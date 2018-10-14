@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, Response
+from worker import worker
 
 app = Flask(__name__)
 
@@ -14,9 +15,9 @@ API for Value Extraction
 def valueExtraction():
     if request.method == "POST":
         data = request.get_json()
-        print(data)
+        return worker(data)
     else:
-        return Response('This API supports only POST & GET requests', status=400, mimetype='application/json')
+        return Response(json.dumps({'message': 'API supports only GET and POST requests'}), status=400, mimetype='application/json')
 
 
 
