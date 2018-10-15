@@ -2,6 +2,7 @@ import json
 import string
 import requests
 from flask import Response
+from random import randint
 import util
 
 # Input validation
@@ -23,24 +24,37 @@ def uploadReport(data):
         'Content-type': 'application/json'
     }
 
-    data = {
-        "report_type": data['report']['report_type'],
-        "id": data['userId'],
-        "report_id": data['userId'],
-        "source": data['userId'],
-        "report_date": data['report']['report_date'],
-        "subject": data['userId'],
-        "report_text": data['report']['report_text']
-    }
+    # Generating a sourceId
+    sourceId = randint(1000, 9999)
 
-    print(data)
+    payload = list()
+
+    id = 1
+
+    for report in data['reports']:
+        jsonBody = {
+            "report_type":"ClarityNLPaaS doc",
+            "id":str(sourceId) + str(id),
+            "report_id":str(sourceId) + str(id),
+            "source":str(sourceId),
+            "report_date":"1970-01-01T00:00:00Z",
+            "subject": "ClarityNLPaaS doc",
+            "report_text":report
+        }
+        payload.append(jsonBody)
+        id+=1
 
 
-    response = requests.post(url, headers=headers, data=json.dumps(data))
+    print( "Source ID = " + str(sourceId))
+
+
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
     if response.status_code == 200:
         return True
     else:
         return False
+
+    
 
 
 def getNLPQL(data):
@@ -65,7 +79,7 @@ def worker(data):
         return Response(json.dumps({'message': validObj[1]}), status=400, mimetype='application/json')
 
     # Uploading report to Solr
-    # if uploadReport(data) == False:
-    #     return Response(json.dumps({'message': 'Could not upload report to Solr'}), status=500, mimetype='application/json')
+    if uploadReport(data) == False:
+        return Response(json.dumps({'message': 'Could not upload report to Solr'}), status=500, mimetype='application/json')
 
     return Response(json.dumps({'message': 'OK'}), status=200, mimetype='application/json')
