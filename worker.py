@@ -6,14 +6,13 @@ import util
 
 # Input validation
 def validateInput(data):
-    if 'userId' not in data or 'report' not in data:
-        return False
+    if 'reports' not in data:
+        return (False, "Input JSON is invalid")
 
-    report = data['report']
-    if 'description_attr' not in report or 'report_text' not in report or 'report_type' not in report:
-        return False
+    if len(data['reports']) > 10:
+        return (False, "Max 10 reports per request.")
 
-    return True
+    return (True, "Valid Input")
 
 
 def uploadReport(data):
@@ -57,15 +56,16 @@ def hasActiveJob(data):
 def worker(data):
 
     # Checking for active Job
-    if hasActiveJob() == True:
+    if hasActiveJob(data) == True:
         return Response(json.dumps({'message': 'You currently have an active job. Only one active job allowed'}), status=200, mimetype='application/json')
 
     # Validating the input object
-    if validateInput(data) == False:
-        return Response(json.dumps({'message': 'Input JSON object is invalid'}), status=400, mimetype='application/json')
+    validObj = validateInput(data)
+    if validObj[0] == False:
+        return Response(json.dumps({'message': validObj[1]}), status=400, mimetype='application/json')
 
     # Uploading report to Solr
-    if uploadReport(data) == False:
-        return Response(json.dumps({'message': 'Could not upload report to Solr'}), status=500, mimetype='application/json')
+    # if uploadReport(data) == False:
+    #     return Response(json.dumps({'message': 'Could not upload report to Solr'}), status=500, mimetype='application/json')
 
     return Response(json.dumps({'message': 'OK'}), status=200, mimetype='application/json')
