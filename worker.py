@@ -3,6 +3,7 @@ import string
 import requests
 from flask import Response
 from random import randint
+from pymongo import MongoClient
 import util
 
 # Input validation
@@ -54,17 +55,44 @@ def uploadReport(data):
     else:
         return False
 
-    
 
 
-def getNLPQL(data):
-    # TODO: Write the code to extract the required NLPQL and enter data
-    pass
+def getNLPQL(file_path):
+    with open(file_path, "r") as file:
+        content = file.read()
+
+    return content
+
+def submitJob(nlpql):
+    url = util.claritynlp_url + "nlpql"
+    response = requests.post(url, data=nlpql)
+    if response.status_code == 200:
+        data = response.json()
+        return (True, data["job_id"])
+    else:
+        print (response.reason)
+        return (False, response.reason)
+
 
 def hasActiveJob(data):
     # TODO: Query Mongo and see if the user has any current active job
     # If active job is present return
     return False
+
+def getResults(jobId):
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    db = client[util.mongo_db]
+    collection = db['phenotype_results']
+    cursor = collection.find({'job_id':jobId})
+
+    if cursor.count() == 0:
+        return json.dumps({'message':'Job is in progress'})
+
+    results = list()
+    for entry in cursor:
+        results.append(entry)
+
+    return json.dumps(results)
 
 
 def worker(data):
@@ -78,8 +106,24 @@ def worker(data):
     if validObj[0] == False:
         return Response(json.dumps({'message': validObj[1]}), status=400, mimetype='application/json')
 
+    # TODO: Uncomment
     # Uploading report to Solr
-    if uploadReport(data) == False:
-        return Response(json.dumps({'message': 'Could not upload report to Solr'}), status=500, mimetype='application/json')
+    # if uploadReport(data) == False:
+    #     return Response(json.dumps({'message': 'Could not upload report to Solr'}), status=500, mimetype='application/json')
 
-    return Response(json.dumps({'message': 'OK'}), status=200, mimetype='application/json')
+    # Getting the nlpql from disk
+    nlpql = getNLPQL("nlpql/test.nlpql")
+
+    # Submitting the job
+    jobResponse = submitJob(nlpql)
+    if jobResponse[0] == False:
+        return Response(json.dumps({'message': 'Could not submit job. Reason: ' + jobResponse[1]}), status=400, mimetype='application/json')
+
+    jobId = jobResponse[1]
+    print("JOB ID = " + str(jobId))
+
+
+    # Getting the results of the Job
+    results = getResults(jobId)
+    return Response(results, status=200, mimetype='application/json')
+    #return Response(json.dumps({'message': 'OK'}), status=200, mimetype='application/json')
