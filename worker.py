@@ -16,7 +16,7 @@ def validateInput(data):
 
     return (True, "Valid Input")
 
-
+# Uploading input to Solr
 def uploadReport(data):
     # Constructing Solr request
     url = util.solr_url + '/update?commit=true'
@@ -51,18 +51,20 @@ def uploadReport(data):
 
     response = requests.post(url, headers=headers, data=json.dumps(payload))
     if response.status_code == 200:
-        return True
+        return (True, sourceId)
     else:
-        return False
+        return (False, response.reason)
 
 
-
-def getNLPQL(file_path):
+# Getting the required nlpql from the nlpql directory
+def getNLPQL(file_path, sourceId):
     with open(file_path, "r") as file:
         content = file.read()
 
+    # TODO: Dynamically inject the new source ID
     return content
 
+# Submitting the job to ClarityNLP
 def submitJob(nlpql):
     url = util.claritynlp_url + "nlpql"
     response = requests.post(url, data=nlpql)
@@ -73,12 +75,14 @@ def submitJob(nlpql):
         print (response.reason)
         return (False, response.reason)
 
-
+# TODO
+# Checking if the user has an active job
 def hasActiveJob(data):
     # TODO: Query Mongo and see if the user has any current active job
     # If active job is present return
     return False
 
+# Reading results from Mongo and converting into JSON
 def getResults(jobId):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
@@ -95,6 +99,7 @@ def getResults(jobId):
     return json.dumps(results)
 
 
+# Main function
 def worker(data):
 
     # Checking for active Job
@@ -108,11 +113,14 @@ def worker(data):
 
     # TODO: Uncomment
     # Uploading report to Solr
-    # if uploadReport(data) == False:
-    #     return Response(json.dumps({'message': 'Could not upload report to Solr'}), status=500, mimetype='application/json')
+    # uploadObj = uploadReport(data)
+    # if uploadObj[0] == False:
+    #     return Response(json.dumps({'message': 'Could not upload report to Solr. Reason: ' + uploadObj[1]}), status=500, mimetype='application/json')
+    # else:
+    #     sourceId = uploadObj[1]
 
     # Getting the nlpql from disk
-    nlpql = getNLPQL("nlpql/test.nlpql")
+    nlpql = getNLPQL("nlpql/test.nlpql", sourceId)
 
     # Submitting the job
     jobResponse = submitJob(nlpql)
