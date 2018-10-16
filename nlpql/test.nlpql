@@ -9,7 +9,7 @@ include ClarityCore version "1.0" called Clarity;
 termset Orthopnea:
   ["orthopnea","orthopnoea","PND"];
 
-define hasOrthopnea:
+define final hasOrthopnea:
   Clarity.TermFinder({
     termset:[Orthopnea]
     });
