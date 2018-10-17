@@ -20,7 +20,6 @@ def validateInput(data):
 
 # Uploading input to Solr
 def uploadReport(data):
-    # Constructing Solr request
     url = util.solr_url + '/update?commit=true'
 
     headers = {
@@ -28,7 +27,7 @@ def uploadReport(data):
     }
 
     # Generating a sourceId
-    sourceId = randint(1000, 9999)
+    sourceId = randint(100000, 999999)
 
     payload = list()
 
@@ -48,8 +47,7 @@ def uploadReport(data):
         id+=1
 
 
-    print( "Source ID = " + str(sourceId))
-
+    print("\n\nSource ID = " + str(sourceId))
 
     response = requests.post(url, headers=headers, data=json.dumps(payload))
     if response.status_code == 200:
@@ -57,14 +55,33 @@ def uploadReport(data):
     else:
         return (False, response.reason)
 
+# Deleting the uploaded report
+def deleteReport(sourceId):
+    url = util.solr_url + '/update?commit=true'
+
+    headers = {
+        'Content-type': 'text/xml; charset=utf-8',
+    }
+
+    data = '<delete><query>source:%s</query></delete>' % (sourceId)
+
+    response = requests.post(url, headers=headers, data=data)
+    if response.status_code == 200:
+        return (True, response.reason)
+    else:
+        return (False, response.reason)
+
+
 
 # Getting the required nlpql from the nlpql directory
 def getNLPQL(file_path, sourceId):
     with open(file_path, "r") as file:
         content = file.read()
 
-    # TODO: Dynamically inject the new source ID
-    return content
+    updatedContent = content % (sourceId)
+    print("\n\nNLPQL:\n")
+    print(updatedContent)
+    return updatedContent
 
 # Submitting the job to ClarityNLP
 def submitJob(nlpql):
@@ -72,9 +89,11 @@ def submitJob(nlpql):
     response = requests.post(url, data=nlpql)
     if response.status_code == 200:
         data = response.json()
+        print("\n\nJob Response:\n")
         print(data)
         return (True, data)
     else:
+        print(response.status_code)
         print (response.reason)
         return (False, response.reason)
 
@@ -87,52 +106,65 @@ def hasActiveJob(data):
 
 # Reading results from Mongo and converting into JSON
 def getResults(data):
-    time.sleep(60)
     jobId = int(data['job_id'])
-    print(jobId)
+    print("\n\nJobID = " + str(jobId))
+
+    # Polling for job completion
+    while(True):
+        r = requests.get(data['status_endpoint'])
+
+        if r.status_code != 200:
+            return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}), status=500, mimetype='application/json')
+
+        if r.json()["status"] == "COMPLETED":
+            break
+
+        time.sleep(0.5)
+
+
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
     collection = db['phenotype_results']
     cursor = collection.find({'job_id':jobId})
 
-    # if cursor.count() == 0:
-    #     return json.dumps({'message':'Job is in progress'})
 
-    #status = requests.get('')
 
     return dumps(cursor)
 
-
-
 # Main function
-def worker(data):
-
+def worker(jobFilePath, data):
+    start = time.time()
     # Checking for active Job
-    if hasActiveJob(data) == True:
+    if hasActiveJob(data):
         return Response(json.dumps({'message': 'You currently have an active job. Only one active job allowed'}), status=200, mimetype='application/json')
 
     # Validating the input object
     validObj = validateInput(data)
-    if validObj[0] == False:
+    if not validObj[0]:
         return Response(json.dumps({'message': validObj[1]}), status=400, mimetype='application/json')
 
-    # TODO: Uncomment
     # Uploading report to Solr
     uploadObj = uploadReport(data)
-    if uploadObj[0] == False:
-        return Response(json.dumps({'message': 'Could not upload report to Solr. Reason: ' + uploadObj[1]}), status=500, mimetype='application/json')
+    if not uploadObj[0]:
+        return Response(json.dumps({'message': 'Could not upload report. Reason: ' + uploadObj[1]}), status=500, mimetype='application/json')
     else:
         sourceId = uploadObj[1]
 
     # Getting the nlpql from disk
-    nlpql = getNLPQL("nlpql/test.nlpql", sourceId)
+    nlpql = getNLPQL(jobFilePath, sourceId)
 
     # Submitting the job
     jobResponse = submitJob(nlpql)
-    if jobResponse[0] == False:
+    if not jobResponse[0]:
         return Response(json.dumps({'message': 'Could not submit job. Reason: ' + jobResponse[1]}), status=500, mimetype='application/json')
 
     # Getting the results of the Job
     results = getResults(jobResponse[1])
+
+    # Deleting uploaded documents
+    deleteObj = deleteReport(sourceId)
+    if not deleteObj[0]:
+        return Response(json.dumps({'message': 'Could not delete report. Reason: ' + deleteObj[1]}), status=500, mimetype='application/json')
+
+    print("\n\nRun Time = %s \n\n" %(time.time() - start))
     return Response(results, status=200, mimetype='application/json')
-    #return Response(json.dumps({'message': 'OK'}), status=200, mimetype='application/json')

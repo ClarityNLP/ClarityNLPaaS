@@ -7,7 +7,6 @@ app = Flask(__name__)
 
 
 def validJob(jobType):
-    jobType += ".nlpql"
     validJobs = os.listdir("nlpql")
     return jobType in validJobs
 
@@ -35,12 +34,14 @@ API for triggering jobs
 @app.route("/job/<jobType>", methods=['POST', 'GET'])
 def submitJob(jobType):
     if request.method == 'POST':
+        jobType += ".nlpql"
         # Checking if the selected job is valid
         if not validJob(jobType):
             return Response(json.dumps({'message': 'Invalid API route'}), status=400, mimetype='application/json')
         else:
             data = request.get_json()
-            return worker(data)
+            jobFilePath = "nlpql/" + jobType
+            return worker(jobFilePath, data)
     else:
         return Response(json.dumps({'message': 'API supports only POST requests'}), status=400, mimetype='application/json')
 

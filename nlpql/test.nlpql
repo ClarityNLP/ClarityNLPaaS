@@ -1,15 +1,18 @@
-limit 100;
+limit 10;
 
-//phenotype name
-phenotype "Orthopnea" version "2";
+phenotype "Test" version "2";
 
-//include Clarity main NLP libraries
 include ClarityCore version "1.0" called Clarity;
 
-termset Orthopnea:
-  ["orthopnea","orthopnoea","PND"];
+documentset SubmittedDocs:
+     Clarity.createDocumentSet({
+         "query":"source:%s"});
 
-define final hasOrthopnea:
-  Clarity.TermFinder({
-    termset:[Orthopnea]
-    });
+termset Test:
+ ["test","fun"];
+
+define final MyTest:
+ Clarity.TermFinder({
+  documentset:[SubmittedDocs],
+   termset:[Test]
+   });
