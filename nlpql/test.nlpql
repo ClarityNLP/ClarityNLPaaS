@@ -9,7 +9,7 @@ documentset SubmittedDocs:
          "query":"source:%s"});
 
 termset Test:
- ["test","fun"];
+ ["test","fun", "book", "deep", "claim"];
 
 define final MyTest:
  Clarity.TermFinder({
