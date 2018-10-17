@@ -18,17 +18,6 @@ def hello():
 
 
 """
-API for Value Extraction
-"""
-# @app.route("/valueExtraction", methods=['POST', 'GET'])
-# def valueExtraction():
-#     if request.method == "POST":
-#         data = request.get_json()
-#         return worker(data)
-#     else:
-#         return Response(json.dumps({'message': 'API supports only GET and POST requests'}), status=400, mimetype='application/json')
-
-"""
 API for triggering jobs
 """
 @app.route("/job/<jobType>", methods=['POST', 'GET'])
