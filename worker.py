@@ -166,7 +166,25 @@ def getResultsByJobId(jobId):
     if cursor.count() == 0:
         return Response(json.dumps({'message': 'No result found'}), status=200, mimetype='application/json')
     else:
-        return dumps(cursor)
+        return cleanOutput(dumps(cursor))
+        #return dumps(cursor)
+
+
+"""
+Function to clean output JSON
+"""
+def cleanOutput(data):
+    data = json.loads(data)
+
+    keys = ['_id', 'experiencer', 'report_id', 'source', 'phenotype_final', 'temporality', 'subject', 'concept_code', 'report_type', 'inserted_date', 'negation', 'solr_id', 'end', 'start', 'report_date', 'batch', 'owner', 'pipeline_id']
+
+    for k in keys:
+        for obj in data:
+            obj.pop(k, None)
+
+    return json.dumps(data)
+
+
 
 
 """
@@ -207,4 +225,6 @@ def worker(jobFilePath, data):
         return Response(json.dumps({'message': 'Could not delete report. Reason: ' + deleteObj[1]}), status=500, mimetype='application/json')
 
     print("\n\nRun Time = %s \n\n" %(time.time() - start))
-    return Response(results, status=200, mimetype='application/json')
+    return Response(cleanOutput(results), status=200, mimetype='application/json')
+
+    #return Response(results, status=200, mimetype='application/json')
