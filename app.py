@@ -10,6 +10,12 @@ def validJob(jobType):
     validJobs = os.listdir("nlpql")
     return jobType in validJobs
 
+def getApiRoutes():
+    existingFiles = os.listdir("nlpql")
+    results = list()
+    for f in existingFiles:
+        results.append('~/' + f[0:f.find('.')])
+    return ', '.join(results)
 
 
 @app.route("/")
@@ -26,7 +32,7 @@ def submitJob(jobType):
         jobType += ".nlpql"
         # Checking if the selected job is valid
         if not validJob(jobType):
-            return Response(json.dumps({'message': 'Invalid API route'}), status=400, mimetype='application/json')
+            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + getApiRoutes()}), status=400, mimetype='application/json')
         else:
             data = request.get_json()
             jobFilePath = "nlpql/" + jobType
