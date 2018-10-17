@@ -8,7 +8,9 @@ import time
 import util
 from bson.json_util import dumps
 
-# Input validation
+"""
+Input request validation
+"""
 def validateInput(data):
     if 'reports' not in data:
         return (False, "Input JSON is invalid")
@@ -18,7 +20,9 @@ def validateInput(data):
 
     return (True, "Valid Input")
 
-# Uploading input to Solr
+"""
+Uploading reports with unique source
+"""
 def uploadReport(data):
     url = util.solr_url + '/update?commit=true'
 
@@ -55,7 +59,9 @@ def uploadReport(data):
     else:
         return (False, response.reason)
 
-# Deleting the uploaded report
+"""
+Deleting reports based on generated source
+"""
 def deleteReport(sourceId):
     url = util.solr_url + '/update?commit=true'
 
@@ -73,7 +79,9 @@ def deleteReport(sourceId):
 
 
 
-# Getting the required nlpql from the nlpql directory
+"""
+Getting required NLPQL based on API route
+"""
 def getNLPQL(file_path, sourceId):
     with open(file_path, "r") as file:
         content = file.read()
@@ -83,7 +91,9 @@ def getNLPQL(file_path, sourceId):
     print(updatedContent)
     return updatedContent
 
-# Submitting the job to ClarityNLP
+"""
+Submitting ClarityNLP job
+"""
 def submitJob(nlpql):
     url = util.claritynlp_url + "nlpql"
     response = requests.post(url, data=nlpql)
@@ -97,14 +107,18 @@ def submitJob(nlpql):
         print (response.reason)
         return (False, response.reason)
 
-# TODO
-# Checking if the user has an active job
+"""
+TODO:
+DoS Protection by allowing user to have only one active job
+"""
 def hasActiveJob(data):
     # TODO: Query Mongo and see if the user has any current active job
     # If active job is present return
     return False
 
-# Reading results from Mongo and converting into JSON
+"""
+Reading Results from Mongo
+"""
 def getResults(data):
     jobId = int(data['job_id'])
     print("\n\nJobID = " + str(jobId))
@@ -127,11 +141,37 @@ def getResults(data):
     collection = db['phenotype_results']
     cursor = collection.find({'job_id':jobId})
 
-
-
     return dumps(cursor)
 
-# Main function
+"""
+Getting the results of a job by querying the job ID
+"""
+def getResultsByJobId(jobId):
+    status = "status/%s" % (jobId)
+    url = util.claritynlp_url + status
+    r = requests.get(url)
+
+    if r.status_code != 200:
+        return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}), status=500, mimetype='application/json')
+
+    if r.json()["status"] != "COMPLETED":
+        return Response(json.dumps({'message': 'Job is still in progress'}), status=500, mimetype='application/json')
+
+
+    client = MongoClient(util.mongo_host, util.mongo_port)
+    db = client[util.mongo_db]
+    collection = db['phenotype_results']
+    cursor = collection.find({'job_id':int(jobId)})
+
+    if cursor.count() == 0:
+        return Response(json.dumps({'message': 'No result found'}), status=200, mimetype='application/json')
+    else:
+        return dumps(cursor)
+
+
+"""
+Main worker function
+"""
 def worker(jobFilePath, data):
     start = time.time()
     # Checking for active Job

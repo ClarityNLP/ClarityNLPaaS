@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, Response
-from worker import worker
+from worker import worker, getResultsByJobId
 import json
 import os
 
@@ -39,6 +39,16 @@ def submitJob(jobType):
             return worker(jobFilePath, data)
     else:
         return Response(json.dumps({'message': 'API supports only POST requests'}), status=400, mimetype='application/json')
+
+"""
+API for getting Job results
+"""
+@app.route("/job/results/<jobId>", methods=['GET'])
+def getResults(jobId):
+    if request.method == 'GET':
+        return getResultsByJobId(jobId)
+    else:
+        return Response(json.dumps({'message': 'API supports only GET requests'}), status=400, mimetype='application/json')
 
 
 
