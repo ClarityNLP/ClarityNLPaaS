@@ -147,8 +147,9 @@ def getResults(data):
 Getting the results of a job by querying the job ID
 """
 def getResultsByJobId(jobId):
-    status = "status/%s" % (jobId)
-    url = util.claritynlp_url + status
+    #status = "status/%s" % (jobId)
+    url = "http://nlp-api/status/%s" %(jobId)
+    #url = util.claritynlp_url + status
     r = requests.get(url)
 
     if r.status_code != 200:
