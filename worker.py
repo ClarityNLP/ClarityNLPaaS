@@ -123,9 +123,16 @@ def getResults(data):
     jobId = int(data['job_id'])
     print("\n\nJobID = " + str(jobId))
 
+
+    # Checking if it is a dev box
+    if util.development_mode == "dev":
+        url = data['status_endpoint']
+    else:
+        url = "http://nlp-api/status/%s" %(jobId)
+
     # Polling for job completion
     while(True):
-        r = requests.get(data['status_endpoint'])
+        r = requests.get(url)
 
         if r.status_code != 200:
             return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}), status=500, mimetype='application/json')
@@ -147,9 +154,13 @@ def getResults(data):
 Getting the results of a job by querying the job ID
 """
 def getResultsByJobId(jobId):
-    #status = "status/%s" % (jobId)
-    url = "http://nlp-api/status/%s" %(jobId)
-    #url = util.claritynlp_url + status
+    status = "status/%s" % (jobId)
+
+    if util.development_mode == "dev":
+        url = util.claritynlp_url + status
+    else:
+        url = "http://nlp-api/status/%s" %(jobId)
+
     r = requests.get(url)
 
     if r.status_code != 200:

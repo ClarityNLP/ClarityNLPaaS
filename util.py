@@ -29,3 +29,6 @@ mongo_working_collection = read_property('NLP_MONGO_WORKING_COLLECTION', ('mongo
 
 # ClarityNLP
 claritynlp_url = read_property('CLARITY_NLP_URL', ('claritynlp', 'url'))
+
+# Dev mode
+development_mode = read_property('DEV_ENV', ('development', 'mode'))
