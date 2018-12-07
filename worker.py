@@ -15,8 +15,8 @@ def validateInput(data):
     if 'reports' not in data:
         return (False, "Input JSON is invalid")
 
-    if len(data['reports']) > 10:
-        return (False, "Max 10 reports per request.")
+    # if len(data['reports']) > 10:
+    #     return (False, "Max 10 reports per request.")
 
     return (True, "Valid Input")
 
@@ -129,6 +129,7 @@ def getResults(data):
         url = data['status_endpoint']
     else:
         url = "http://nlp-api/status/%s" %(jobId)
+        print("\n\n" + url + "\n\n")
 
     # Polling for job completion
     while(True):
@@ -190,9 +191,9 @@ def cleanOutput(data):
 
     keys = ['_id', 'experiencer', 'report_id', 'source', 'phenotype_final', 'temporality', 'subject', 'concept_code', 'report_type', 'inserted_date', 'negation', 'solr_id', 'end', 'start', 'report_date', 'batch', 'owner', 'pipeline_id']
 
-    for k in keys:
-        for obj in data:
-            obj.pop(k, None)
+    # for k in keys:
+    #     for obj in data:
+    #         obj.pop(k, None)
 
     return json.dumps(data)
 
