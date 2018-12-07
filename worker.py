@@ -161,6 +161,7 @@ def getResultsByJobId(jobId):
         url = util.claritynlp_url + status
     else:
         url = "http://nlp-api/status/%s" %(jobId)
+        print(url)
 
     r = requests.get(url)
 
