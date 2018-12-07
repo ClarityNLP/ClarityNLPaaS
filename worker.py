@@ -125,11 +125,13 @@ def getResults(data):
 
 
     # Checking if it is a dev box
+    # Checking if it is a dev box
     if util.development_mode == "dev":
         url = data['status_endpoint']
     else:
-        url = "http://nlp-api/status/%s" %(jobId)
-        print("\n\n" + url + "\n\n")
+        status = "status/%s" % (jobId)
+        url = util.claritynlp_url + status
+        print(url)
 
     # Polling for job completion
     while(True):
@@ -157,10 +159,12 @@ Getting the results of a job by querying the job ID
 def getResultsByJobId(jobId):
     status = "status/%s" % (jobId)
 
-    if util.development_mode == "dev":
-        url = util.claritynlp_url + status
-    else:
-        url = "http://nlp-api/status/%s" %(jobId)
+    url = util.claritynlp_url + status
+    print(url)
+    # if util.development_mode == "dev":
+    #     url = util.claritynlp_url + status
+    # else:
+    #     url = "http://nlp-api/status/%s" %(jobId)
 
     r = requests.get(url)
 
