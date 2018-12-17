@@ -8,7 +8,7 @@ documentset SubmittedDocs:
          "query":"source:%s"});
 
 termset Happiness:
- ["happy","delighted"];
+ ["happy","delighted","amazed","inflated"];
 
 define isHappy:
  Clarity.ProviderAssertion({
