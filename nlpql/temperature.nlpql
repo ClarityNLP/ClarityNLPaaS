@@ -14,7 +14,7 @@ termset TemperatureTerms:
 define Temperature:
   Clarity.ValueExtraction({
     documentset:[SubmittedDocs],
-    termset:[EjectionFractionTerms],
+    termset:[TemperatureTerms],
     minimum_value: "97",
     maximum_value: "107"
     });
