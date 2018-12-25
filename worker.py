@@ -8,6 +8,8 @@ import time
 import util
 from bson.json_util import dumps
 
+nlpaas_report_list = list()
+
 """
 Input request validation
 """
@@ -34,7 +36,7 @@ def uploadReport(data):
     sourceId = randint(100000, 999999)
 
     payload = list()
-
+    nlpaas_report_list.clear()
     id = 1
 
     for report in data['reports']:
@@ -45,13 +47,17 @@ def uploadReport(data):
             "source":str(sourceId),
             "report_date":"1970-01-01T00:00:00Z",
             "subject": "ClarityNLPaaS doc",
-            "report_text":report
+            "report_text":report,
+            "nlpaas_id":str(id)
         }
         payload.append(jsonBody)
+        nlpaas_report_list.append(str(sourceId) + str(id))
         id+=1
 
 
     print("\n\nSource ID = " + str(sourceId))
+    print("\n\nReport List = " + str(nlpaas_report_list))
+
 
     response = requests.post(url, headers=headers, data=json.dumps(payload))
     if response.status_code == 200:
@@ -143,7 +149,7 @@ def getResults(data):
         if r.json()["status"] == "COMPLETED":
             break
 
-        time.sleep(0.5)
+        time.sleep(2.0)
 
 
     client = MongoClient(util.mongo_host, util.mongo_port)
@@ -193,7 +199,18 @@ Function to clean output JSON
 def cleanOutput(data):
     data = json.loads(data)
 
-    keys = ['_id', 'experiencer', 'report_id', 'source', 'phenotype_final', 'temporality', 'subject', 'concept_code', 'report_type', 'inserted_date', 'negation', 'solr_id', 'end', 'start', 'report_date', 'batch', 'owner', 'pipeline_id']
+    #iterate through to check for report_ids that are empty and assign report count from original report_list
+    for obj in data:
+        nlpaas_array_id=int(str(obj["report_id"])[6:])
+        if obj["report_id"] in nlpaas_report_list:
+            obj.update({'nlpaas_report_list_id':nlpaas_array_id})
+            nlpaas_report_list.remove(obj["report_id"])
+    #return null response for reports with no results
+    for item in nlpaas_report_list:
+        nlpaas_array_id=int(item[6:])
+        data+=[{'nlpaas_report_list_id':nlpaas_array_id,'nlpql_feature':'null'}]
+
+    keys = ['_id', 'experiencer', 'report_id', 'source', 'phenotype_final', 'temporality', 'subject', 'concept_code', 'report_type', 'inserted_date', 'negation', 'solr_id', 'end', 'start', 'report_date', 'batch', 'nlpaas_id', 'owner', 'pipeline_id']
 
     # for k in keys:
     #     for obj in data:
