@@ -8,7 +8,7 @@ documentset SubmittedDocs:
          "query":"source:%s"});
 
 termset Happiness:
- ["happy","delighted"];
+ ["happy","delighted","excited","amazed","thrilled"];
 
 termset Sadness:
  ["sad", "unhappy", "depressed"];
