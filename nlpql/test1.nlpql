@@ -10,8 +10,26 @@ documentset SubmittedDocs:
 termset Happiness:
  ["happy","delighted"];
 
+termset Sadness:
+ ["sad", "unhappy", "depressed"];
+
+termset Excited:
+ ["exciting", "interesting", "awesome"];
+
 define isHappy:
  Clarity.ProviderAssertion({
    termset:[Happiness],
+   documentset:[SubmittedDocs]
+   });
+
+define isSad:
+Clarity.ProviderAssertion({
+  termset:[Sadness],
+  documentset:[SubmittedDocs]
+  });
+
+define isExcited:
+ Clarity.ProviderAssertion({
+   termset:[Excited],
    documentset:[SubmittedDocs]
    });
