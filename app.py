@@ -17,6 +17,12 @@ def getApiRoutes():
         results.append('~/' + f[0:f.find('.')])
     return ', '.join(results)
 
+def getNLPQLOptions():
+    existingFiles = os.listdir("nlpql")
+    results = list()
+    for f in existingFiles:
+        results.append(f[0:f.find('.')])
+    return results
 
 @app.route("/")
 def hello():
@@ -44,12 +50,21 @@ def submitJob(jobType):
 API for getting Job results
 """
 @app.route("/job/results/<jobId>", methods=['GET'])
-def getResults(jobId):
+def getResults():
     if request.method == 'GET':
         return getResultsByJobId(jobId)
     else:
         return Response(json.dumps({'message': 'API supports only GET requests'}), status=400, mimetype='application/json')
 
+"""
+API for getting NLPQL Options
+"""
+@app.route("/list", methods=['GET'])
+def getNLPQLList():
+    if request.method == 'GET':
+        return Response(json.dumps(getNLPQLOptions()), status=200, mimetype='application/json')
+    else:
+        return Response(json.dumps({'message': 'API supports only GET requests'}), status=400, mimetype='application/json')
 
 
 
