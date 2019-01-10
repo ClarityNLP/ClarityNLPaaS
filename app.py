@@ -59,7 +59,7 @@ def getResults(jobId):
 """
 API for getting NLPQL Options
 """
-@app.route("/list", methods=['GET'])
+@app.route("/job/list", methods=['GET'])
 def getNLPQLList():
     if request.method == 'GET':
         return Response(json.dumps(getNLPQLOptions()), status=200, mimetype='application/json')
