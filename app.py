@@ -59,12 +59,12 @@ def getResults(jobId):
 """
 API for getting NLPQL Options
 """
-@app.route("/list", methods=['GET'])
+@app.route("/list", methods=['POST'])
 def getNLPQLList():
-    if request.method == 'GET':
+    if request.method == 'POST':
         return Response(json.dumps(getNLPQLOptions()), status=200, mimetype='application/json')
     else:
-        return Response(json.dumps({'message': 'API supports only GET requests'}), status=400, mimetype='application/json')
+        return Response(json.dumps({'message': 'API supports only POST requests'}), status=400, mimetype='application/json')
 
 
 
