@@ -50,7 +50,7 @@ def submitJob(jobType):
 API for getting Job results
 """
 @app.route("/job/results/<jobId>", methods=['GET'])
-def getResults():
+def getResults(jobId):
     if request.method == 'GET':
         return getResultsByJobId(jobId)
     else:
