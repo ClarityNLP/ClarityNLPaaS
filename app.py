@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify, Response
+from flask_cors import CORS
 from worker import worker, getResultsByJobId
 import json
 import os
 
 app = Flask(__name__)
+CORS(app)
 
 
 def validJob(jobType):
