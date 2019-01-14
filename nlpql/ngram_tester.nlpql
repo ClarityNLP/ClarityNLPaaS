@@ -1,0 +1,24 @@
+phenotype "ngram Test" version "2";
+
+//include Clarity main NLP libraries
+include ClarityCore version "1.0" called Clarity;
+
+documentset SubmittedDocs:
+     Clarity.createDocumentSet({
+         "query":"source:%s"});
+
+termset Happiness:
+["happy","delighted","excited","amazed","thrilled"];
+
+define demographicsNgram:
+  Clarity.ngram({
+    termset:[Happiness],
+    documentset:[SubmittedDocs],
+    "n": "3",
+    "filter_nums": false,
+    "filter_stops": false,
+    "filter_punct": true,
+    "min_freq": 1,
+    "lemmas": true,
+    "limit_to_termset": true
+    });
