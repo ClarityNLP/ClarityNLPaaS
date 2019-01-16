@@ -1,4 +1,4 @@
-phenotype "Happy Test" version "2";
+phenotype "Clinical Trial Test" version "2";
 
 //include Clarity main NLP libraries
 include ClarityCore version "1.0" called Clarity;
@@ -7,29 +7,16 @@ documentset SubmittedDocs:
      Clarity.createDocumentSet({
          "query":"source:%s"});
 
-termset Happiness:
- ["happy","delighted","excited","amazed","thrilled"];
+ // lesion terms
+ termset LesionTerms: [
+     "lesion", "growth", "mass", "malignancy", "tumor",
+     "neoplasm", "nodule", "cyst", "focus of enhancement",
+     "echodensity", "hyperechogenic focus"
+ ];
 
-termset Sadness:
- ["sad", "unhappy", "depressed"];
-
-termset Excited:
- ["exciting", "interesting", "awesome"];
-
-define isHappy:
- Clarity.ProviderAssertion({
-   termset:[Happiness],
-   documentset:[SubmittedDocs]
-   });
-
-define isSad:
-Clarity.ProviderAssertion({
-  termset:[Sadness],
-  documentset:[SubmittedDocs]
-  });
-
-define isExcited:
- Clarity.ProviderAssertion({
-   termset:[Excited],
-   documentset:[SubmittedDocs]
-   });
+ // lesion measurements
+ define hasBreastLesion:
+     Clarity.MeasurementFinder({
+         documentset: [SubmittedDocs],
+         termset: [LesionTerms]
+     });
