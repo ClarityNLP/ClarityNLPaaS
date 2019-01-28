@@ -10,7 +10,6 @@ include ClarityCore version "1.0" called Clarity;
 documentset Docs:
      Clarity.createDocumentSet({
          "query":"source:%s"});
-         
 
 // Medication(s) inclusion criteria termset, if medication criteria present
 
@@ -18,7 +17,7 @@ termset TreatmentTerms0:[
     "rituxan", "rituximab"
 ];
 
-define Treatment_Rituximab:
+define  Treatment_Rituximab:
     Clarity.ProviderAssertion({
         termset:[TreatmentTerms0],
         documentset:[Docs]
@@ -29,7 +28,7 @@ termset TreatmentTerms1:[
     "cytoxan", "cyclophosphamide"
 ];
 
-define Treatment_Cyclophosphamide:
+define  Treatment_Cyclophosphamide:
     Clarity.ProviderAssertion({
         termset:[TreatmentTerms1],
         documentset:[Docs]
@@ -40,7 +39,7 @@ termset TreatmentTerms2:[
     "adriamycin", "doxorubicin"
 ];
 
-define Treatment_Doxorubicin:
+define  Treatment_Doxorubicin:
     Clarity.ProviderAssertion({
         termset:[TreatmentTerms2],
         documentset:[Docs]
@@ -51,7 +50,7 @@ termset TreatmentTerms3:[
     "oncovin", "vincristine"
 ];
 
-define Treatment_Vincristine:
+define  Treatment_Vincristine:
     Clarity.ProviderAssertion({
         termset:[TreatmentTerms3],
         documentset:[Docs]
@@ -62,7 +61,7 @@ termset TreatmentTerms4:[
     "millipred", "prednisolone"
 ];
 
-define Treatment_Prednisolone:
+define  Treatment_Prednisolone:
     Clarity.ProviderAssertion({
         termset:[TreatmentTerms4],
         documentset:[Docs]
@@ -73,10 +72,10 @@ define Treatment_Prednisolone:
 // Regimen names
 
 termset RegimenTerms:[
-    "CHOPR", "RCHOP", "CHOP-R", "R/CHOP", "R-CHOP-21", "R-CHOP", "CHOP/R", "RCHOP21", "R/CHOP/21"
+    "CHOPR", "CHOP/R", "R/CHOP/21", "RCHOP21", "RCHOP", "CHOP-R", "R-CHOP-21", "R/CHOP", "R-CHOP"
 ];
 
-define Regimen_CHOPR:
+define final Regimen_RCHOP_Mentioned:
   Clarity.ProviderAssertion({
     termset:[RegimenTerms],
     documentset:[Docs]
@@ -86,11 +85,9 @@ define Regimen_CHOPR:
 // Results
 
         
-define ReceivedRegimenTreatments:
+define final Received_RCHOP_Treatments:
     where Treatment_Rituximab AND Treatment_Cyclophosphamide AND Treatment_Doxorubicin AND Treatment_Vincristine AND Treatment_Prednisolone;
-    
-define final Received_RCHOP:
-    where Regimen_CHOPR OR ReceivedRegimenTreatments;        
+          
         
         
         
@@ -98,8 +95,9 @@ define final Received_RCHOP:
 // Comments
 /***
 
-Known regimen for: Primary_mediastinal_B-cell_lymphoma, Follicular_lymphoma, HIV-associated_lymphoma, Waldenström_macroglobulinemia, Post-transplant_lymphoproliferative_disorder, Marginal_zone_lymphoma, Diffuse_large_B-cell_lymphoma, Mantle_cell_lymphoma
+Known regimen for: Diffuse_large_B-cell_lymphoma, Follicular_lymphoma, HIV-associated_lymphoma, Waldenström_macroglobulinemia, Marginal_zone_lymphoma, Mantle_cell_lymphoma, Post-transplant_lymphoproliferative_disorder, Primary_mediastinal_B-cell_lymphoma
 
 
 ***/
  
+
