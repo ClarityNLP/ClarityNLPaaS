@@ -1,3 +1,4 @@
+limit 100;
 
 // Phenotype library name
 phenotype "Cancer mention" version "1";
