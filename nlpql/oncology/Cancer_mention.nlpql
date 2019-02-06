@@ -20,5 +20,7 @@ termset Terms:[
 define final CancerMentions:
     Clarity.ProviderAssertion({
         termset:[Terms],
-        documentset:[Docs]
+        documentset:[Docs],
+        code: 'CANCER',
+        codesystem: 'TEST'
 }); 
