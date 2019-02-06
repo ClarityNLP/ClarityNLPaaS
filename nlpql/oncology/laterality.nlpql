@@ -21,8 +21,6 @@ termset CancerTerms:[
 
 define final LeftCancerLaterality:
     Clarity.TermProximityTask({
-       code: "2",
-        codesystem: "NAACCR Laterality",
         documentset: [SubmittedDocs],
         "termset1": "left,lt",
         "termset2": " cancer,tumor,neoplasm,lymphoma,leukemia,carcinoma,chemotherapy,melanoma,Pheochromocytoma,adenocarcinoma,neoplasia,neoplasm,glioma,Glioblastoma,Meningioma,sarcoma,Rhabdomyosarcoma,Osteosarcoma,Mesothelioma,braf,Medulloblastoma,Hepatoblastoma,metastasis,metastatic,metastases,Carcinomatosis,tumors,mass,masses",
@@ -32,8 +30,6 @@ define final LeftCancerLaterality:
 
 define final RightCancerLaterality:
     Clarity.TermProximityTask({
-        code: "1",
-        codesystem: "NAACCR Laterality",
         documentset: [SubmittedDocs],
         "termset1": "right,rt",
         "termset2": " cancer,tumor,neoplasm,lymphoma,leukemia,carcinoma,chemotherapy,melanoma,Pheochromocytoma,adenocarcinoma,neoplasia,neoplasm,glioma,Glioblastoma,Meningioma,sarcoma,Rhabdomyosarcoma,Osteosarcoma,Mesothelioma,braf,Medulloblastoma,Hepatoblastoma,metastasis,metastatic,metastases,Carcinomatosis,tumors,mass,masses",
