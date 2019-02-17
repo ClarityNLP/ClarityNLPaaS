@@ -129,10 +129,13 @@ def has_active_job(data):
     return False
 
 
-def get_results(data):
+def get_results(data, source_data=None):
     """
     Reading Results from Mongo
     """
+    if not source_data:
+        source_data = list()
+
     job_id = int(data['job_id'])
     print("\n\njob_id = " + str(job_id))
 
@@ -160,9 +163,18 @@ def get_results(data):
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
     collection = db['phenotype_results']
-    cursor = collection.find({'job_id': job_id})
+    results = list(collection.find({'job_id': job_id}))
+    if len(source_data) > 0:
+        for r in results:
+            report_id = r['report_id']
+            source = r['source']
+            doc_index = int(report_id.replace(source, '')) - 1
+            source_doc = source_data[doc_index]
+            r['report_text'] = source_doc
+            print('found source doc')
 
-    return dumps(cursor)
+    result_string = dumps(results)
+    return result_string
 
 
 def get_results_by_job_id(job_id):
@@ -259,7 +271,7 @@ def worker(job_file_path, data):
                         mimetype='application/json')
 
     # Getting the results of the Job
-    results = get_results(job_response[1])
+    results = get_results(job_response[1], source_data=data['reports'])
 
     # Deleting uploaded documents
     delete_obj = delete_report(source_id)

@@ -43,6 +43,46 @@ def hello():
     return "Welcome to ClarityNLPaaS."
 
 
+@app.route("/job/<job_category>/<job_subcategory>/<job_name>", methods=['POST', 'GET'])
+def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_name: str):
+    """
+    API for triggering jobs
+    """
+    if request.method == 'POST':
+        job_type = "{}/{}/{}".format(job_category, job_subcategory, job_name)
+        # Checking if the selected job is valid
+        if not valid_job(job_type):
+            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}), status=400,
+                            mimetype='application/json')
+        else:
+            data = request.get_json()
+            job_file_path = "nlpql/" + job_type + ".nlpql"
+            return worker(job_file_path, data)
+    else:
+        return Response(json.dumps({'message': 'API supports only POST requests'}), status=400,
+                        mimetype='application/json')
+
+
+@app.route("/job/<job_category>/<job_name>", methods=['POST', 'GET'])
+def submit_job_with_category(job_category: str, job_name: str):
+    """
+    API for triggering jobs
+    """
+    if request.method == 'POST':
+        job_type = "{}/{}".format(job_category, job_name)
+        # Checking if the selected job is valid
+        if not valid_job(job_type):
+            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}), status=400,
+                            mimetype='application/json')
+        else:
+            data = request.get_json()
+            job_file_path = "nlpql/" + job_type + ".nlpql"
+            return worker(job_file_path, data)
+    else:
+        return Response(json.dumps({'message': 'API supports only POST requests'}), status=400,
+                        mimetype='application/json')
+
+
 @app.route("/job/<job_type>", methods=['POST', 'GET'])
 def submit_job(job_type: str):
     """
