@@ -1,0 +1,103 @@
+// Phenotype library name
+phenotype "Regimen for R-CHOP" version "1";
+
+// Phenotype library description 
+description "Generated query for cancer treatment based on https://hemonc.org/wiki/Main_Page";
+
+// # Referenced libraries #
+include ClarityCore version "1.0" called Clarity;
+
+documentset Docs:
+     Clarity.createDocumentSet({
+         "query":"source:%s"});
+
+// Medication(s) inclusion criteria termset, if medication criteria present
+
+termset TreatmentTerms0:[
+    "rituxan", "rituximab"
+];
+
+define  Treatment_Rituximab:
+    Clarity.ProviderAssertion({
+        termset:[TreatmentTerms0],
+        documentset:[Docs]
+}); 
+
+        
+termset TreatmentTerms1:[
+    "cytoxan", "cyclophosphamide"
+];
+
+define  Treatment_Cyclophosphamide:
+    Clarity.ProviderAssertion({
+        termset:[TreatmentTerms1],
+        documentset:[Docs]
+}); 
+
+        
+termset TreatmentTerms2:[
+    "adriamycin", "doxorubicin"
+];
+
+define  Treatment_Doxorubicin:
+    Clarity.ProviderAssertion({
+        termset:[TreatmentTerms2],
+        documentset:[Docs]
+}); 
+
+        
+termset TreatmentTerms3:[
+    "oncovin", "vincristine"
+];
+
+define  Treatment_Vincristine:
+    Clarity.ProviderAssertion({
+        termset:[TreatmentTerms3],
+        documentset:[Docs]
+}); 
+
+        
+termset TreatmentTerms4:[
+    "millipred", "prednisolone"
+];
+
+define  Treatment_Prednisolone:
+    Clarity.ProviderAssertion({
+        termset:[TreatmentTerms4],
+        documentset:[Docs]
+}); 
+
+        
+
+// Regimen names
+
+termset RegimenTerms:[
+    "CHOPR", "CHOP/R", "R/CHOP/21", "RCHOP21", "RCHOP", "CHOP-R", "R-CHOP-21", "R/CHOP", "R-CHOP"
+];
+
+define final Regimen_RCHOP_Mentioned:
+  Clarity.ProviderAssertion({
+    termset:[RegimenTerms],
+    documentset:[Docs]
+   }); 
+
+
+// Results
+
+        
+define final Received_RCHOP_Treatments:
+    where Treatment_Rituximab AND Treatment_Cyclophosphamide AND Treatment_Doxorubicin AND Treatment_Vincristine AND Treatment_Prednisolone;
+          
+        
+        
+        
+
+// Comments
+/***
+
+Known regimen for: Diffuse_large_B-cell_lymphoma, Follicular_lymphoma, HIV-associated_lymphoma, Waldenstrom_macroglobulinemia, Marginal_zone_lymphoma, Mantle_cell_lymphoma, Post-transplant_lymphoproliferative_disorder, Primary_mediastinal_B-cell_lymphoma
+
+
+***/
+ 
+

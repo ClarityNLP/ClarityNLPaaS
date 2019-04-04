@@ -7,12 +7,12 @@ phenotype "Patient Temperatures" version "2";
              "query":"source:%s"});
 
     termset ScoreTerms:
-       ["score"];
+       ["ecog","karnovsky","karnofsky"];
 
      define final Scores:
        Clarity.ValueExtraction({
          termset:[ScoreTerms],
          documentset:[SubmittedDocs],
          minimum_value: "0",
-         maximum_value: "500"
+         maximum_value: "100"
          });

@@ -1,216 +1,265 @@
 import json
-import string
-import requests
-from flask import Response
-from random import randint
-from pymongo import MongoClient
 import time
-import util
+from random import randint
+
+import requests
 from bson.json_util import dumps
+from flask import Response
+from pymongo import MongoClient
+
+import util
 
 nlpaas_report_list = list()
 
-"""
-Input request validation
-"""
-def validateInput(data):
+
+def validate_input(data):
+    """
+    Input request validation
+    """
     if 'reports' not in data:
-        return (False, "Input JSON is invalid")
+        return False, "Input JSON is invalid"
 
     # if len(data['reports']) > 10:
     #     return (False, "Max 10 reports per request.")
 
-    return (True, "Valid Input")
+    return True, "Valid Input"
 
-"""
-Uploading reports with unique source
-"""
-def uploadReport(data):
+
+def upload_report(data):
+    """
+    Uploading reports with unique source
+    """
     url = util.solr_url + '/update?commit=true'
 
     headers = {
         'Content-type': 'application/json'
     }
 
-    # Generating a sourceId
-    sourceId = randint(100000, 999999)
+    # Generating a source_id
+    source_id = randint(100000, 999999)
 
     payload = list()
     nlpaas_report_list.clear()
-    id = 1
+    nlpaas_id = 1
 
     for report in data['reports']:
-        jsonBody = {
-            "report_type":"ClarityNLPaaS doc",
-            "id":str(sourceId) + str(id),
-            "report_id":str(sourceId) + str(id),
-            "source":str(sourceId),
-            "report_date":"1970-01-01T00:00:00Z",
-            "subject": "ClarityNLPaaS doc",
-            "report_text":report,
-            "nlpaas_id":str(id)
+        json_body = {
+            "report_type": "ClarityNLPaaS Document",
+            "id": str(source_id) + str(nlpaas_id),
+            "report_id": str(source_id) + str(nlpaas_id),
+            "source": str(source_id),
+            "report_date": "1970-01-01T00:00:00Z",
+            "subject": "ClarityNLPaaS Document",
+            "report_text": report,
+            "nlpaas_id": str(nlpaas_id)
         }
-        payload.append(jsonBody)
-        nlpaas_report_list.append(str(sourceId) + str(id))
-        id+=1
+        payload.append(json_body)
+        nlpaas_report_list.append(str(source_id) + str(nlpaas_id))
+        nlpaas_id += 1
 
-
-    print("\n\nSource ID = " + str(sourceId))
+    print("\n\nSource ID = " + str(source_id))
     print("\n\nReport List = " + str(nlpaas_report_list))
-
 
     response = requests.post(url, headers=headers, data=json.dumps(payload))
     if response.status_code == 200:
-        return (True, sourceId)
+        return True, source_id
     else:
-        return (False, response.reason)
+        return False, response.reason
 
-"""
-Deleting reports based on generated source
-"""
-def deleteReport(sourceId):
+
+def delete_report(source_id):
+    """
+    Deleting reports based on generated source
+    """
     url = util.solr_url + '/update?commit=true'
 
     headers = {
         'Content-type': 'text/xml; charset=utf-8',
     }
 
-    data = '<delete><query>source:%s</query></delete>' % (sourceId)
+    data = '<delete><query>source:%s</query></delete>' % source_id
 
     response = requests.post(url, headers=headers, data=data)
     if response.status_code == 200:
-        return (True, response.reason)
+        return True, response.reason
     else:
-        return (False, response.reason)
+        return False, response.reason
 
 
-
-"""
-Getting required NLPQL based on API route
-"""
-def getNLPQL(file_path, sourceId):
+def get_nlpql(file_path, source_id):
+    """
+    Getting required NLPQL based on API route
+    """
     with open(file_path, "r") as file:
         content = file.read()
 
-    updatedContent = content % (sourceId)
+    updated_content = content % source_id
     print("\n\nNLPQL:\n")
-    print(updatedContent)
-    return updatedContent
+    print(updated_content)
+    return updated_content
 
-"""
-Submitting ClarityNLP job
-"""
-def submitJob(nlpql):
+
+def submit_job(nlpql):
+    """
+    Submitting ClarityNLP job
+    """
     url = util.claritynlp_url + "nlpql"
     response = requests.post(url, data=nlpql)
     if response.status_code == 200:
         data = response.json()
+        if 'success' in data:
+            if not data['success']:
+                print(data['error'])
+                return False, data['error']
         print("\n\nJob Response:\n")
         print(data)
-        return (True, data)
+        return True, data
     else:
         print(response.status_code)
-        print (response.reason)
-        return (False, response.reason)
+        print(response.reason)
+        return False, response.reason
 
-"""
-TODO:
-DoS Protection by allowing user to have only one active job
-"""
-def hasActiveJob(data):
+
+def submit_test(nlpql):
+    """
+    Testing ClarityNLP job
+    """
+    url = util.claritynlp_url + "nlpql_tester"
+    response = requests.post(url, data=nlpql)
+    if response.status_code == 200:
+        data = response.json()
+        if 'success' in data:
+            if not data['success']:
+                print(data['error'])
+                return False, data['error']
+        if 'valid' in data:
+            if not data['valid']:
+                print(data['valid'])
+                return False, data['valid']
+        print("\n\nJob Response:\n")
+        print(data)
+        return True, data
+    else:
+        print(response.status_code)
+        print(response.reason)
+        return False, {
+            'success': False,
+            'status_code': response.status_code,
+            'reason': str(response.reason)
+        }
+
+
+
+def has_active_job(data):
+    """
+    DoS Protection by allowing user to have only one active job
+    """
     # TODO: Query Mongo and see if the user has any current active job
     # If active job is present return
     return False
 
-"""
-Reading Results from Mongo
-"""
-def getResults(data):
-    jobId = int(data['job_id'])
-    print("\n\nJobID = " + str(jobId))
 
+def get_results(data, source_data=None):
+    """
+    Reading Results from Mongo
+    """
+    if not source_data:
+        source_data = list()
+
+    job_id = int(data['job_id'])
+    print("\n\njob_id = " + str(job_id))
 
     # Checking if it is a dev box
     if util.development_mode == "dev":
         url = data['status_endpoint']
     else:
-        status = "status/%s" % (jobId)
+        status = "status/%s" % job_id
         url = util.claritynlp_url + status
         print(url)
 
-
     # Polling for job completion
-    while(True):
+    while True:
         r = requests.get(url)
 
         if r.status_code != 200:
-            return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}), status=500, mimetype='application/json')
+            return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}), status=500,
+                            mimetype='application/json')
 
         if r.json()["status"] == "COMPLETED":
             break
 
         time.sleep(2.0)
 
-
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
     collection = db['phenotype_results']
-    cursor = collection.find({'job_id':jobId})
+    results = list(collection.find({'job_id': job_id}))
+    if len(source_data) > 0:
+        for r in results:
+            report_id = r['report_id']
+            source = r['source']
+            doc_index = int(report_id.replace(source, '')) - 1
+            source_doc = source_data[doc_index]
+            r['report_text'] = source_doc
+            print('found source doc')
 
-    return dumps(cursor)
+    result_string = dumps(results)
+    return result_string
 
-"""
-Getting the results of a job by querying the job ID
-"""
-def getResultsByJobId(jobId):
-    status = "status/%s" % (jobId)
+
+def get_results_by_job_id(job_id):
+    """
+    Getting the results of a job by querying the job ID
+    """
+    status = "status/%s" % job_id
 
     url = util.claritynlp_url + status
     print(url)
     # if util.development_mode == "dev":
     #     url = util.claritynlp_url + status
     # else:
-    #     url = "http://nlp-api/status/%s" %(jobId)
+    #     url = "http://nlp-api/status/%s" %(job_id)
 
     r = requests.get(url)
 
     if r.status_code != 200:
-        return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}), status=500, mimetype='application/json')
+        return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}), status=500,
+                        mimetype='application/json')
 
     if r.json()["status"] != "COMPLETED":
         return Response(json.dumps({'message': 'Job is still in progress'}), status=500, mimetype='application/json')
 
-
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
     collection = db['phenotype_results']
-    cursor = collection.find({'job_id':int(jobId)})
+    cursor = collection.find({'job_id': int(job_id)})
 
     if cursor.count() == 0:
         return Response(json.dumps({'message': 'No result found'}), status=200, mimetype='application/json')
     else:
-        return cleanOutput(dumps(cursor))
-        #return dumps(cursor)
+        return clean_output(dumps(cursor))
 
 
-"""
-Function to clean output JSON
-"""
-def cleanOutput(data):
+def clean_output(data):
+    """
+    Function to clean output JSON
+    """
     data = json.loads(data)
 
-    #iterate through to check for report_ids that are empty and assign report count from original report_list
+    # iterate through to check for report_ids that are empty and assign report count from original report_list
     for obj in data:
-        nlpaas_array_id=int(str(obj["report_id"])[6:])
+        nlpaas_array_id = int(str(obj["report_id"])[6:])
         if obj["report_id"] in nlpaas_report_list:
-            obj.update({'nlpaas_report_list_id':nlpaas_array_id})
+            obj.update({'nlpaas_report_list_id': nlpaas_array_id})
             nlpaas_report_list.remove(obj["report_id"])
-    #return null response for reports with no results
+    # return null response for reports with no results
     for item in nlpaas_report_list:
-        nlpaas_array_id=int(item[6:])
-        data+=[{'nlpaas_report_list_id':nlpaas_array_id,'nlpql_feature':'null'}]
+        nlpaas_array_id = int(item[6:])
+        data += [{'nlpaas_report_list_id': nlpaas_array_id, 'nlpql_feature': 'null'}]
 
-    keys = ['_id', 'experiencer', 'report_id', 'source', 'phenotype_final', 'temporality', 'subject', 'concept_code', 'report_type', 'inserted_date', 'negation', 'solr_id', 'end', 'start', 'report_date', 'batch', 'nlpaas_id', 'owner', 'pipeline_id']
+    # keys = ['_id', 'experiencer', 'report_id', 'source', 'phenotype_final', 'temporality', 'subject', 'concept_code',
+    #         'report_type', 'inserted_date', 'negation', 'solr_id', 'end', 'start', 'report_date', 'batch', 
+    #         'nlpaas_id', 'owner', 'pipeline_id']
 
     # for k in keys:
     #     for obj in data:
@@ -219,46 +268,46 @@ def cleanOutput(data):
     return json.dumps(data)
 
 
-
-
-"""
-Main worker function
-"""
-def worker(jobFilePath, data):
+def worker(job_file_path, data):
+    """
+    Main worker function
+    """
     start = time.time()
     # Checking for active Job
-    if hasActiveJob(data):
-        return Response(json.dumps({'message': 'You currently have an active job. Only one active job allowed'}), status=200, mimetype='application/json')
+    if has_active_job(data):
+        return Response(json.dumps({'message': 'You currently have an active job. Only one active job allowed'}),
+                        status=200, mimetype='application/json')
 
     # Validating the input object
-    validObj = validateInput(data)
-    if not validObj[0]:
-        return Response(json.dumps({'message': validObj[1]}), status=400, mimetype='application/json')
+    valid_obj = validate_input(data)
+    if not valid_obj[0]:
+        return Response(json.dumps({'message': valid_obj[1]}), status=400, mimetype='application/json')
 
     # Uploading report to Solr
-    uploadObj = uploadReport(data)
-    if not uploadObj[0]:
-        return Response(json.dumps({'message': 'Could not upload report. Reason: ' + uploadObj[1]}), status=500, mimetype='application/json')
+    upload_obj = upload_report(data)
+    if not upload_obj[0]:
+        return Response(json.dumps({'message': 'Could not upload report. Reason: ' + upload_obj[1]}), status=500,
+                        mimetype='application/json')
     else:
-        sourceId = uploadObj[1]
+        source_id = upload_obj[1]
 
     # Getting the nlpql from disk
-    nlpql = getNLPQL(jobFilePath, sourceId)
+    nlpql = get_nlpql(job_file_path, source_id)
 
     # Submitting the job
-    jobResponse = submitJob(nlpql)
-    if not jobResponse[0]:
-        return Response(json.dumps({'message': 'Could not submit job. Reason: ' + jobResponse[1]}), status=500, mimetype='application/json')
+    job_response = submit_job(nlpql)
+    if not job_response[0]:
+        return Response(json.dumps({'message': 'Could not submit job. Reason: ' + job_response[1]}), status=500,
+                        mimetype='application/json')
 
     # Getting the results of the Job
-    results = getResults(jobResponse[1])
+    results = get_results(job_response[1], source_data=data['reports'])
 
     # Deleting uploaded documents
-    deleteObj = deleteReport(sourceId)
-    if not deleteObj[0]:
-        return Response(json.dumps({'message': 'Could not delete report. Reason: ' + deleteObj[1]}), status=500, mimetype='application/json')
+    delete_obj = delete_report(source_id)
+    if not delete_obj[0]:
+        return Response(json.dumps({'message': 'Could not delete report. Reason: ' + delete_obj[1]}), status=500,
+                        mimetype='application/json')
 
-    print("\n\nRun Time = %s \n\n" %(time.time() - start))
-    return Response(cleanOutput(results), status=200, mimetype='application/json')
-
-    #return Response(results, status=200, mimetype='application/json')
+    print("\n\nRun Time = %s \n\n" % (time.time() - start))
+    return Response(clean_output(results), status=200, mimetype='application/json')

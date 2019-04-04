@@ -1,73 +1,139 @@
-from flask import Flask, request, jsonify, Response
-from flask_cors import CORS
-from worker import worker, getResultsByJobId
 import json
 import os
+
+from flask import Flask, request, Response
+from flask_cors import CORS
+
+from worker import worker, get_results_by_job_id, submit_test
 
 app = Flask(__name__)
 CORS(app)
 
 
-def validJob(jobType):
-    validJobs = os.listdir("nlpql")
-    return jobType in validJobs
+def get_files(files, path):
+    for (directory_path, directory_names, file_names) in os.walk(path):
+        for d in directory_names:
+            get_files(files, directory_path + '/' + d)
+        for f in file_names:
+            path = (directory_path + '/' + f[0:f.find('.')]).replace('nlpql/', '')
+            files.append(path)
+            
 
-def getApiRoutes():
-    existingFiles = os.listdir("nlpql")
+def get_nlpql_options(with_sorting=True):
     results = list()
-    for f in existingFiles:
-        results.append('~/' + f[0:f.find('.')])
-    return ', '.join(results)
+    get_files(results, 'nlpql')
 
-def getNLPQLOptions():
-    existingFiles = os.listdir("nlpql")
-    results = list()
-    for f in existingFiles:
-        results.append(f[0:f.find('.')])
-    return results
+    unique = list(set(results))
+    if with_sorting:
+        return sorted(unique)
+    else:
+        return unique
+
+
+def valid_job(job_type):
+    return job_type in get_nlpql_options(with_sorting=False)
+
+
+def get_api_routes():
+    return ', '.join(get_nlpql_options())
+
 
 @app.route("/")
 def hello():
-    return "Welcome to ClarityNLPaaS"
+    return "Welcome to ClarityNLPaaS."
 
 
-"""
-API for triggering jobs
-"""
-@app.route("/job/<jobType>", methods=['POST', 'GET'])
-def submitJob(jobType):
+@app.route("/job/<job_category>/<job_subcategory>/<job_name>", methods=['POST', 'GET'])
+def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_name: str):
+    """
+    API for triggering jobs
+    """
     if request.method == 'POST':
-        jobType += ".nlpql"
+        job_type = "{}/{}/{}".format(job_category, job_subcategory, job_name)
         # Checking if the selected job is valid
-        if not validJob(jobType):
-            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + getApiRoutes()}), status=400, mimetype='application/json')
+        if not valid_job(job_type):
+            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}), status=400,
+                            mimetype='application/json')
         else:
             data = request.get_json()
-            jobFilePath = "nlpql/" + jobType
-            return worker(jobFilePath, data)
+            job_file_path = "nlpql/" + job_type + ".nlpql"
+            return worker(job_file_path, data)
     else:
-        return Response(json.dumps({'message': 'API supports only POST requests'}), status=400, mimetype='application/json')
+        return Response(json.dumps({'message': 'API supports only POST requests'}), status=400,
+                        mimetype='application/json')
 
-"""
-API for getting Job results
-"""
-@app.route("/job/results/<jobId>", methods=['GET'])
-def getResults(jobId):
+
+@app.route("/job/<job_category>/<job_name>", methods=['POST', 'GET'])
+def submit_job_with_category(job_category: str, job_name: str):
+    """
+    API for triggering jobs
+    """
+    if request.method == 'POST':
+        job_type = "{}/{}".format(job_category, job_name)
+        # Checking if the selected job is valid
+        if not valid_job(job_type):
+            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}), status=400,
+                            mimetype='application/json')
+        else:
+            data = request.get_json()
+            job_file_path = "nlpql/" + job_type + ".nlpql"
+            return worker(job_file_path, data)
+    else:
+        return Response(json.dumps({'message': 'API supports only POST requests'}), status=400,
+                        mimetype='application/json')
+
+
+@app.route("/job/<job_type>", methods=['POST', 'GET'])
+def submit_job(job_type: str):
+    """
+    API for triggering jobs
+    """
+    if request.method == 'POST':
+        job_type = job_type.replace('~', '/')
+        # Checking if the selected job is valid
+        if not valid_job(job_type):
+            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}), status=400,
+                            mimetype='application/json')
+        else:
+            data = request.get_json()
+            job_file_path = "nlpql/" + job_type + ".nlpql"
+            return worker(job_file_path, data)
+    else:
+        return Response(json.dumps({'message': 'API supports only POST requests'}), status=400,
+                        mimetype='application/json')
+
+
+@app.route("/job/results/<job_id>", methods=['GET'])
+def get_results(job_id):
+    """
+    API for getting Job results
+    """
     if request.method == 'GET':
-        return getResultsByJobId(jobId)
+        return get_results_by_job_id(job_id)
     else:
-        return Response(json.dumps({'message': 'API supports only GET requests'}), status=400, mimetype='application/json')
+        return Response(json.dumps({'message': 'API supports only GET requests'}), status=400,
+                        mimetype='application/json')
 
-"""
-API for getting NLPQL Options
-"""
-@app.route("/list", methods=['GET'])
-def getNLPQLList():
+
+@app.route("/job/list/all", methods=['GET'])
+def get_nlpql_list():
+    """
+    API for getting NLPQL Options
+    """
     if request.method == 'GET':
-        return Response(json.dumps(getNLPQLOptions()), status=200, mimetype='application/json')
+        return Response(json.dumps(get_nlpql_options()), status=200, mimetype='application/json')
     else:
-        return Response(json.dumps({'message': 'API supports only GET requests'}), status=400, mimetype='application/json')
+        return Response(json.dumps({'message': 'API supports only GET requests'}), status=400,
+                        mimetype='application/json')
 
+
+@app.route("/job/test/nlpql", methods=["POST"])
+def nlpql_tester():
+    if request.method == 'POST' and request.data:
+        _, res = submit_test(request.data)
+        return json.dumps(res, indent=4, sort_keys=True),
+
+    return "Please POST text containing NLPQL."
 
 
 if __name__ == '__main__':

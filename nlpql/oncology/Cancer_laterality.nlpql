@@ -1,0 +1,42 @@
+
+
+// Phenotype library name
+phenotype "Cancer Laterality" version "1";
+
+// Phenotype library description 
+description "Generated query for cancer treatment based on https://hemonc.org/wiki/Main_Page";
+
+// # Referenced libraries #
+include ClarityCore version "1.0" called Clarity;
+
+documentset SubmittedDocs:
+     Clarity.createDocumentSet({
+         "query":"source:%s"});
+
+
+termset CancerTerms:[
+    "cancer", "tumor", "neoplasm", "lymphoma", "leukemia", "carcinoma", "chemotherapy", "melanoma", "Pheochromocytoma", "adenocarcinoma", "neoplasia", "neoplasm", "glioma", "Glioblastoma", "Meningioma", "sarcoma", "Rhabdomyosarcoma", "Osteosarcoma", "Mesothelioma", "braf", "Medulloblastoma", "Hepatoblastoma", "metastasis", "metastatic", "metastases", "Carcinomatosis"
+];
+
+
+define final LeftCancerLaterality:
+    Clarity.TermProximityTask({
+        code: "2",
+        codesystem: "NAACCR Laterality",
+        documentset: [SubmittedDocs],
+        "termset1": "left,lt",
+        "termset2": " cancer,tumor,neoplasm,lymphoma,leukemia,carcinoma,chemotherapy,melanoma,Pheochromocytoma,adenocarcinoma,neoplasia,neoplasm,glioma,Glioblastoma,Meningioma,sarcoma,Rhabdomyosarcoma,Osteosarcoma,Mesothelioma,braf,Medulloblastoma,Hepatoblastoma,metastasis,metastatic,metastases,Carcinomatosis,tumors,mass,masses",
+        "word_distance": 10,
+        "any_order": "True"
+    });
+
+define final RightCancerLaterality:
+    Clarity.TermProximityTask({
+          code: "1",
+        codesystem: "NAACCR Laterality",
+        documentset: [SubmittedDocs],
+        "termset1": "right,rt",
+        "termset2": " cancer,tumor,neoplasm,lymphoma,leukemia,carcinoma,chemotherapy,melanoma,Pheochromocytoma,adenocarcinoma,neoplasia,neoplasm,glioma,Glioblastoma,Meningioma,sarcoma,Rhabdomyosarcoma,Osteosarcoma,Mesothelioma,braf,Medulloblastoma,Hepatoblastoma,metastasis,metastatic,metastases,Carcinomatosis,tumors,mass,masses",
+        "word_distance": 10,
+        "any_order": "True"
+    });
