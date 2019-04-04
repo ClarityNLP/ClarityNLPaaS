@@ -4,7 +4,7 @@ import os
 from flask import Flask, request, Response
 from flask_cors import CORS
 
-from worker import worker, get_results_by_job_id
+from worker import worker, get_results_by_job_id, submit_test
 
 app = Flask(__name__)
 CORS(app)
@@ -125,6 +125,15 @@ def get_nlpql_list():
     else:
         return Response(json.dumps({'message': 'API supports only GET requests'}), status=400,
                         mimetype='application/json')
+
+
+@app.route("/job/nlpql_tester", methods=["POST"])
+def nlpql_tester():
+    if request.method == 'POST' and request.data:
+        _, res = submit_test(request.data)
+        return json.dumps(res, indent=4, sort_keys=True),
+
+    return "Please POST text containing NLPQL."
 
 
 if __name__ == '__main__':
