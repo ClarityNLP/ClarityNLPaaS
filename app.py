@@ -127,7 +127,7 @@ def get_nlpql_list():
                         mimetype='application/json')
 
 
-@app.route("/job/nlpql_tester", methods=["POST"])
+@app.route("/job/test/nlpql", methods=["POST"])
 def nlpql_tester():
     if request.method == 'POST' and request.data:
         _, res = submit_test(request.data)
