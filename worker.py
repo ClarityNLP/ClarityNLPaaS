@@ -120,6 +120,36 @@ def submit_job(nlpql):
         return False, response.reason
 
 
+def submit_test(nlpql):
+    """
+    Testing ClarityNLP job
+    """
+    url = util.claritynlp_url + "nlpql_tester"
+    response = requests.post(url, data=nlpql)
+    if response.status_code == 200:
+        data = response.json()
+        if 'success' in data:
+            if not data['success']:
+                print(data['error'])
+                return False, data['error']
+        if 'valid' in data:
+            if not data['valid']:
+                print(data['valid'])
+                return False, data['valid']
+        print("\n\nJob Response:\n")
+        print(data)
+        return True, data
+    else:
+        print(response.status_code)
+        print(response.reason)
+        return False, {
+            'success': False,
+            'status_code': response.status_code,
+            'reason': str(response.reason)
+        }
+
+
+
 def has_active_job(data):
     """
     DoS Protection by allowing user to have only one active job
