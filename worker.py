@@ -145,7 +145,8 @@ def submit_test(nlpql):
         return False, {
             'success': False,
             'status_code': response.status_code,
-            'reason': str(response.reason)
+            'reason': str(response.reason),
+            'valid': False
         }
 
 
