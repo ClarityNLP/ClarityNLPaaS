@@ -6,7 +6,6 @@ import uuid
 import requests
 from bson.json_util import dumps
 from flask import Response
-from pymongo import MongoClient
 
 import util
 
@@ -21,7 +20,7 @@ def get_document_set(source):
         "declaration": "documentset",
         "description": "",
         "funct": "createDocumentSet",
-        "library": "Clarity",
+        "library": "ClarityNLP",
         "name": "Docs",
         "named_arguments": {
             "query": "source:{}".format(source)
@@ -239,31 +238,41 @@ def get_results(job_id: int, source_data=None, status_endpoint=None):
 
         time.sleep(2.0)
 
-    client = MongoClient(util.mongo_host, util.mongo_port)
-    try:
-        db = client[util.mongo_db]
-        collection = db['phenotype_results']
-        results = list(collection.find({'job_id': job_id}))
-        if len(source_data) > 0:
-            for r in results:
-                report_id = r['report_id']
-                source = r['source']
-                doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
-                if doc_index < len(source_data):
-                    source_doc = source_data[doc_index]
-                    r['report_text'] = source_doc
-                else:
-                    r['report_text'] = r['sentence']
+    # /phenotype_paged_results/<int:job_id>/<string:phenotype_final_str>
+    """
+    Submitting ClarityNLP job
+    """
+    url = "{}phenotype_paged_results/{}/{}".format(util.claritynlp_url, job_id, 'true')
 
-        result_string = dumps(results)
-    except Exception as ex:
-        print(ex)
-        result_string = """{
-            "message": "Unable to query results, {}."
-        }""".format(str(ex))
-    finally:
-        client.close()
-    return result_string
+    response = requests.get(url)
+    if response.status_code == 200:
+        try:
+            results = response.json()['results']
+            if len(source_data) > 0:
+                for r in results:
+                    report_id = r['report_id']
+                    source = r['source']
+                    doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
+                    if doc_index < len(source_data):
+                        source_doc = source_data[doc_index]
+                        r['report_text'] = source_doc
+                    else:
+                        r['report_text'] = r['sentence']
+
+            result_string = dumps(results)
+            return result_string
+        except Exception as ex:
+            return '''
+                "success":"false",
+                "message":{}
+            '''.format(str(ex))
+
+    else:
+
+        return '''
+            "success":"false",
+            "message":{}
+        '''.format(response.reason)
 
 
 def clean_output(data):
