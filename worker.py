@@ -1,6 +1,6 @@
 import json
-import time
 import os
+import time
 from random import randint
 
 import requests
@@ -13,17 +13,22 @@ import util
 nlpaas_report_list = list()
 
 
-def validate_input(data):
-    """
-    Input request validation
-    """
-    if 'reports' not in data:
-        return False, "Input JSON is invalid"
-
-    # if len(data['reports']) > 10:
-    #     return (False, "Max 10 reports per request.")
-
-    return True, "Valid Input"
+def get_document_set(source):
+    return {
+        "alias": "",
+        "arguments": [],
+        "concept": "",
+        "declaration": "documentset",
+        "description": "",
+        "funct": "createDocumentSet",
+        "library": "Clarity",
+        "name": "Docs",
+        "named_arguments": {
+            "query": "source:{}".format(source)
+        },
+        "values": [],
+        "version": ""
+    }
 
 
 def upload_report(data):
@@ -61,7 +66,7 @@ def upload_report(data):
     print("\n\nSource ID = " + str(source_id))
     print("\n\nReport List = " + str(nlpaas_report_list))
 
-    response = requests.post(url, headers=headers, data=json.dumps(payload))
+    response = requests.post(url, headers=headers, data=json.dumps(payload, indent=4))
     if response.status_code == 200:
         return True, source_id
     else:
@@ -94,18 +99,19 @@ def get_nlpql(file_path, source_id):
     with open(file_path, "r") as file:
         content = file.read()
 
-    updated_content = content % source_id
-    print("\n\nNLPQL:\n")
-    print(updated_content)
-    return updated_content
+    return content
 
 
-def submit_job(nlpql):
+def submit_job(nlpql_json):
     """
     Submitting ClarityNLP job
     """
-    url = util.claritynlp_url + "nlpql"
-    response = requests.post(url, data=nlpql)
+    url = util.claritynlp_url + "phenotype"
+    phenotype_string = json.dumps(nlpql_json)
+    print("")
+    print(phenotype_string)
+    print("")
+    response = requests.post(url, data=phenotype_string)
     if response.status_code == 200:
         data = response.json()
         if 'success' in data:
@@ -221,7 +227,8 @@ def get_results(data, source_data=None):
         r = requests.get(url)
 
         if r.status_code != 200:
-            return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}), status=500,
+            return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}, indent=4),
+                            status=500,
                             mimetype='application/json')
 
         if r.json()["status"] == "COMPLETED":
@@ -262,11 +269,13 @@ def get_results_by_job_id(job_id):
     r = requests.get(url)
 
     if r.status_code != 200:
-        return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}), status=500,
+        return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}, indent=4),
+                        status=500,
                         mimetype='application/json')
 
     if r.json()["status"] != "COMPLETED":
-        return Response(json.dumps({'message': 'Job is still in progress'}), status=500, mimetype='application/json')
+        return Response(json.dumps({'message': 'Job is still in progress'}, indent=4), status=500,
+                        mimetype='application/json')
 
     client = MongoClient(util.mongo_host, util.mongo_port)
     db = client[util.mongo_db]
@@ -274,7 +283,7 @@ def get_results_by_job_id(job_id):
     cursor = collection.find({'job_id': int(job_id)})
 
     if cursor.count() == 0:
-        return Response(json.dumps({'message': 'No result found'}), status=200, mimetype='application/json')
+        return Response(json.dumps({'message': 'No result found'}, indent=4), status=200, mimetype='application/json')
     else:
         return clean_output(dumps(cursor))
 
@@ -304,7 +313,7 @@ def clean_output(data):
     #     for obj in data:
     #         obj.pop(k, None)
 
-    return json.dumps(data)
+    return json.dumps(data, indent=4, sort_keys=True)
 
 
 def worker(job_file_path, data):
@@ -314,18 +323,15 @@ def worker(job_file_path, data):
     start = time.time()
     # Checking for active Job
     if has_active_job(data):
-        return Response(json.dumps({'message': 'You currently have an active job. Only one active job allowed'}),
-                        status=200, mimetype='application/json')
-
-    # Validating the input object
-    valid_obj = validate_input(data)
-    if not valid_obj[0]:
-        return Response(json.dumps({'message': valid_obj[1]}), status=400, mimetype='application/json')
+        return Response(
+            json.dumps({'message': 'You currently have an active job. Only one active job allowed'}, indent=4),
+            status=200, mimetype='application/json')
 
     # Uploading report to Solr
     upload_obj = upload_report(data)
     if not upload_obj[0]:
-        return Response(json.dumps({'message': 'Could not upload report. Reason: ' + upload_obj[1]}), status=500,
+        return Response(json.dumps({'message': 'Could not upload report. Reason: ' + upload_obj[1]}, indent=4),
+                        status=500,
                         mimetype='application/json')
     else:
         source_id = upload_obj[1]
@@ -333,10 +339,25 @@ def worker(job_file_path, data):
     # Getting the nlpql from disk
     nlpql = get_nlpql(job_file_path, source_id)
 
+    # Validating the input object
+    success, nlpql_json = submit_test(nlpql)
+    if not success:
+        return Response(json.dumps(nlpql_json, indent=4, sort_keys=True), status=400, mimetype='application/json')
+    doc_set = get_document_set(source_id)
+    nlpql_json['document_sets'] = list()
+    nlpql_json['document_sets'].append(doc_set)
+
+    docs = ["Docs"]
+    data_entities = nlpql_json['data_entities']
+    for de in data_entities:
+        de['named_arguments']['documentset'] = docs
+    nlpql_json['data_entities'] = data_entities
+
     # Submitting the job
-    job_response = submit_job(nlpql)
+    job_response = submit_job(nlpql_json)
     if not job_response[0]:
-        return Response(json.dumps({'message': 'Could not submit job. Reason: ' + job_response[1]}), status=500,
+        return Response(json.dumps({'message': 'Could not submit job. Reason: ' + job_response[1]}, indent=4),
+                        status=500,
                         mimetype='application/json')
 
     # Getting the results of the Job
@@ -345,7 +366,8 @@ def worker(job_file_path, data):
     # Deleting uploaded documents
     delete_obj = delete_report(source_id)
     if not delete_obj[0]:
-        return Response(json.dumps({'message': 'Could not delete report. Reason: ' + delete_obj[1]}), status=500,
+        return Response(json.dumps({'message': 'Could not delete report. Reason: ' + delete_obj[1]}, indent=4),
+                        status=500,
                         mimetype='application/json')
 
     print("\n\nRun Time = %s \n\n" % (time.time() - start))
