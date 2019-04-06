@@ -92,7 +92,7 @@ def delete_report(source_id):
         return False, response.reason
 
 
-def get_nlpql(file_path, source_id):
+def get_nlpql(file_path):
     """
     Getting required NLPQL based on API route
     """
@@ -341,7 +341,7 @@ def worker(job_file_path, data):
         source_id = upload_obj[1]
 
     # Getting the nlpql from disk
-    nlpql = get_nlpql(job_file_path, source_id)
+    nlpql = get_nlpql(job_file_path)
 
     # Validating the input object
     success, nlpql_json = submit_test(nlpql)
