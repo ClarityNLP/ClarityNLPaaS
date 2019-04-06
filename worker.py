@@ -1,5 +1,6 @@
 import json
 import time
+import os
 from random import randint
 
 import requests
@@ -149,6 +150,43 @@ def submit_test(nlpql):
             'valid': False
         }
 
+
+def add_custom_nlpql(nlpql):
+    try:
+        os.makedirs('./nlpql/custom/')
+    except OSError as ex:
+        print(ex)
+
+    success, test_json = submit_test(nlpql)
+    if not success:
+        test_json['message'] = "Failed to upload invalid NLPQL."
+        return test_json
+
+    phenotype = test_json['phenotype']
+    if not phenotype:
+        return {
+            'message': 'NLPQL missing phenotype declaration.'
+        }
+    name = phenotype['name']
+    version = phenotype['version']
+
+    if not name or len(name) == 0:
+        return {
+            'message': 'Phenotype declaration missing name'
+        }
+
+    if not version or len(version) == 0:
+        return {
+            'message': 'Phenotype declaration missing version'
+        }
+    nlpql_name = 'custom_{}_v{}'.format('_'.join(name.split(' ')), version.replace('.', '-'))
+    filename = './nlpql/custom/{}.nlpql'.format(nlpql_name)
+    with open(filename, 'w') as the_file:
+        the_file.write(nlpql)
+
+    return {
+        'message': "Your job is callable via the endpoint '/job/custom/{}'".format(nlpql_name)
+    }
 
 
 def has_active_job(data):

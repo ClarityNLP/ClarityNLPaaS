@@ -4,7 +4,7 @@ import os
 from flask import Flask, request, Response
 from flask_cors import CORS
 
-from worker import worker, get_results_by_job_id, submit_test
+from worker import worker, get_results_by_job_id, submit_test, add_custom_nlpql
 
 app = Flask(__name__)
 CORS(app)
@@ -94,6 +94,9 @@ def submit_job(job_type: str):
         if job_type == 'validate_nlpql' and request.data:
             _, res = submit_test(request.data)
             return json.dumps(res, indent=4, sort_keys=True)
+        elif job_type == 'register_nlpql' and request.data:
+            res = request.data.decode("utf-8")
+            return json.dumps(add_custom_nlpql(res), indent=4, sort_keys=True)
         if not valid_job(job_type):
             return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}), status=400,
                             mimetype='application/json')

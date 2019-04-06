@@ -1,0 +1,20 @@
+phenotype "Karnofksy Score" version "1";
+
+limit 100;
+
+termset KarnofksyTerms: [
+"karnofsky"
+];
+
+//Quantitative metrics
+define final KarnofskyScore:
+  Clarity.ValueExtraction({
+    termset:[KarnofksyTerms],
+    minimum_value: "0",
+    maximum_value: "100"
+    });
+
+
+//CDS logical Context (Patient, Document)
+context Patient;
+
