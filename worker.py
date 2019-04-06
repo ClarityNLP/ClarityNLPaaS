@@ -242,12 +242,16 @@ def get_results(job_id: int, source_data=None, status_endpoint=None):
     """
     Submitting ClarityNLP job
     """
+    results = list()
     url = "{}phenotype_paged_results/{}/{}".format(util.claritynlp_url, job_id, 'true')
+    url2 = "{}phenotype_paged_results/{}/{}".format(util.claritynlp_url, job_id, 'false')
 
     response = requests.get(url)
-    if response.status_code == 200:
+    response2 = requests.get(url2)
+    if response.status_code == 200 and response2.status_code == 200:
         try:
-            results = response.json()['results']
+            results.extend(response.json()['results'])
+            results.extend(response2.json()['results'])
             if len(source_data) > 0:
                 for r in results:
                     report_id = r['report_id']
