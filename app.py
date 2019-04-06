@@ -17,7 +17,7 @@ def get_files(files, path):
         for f in file_names:
             path = (directory_path + '/' + f[0:f.find('.')]).replace('nlpql/', '')
             files.append(path)
-            
+
 
 def get_nlpql_options(with_sorting=True):
     results = list()
@@ -52,14 +52,16 @@ def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_nam
         job_type = "{}/{}/{}".format(job_category, job_subcategory, job_name)
         # Checking if the selected job is valid
         if not valid_job(job_type):
-            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}), status=400,
+            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}, indent=4,
+                                       sort_keys=True), status=400,
                             mimetype='application/json')
         else:
             data = request.get_json()
             job_file_path = "nlpql/" + job_type + ".nlpql"
             return worker(job_file_path, data)
     else:
-        return Response(json.dumps({'message': 'API supports only POST requests'}), status=400,
+        return Response(json.dumps({'message': 'API supports only POST requests'}, indent=4, sort_keys=True),
+                        status=400,
                         mimetype='application/json')
 
 
@@ -72,14 +74,16 @@ def submit_job_with_category(job_category: str, job_name: str):
         job_type = "{}/{}".format(job_category, job_name)
         # Checking if the selected job is valid
         if not valid_job(job_type):
-            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}), status=400,
+            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}, indent=4,
+                                       sort_keys=True), status=400,
                             mimetype='application/json')
         else:
             data = request.get_json()
             job_file_path = "nlpql/" + job_type + ".nlpql"
             return worker(job_file_path, data)
     else:
-        return Response(json.dumps({'message': 'API supports only POST requests'}), status=400,
+        return Response(json.dumps({'message': 'API supports only POST requests'}, indent=4, sort_keys=True),
+                        status=400,
                         mimetype='application/json')
 
 
@@ -91,21 +95,23 @@ def submit_job(job_type: str):
     if request.method == 'POST':
         job_type = job_type.replace('~', '/')
         # Checking if the selected job is valid
-        if job_type == 'validate_nlpql' and request.data:
+        if (job_type == 'validate_nlpql' or job_type == 'nlpql_tester') and request.data:
             _, res = submit_test(request.data)
             return json.dumps(res, indent=4, sort_keys=True)
         elif job_type == 'register_nlpql' and request.data:
             res = request.data.decode("utf-8")
             return json.dumps(add_custom_nlpql(res), indent=4, sort_keys=True)
         if not valid_job(job_type):
-            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}), status=400,
+            return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}, indent=4,
+                                       sort_keys=True), status=400,
                             mimetype='application/json')
         else:
             data = request.get_json()
             job_file_path = "nlpql/" + job_type + ".nlpql"
             return worker(job_file_path, data)
     else:
-        return Response(json.dumps({'message': 'API supports only POST requests'}), status=400,
+        return Response(json.dumps({'message': 'API supports only POST requests'}, indent=4, sort_keys=True),
+                        status=400,
                         mimetype='application/json')
 
 
@@ -117,7 +123,7 @@ def get_results(job_id):
     if request.method == 'GET':
         return get_results_by_job_id(job_id)
     else:
-        return Response(json.dumps({'message': 'API supports only GET requests'}), status=400,
+        return Response(json.dumps({'message': 'API supports only GET requests'}, indent=4, sort_keys=True), status=400,
                         mimetype='application/json')
 
 
@@ -129,7 +135,7 @@ def get_nlpql_list():
     if request.method == 'GET':
         return Response(json.dumps(get_nlpql_options()), status=200, mimetype='application/json')
     else:
-        return Response(json.dumps({'message': 'API supports only GET requests'}), status=400,
+        return Response(json.dumps({'message': 'API supports only GET requests'}, indent=4, sort_keys=True), status=400,
                         mimetype='application/json')
 
 
