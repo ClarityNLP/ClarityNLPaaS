@@ -284,15 +284,17 @@ def clean_output(data):
     # iterate through to check for report_ids that are empty and assign report count from original report_list
     for obj in data:
         report_id = obj["report_id"].split('_')
-        nlpaas_array_id = report_id[1]
-        if obj["report_id"] in nlpaas_report_list:
-            obj.update({'nlpaas_report_list_id': nlpaas_array_id})
-            nlpaas_report_list.remove(obj["report_id"])
+        if len(report_id) > 1:
+            nlpaas_array_id = report_id[1]
+            if obj["report_id"] in nlpaas_report_list:
+                obj.update({'nlpaas_report_list_id': nlpaas_array_id})
+                nlpaas_report_list.remove(obj["report_id"])
     # return null response for reports with no results
     for item in nlpaas_report_list:
         item_id = item.split('_')
-        nlpaas_array_id = int(item_id[1])
-        data += [{'nlpaas_report_list_id': nlpaas_array_id, 'nlpql_feature': 'null'}]
+        if len(item_id) > 1:
+            nlpaas_array_id = int(item_id[1])
+            data += [{'nlpaas_report_list_id': nlpaas_array_id, 'nlpql_feature': 'null'}]
 
     # keys = ['_id', 'experiencer', 'report_id', 'source', 'phenotype_final', 'temporality', 'subject', 'concept_code',
     #         'report_type', 'inserted_date', 'negation', 'solr_id', 'end', 'start', 'report_date', 'batch', 
