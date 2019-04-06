@@ -9,8 +9,6 @@ from flask import Response
 
 import util
 
-nlpaas_report_list = list()
-
 
 def get_document_set(source):
     return {
@@ -45,15 +43,15 @@ def upload_report(data):
     source_id = str(rand_uuid)
 
     payload = list()
-    nlpaas_report_list.clear()
+    report_list = list()
     nlpaas_id = 1
 
     for report in data['reports']:
-        id = '{}_{}'.format(source_id, str(nlpaas_id))
+        report_id = '{}_{}'.format(source_id, str(nlpaas_id))
         json_body = {
             "report_type": "ClarityNLPaaS Document",
-            "id": id,
-            "report_id": id,
+            "id": report_id,
+            "report_id": report_id,
             "source": source_id,
             "report_date": "1970-01-01T00:00:00Z",
             "subject": "ClarityNLPaaS Document",
@@ -61,17 +59,14 @@ def upload_report(data):
             "nlpaas_id": str(nlpaas_id)
         }
         payload.append(json_body)
-        nlpaas_report_list.append(id)
+        report_list.append(report_id)
         nlpaas_id += 1
-
-    print("\n\nSource ID = " + str(source_id))
-    print("\n\nReport List = " + str(nlpaas_report_list))
 
     response = requests.post(url, headers=headers, data=json.dumps(payload, indent=4))
     if response.status_code == 200:
-        return True, source_id
+        return True, source_id, report_list
     else:
-        return False, response.reason
+        return False, response.reason, report_list
 
 
 def delete_report(source_id):
@@ -208,13 +203,15 @@ def has_active_job(data):
     return False
 
 
-def get_results(job_id: int, source_data=None, status_endpoint=None):
+def get_results(job_id: int, source_data=None, status_endpoint=None, report_ids=None):
     """
     Reading Results from Mongo
     TODO use API endpoing
     """
     if not source_data:
         source_data = list()
+    if not report_ids:
+        report_ids = list()
 
     # Checking if it is a dev box
     if util.development_mode == "dev" and status_endpoint:
@@ -248,22 +245,26 @@ def get_results(job_id: int, source_data=None, status_endpoint=None):
 
     response = requests.get(url)
     response2 = requests.get(url2)
+    final_list = list()
     if response.status_code == 200 and response2.status_code == 200:
         try:
             results.extend(response.json()['results'])
             results.extend(response2.json()['results'])
-            if len(source_data) > 0:
-                for r in results:
-                    report_id = r['report_id']
-                    source = r['source']
-                    doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
-                    if doc_index < len(source_data):
-                        source_doc = source_data[doc_index]
-                        r['report_text'] = source_doc
-                    else:
-                        r['report_text'] = r['sentence']
 
-            result_string = dumps(results)
+            for r in results:
+                report_id = r['report_id']
+                if len(report_ids) > 0 and report_id not in report_ids:
+                    continue
+                source = r['source']
+                doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
+                if len(source_data) > 0 and doc_index < len(source_data):
+                    source_doc = source_data[doc_index]
+                    r['report_text'] = source_doc
+                else:
+                    r['report_text'] = r['sentence']
+                final_list.append(r)
+
+            result_string = dumps(final_list)
             return result_string
         except Exception as ex:
             return '''
@@ -279,10 +280,12 @@ def get_results(job_id: int, source_data=None, status_endpoint=None):
         '''.format(response.reason)
 
 
-def clean_output(data):
+def clean_output(data, report_list=None):
     """
     Function to clean output JSON
     """
+    if not report_list:
+        report_list = list()
     data = json.loads(data)
 
     # iterate through to check for report_ids that are empty and assign report count from original report_list
@@ -290,11 +293,11 @@ def clean_output(data):
         report_id = obj["report_id"].split('_')
         if len(report_id) > 1:
             nlpaas_array_id = report_id[1]
-            if obj["report_id"] in nlpaas_report_list:
+            if obj["report_id"] in report_list:
                 obj.update({'nlpaas_report_list_id': nlpaas_array_id})
-                nlpaas_report_list.remove(obj["report_id"])
+                report_list.remove(obj["report_id"])
     # return null response for reports with no results
-    for item in nlpaas_report_list:
+    for item in report_list:
         item_id = item.split('_')
         if len(item_id) > 1:
             nlpaas_array_id = int(item_id[1])
@@ -323,13 +326,11 @@ def worker(job_file_path, data):
             status=200, mimetype='application/json')
 
     # Uploading report to Solr
-    upload_obj = upload_report(data)
-    if not upload_obj[0]:
-        return Response(json.dumps({'message': 'Could not upload report. Reason: ' + upload_obj[1]}, indent=4),
+    status, source_id, report_ids = upload_report(data)
+    if not status:
+        return Response(json.dumps({'message': 'Could not upload report. Reason: ' + source_id}, indent=4),
                         status=500,
                         mimetype='application/json')
-    else:
-        source_id = upload_obj[1]
 
     # Getting the nlpql from disk
     nlpql = get_nlpql(job_file_path)
@@ -358,7 +359,8 @@ def worker(job_file_path, data):
     # Getting the results of the Job
     job_id = int(job_info['job_id'])
     print("\n\njob_id = " + str(job_id))
-    results = get_results(job_id, source_data=data['reports'], status_endpoint=job_info['status_endpoint'])
+    results = get_results(job_id, source_data=data['reports'], status_endpoint=job_info['status_endpoint'],
+                          report_ids=report_ids)
 
     # Deleting uploaded documents
     delete_obj = delete_report(source_id)
@@ -368,4 +370,4 @@ def worker(job_file_path, data):
                         mimetype='application/json')
 
     print("\n\nRun Time = %s \n\n" % (time.time() - start))
-    return Response(clean_output(results), status=200, mimetype='application/json')
+    return Response(clean_output(results, report_list=report_ids), status=200, mimetype='application/json')
