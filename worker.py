@@ -248,9 +248,10 @@ def get_results(data, source_data=None):
             report_id = r['report_id']
             source = r['source']
             doc_index = int(report_id.replace(source, '')) - 1
-            source_doc = source_data[doc_index]
-            r['report_text'] = source_doc
-            print('found source doc')
+            if doc_index < len(source_data):
+                source_doc = source_data[doc_index]
+                r['report_text'] = source_doc
+                print('found source doc')
 
     result_string = dumps(results)
     return result_string
