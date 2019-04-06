@@ -111,7 +111,10 @@ def submit_job(nlpql_json):
     print("")
     print(phenotype_string)
     print("")
-    response = requests.post(url, data=phenotype_string)
+    headers = {
+        'Content-type': 'application/json'
+    }
+    response = requests.post(url, headers=headers, data=phenotype_string)
     if response.status_code == 200:
         data = response.json()
         if 'success' in data:
