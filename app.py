@@ -4,7 +4,7 @@ import os
 from flask import Flask, request, Response
 from flask_cors import CORS
 
-from worker import worker, get_results_by_job_id, submit_test, add_custom_nlpql, get_nlpql
+from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql
 
 app = Flask(__name__)
 CORS(app)
@@ -128,7 +128,7 @@ def get_results(job_id):
     API for getting Job results
     """
     if request.method == 'GET':
-        return get_results_by_job_id(job_id)
+        return get_results(job_id)
     else:
         return Response(json.dumps({'message': 'API supports only GET requests'}, indent=4, sort_keys=True), status=400,
                         mimetype='application/json')
