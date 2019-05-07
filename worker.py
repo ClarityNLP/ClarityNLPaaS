@@ -345,8 +345,28 @@ def worker(job_file_path, data):
 
     docs = ["Docs"]
     data_entities = nlpql_json['data_entities']
+    fhir_url = ''
+    fhir_auth_type = ''
+    fhir_auth_token = ''
+    patient_id = -1
+    if data['fhir']:
+        fhir = data['fhir']
+        if 'serviceUrl' in fhir:
+            fhir_url = fhir['serviceUrl']
+        if 'auth' in fhir:
+            auth = fhir['auth']
+            if 'type' in auth:
+                fhir_auth_type = auth['type']
+            if 'token' in auth:
+                fhir_auth_token = auth['token']
+    if 'patient_id' in data:
+        patient_id = data['patient_id']
     for de in data_entities:
         de['named_arguments']['documentset'] = docs
+        de['named_arguments']['patient_id'] = patient_id
+        de['named_arguments']['fhir_url'] = fhir_url
+        de['named_arguments']['fhir_auth_type'] = fhir_auth_type
+        de['named_arguments']['fhir_auth_token'] = fhir_auth_token
     nlpql_json['data_entities'] = data_entities
 
     # Submitting the job
