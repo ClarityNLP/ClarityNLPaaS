@@ -53,10 +53,12 @@ phenotype "Karnofksy Score" version "1";
 
 limit 100;
 
-documentset Docs:
-     Clarity.createDocumentSet({
-         "query":"source:%s"});
-
+define final KarnofskyScore:
+  Clarity.ValueExtraction({
+    termset:[KarnofksyTerms],
+    minimum_value: "0",
+    maximum_value: "100"
+    });
 
 ```
 Your response will tell you the endpoint name that you will use to call this job.
@@ -72,9 +74,12 @@ phenotype "Karnofksy Score" version "1";
 
 limit 100;
 
-documentset Docs:
-     Clarity.createDocumentSet({
-         "query":"source:%s"});
+define final KarnofskyScore:
+  Clarity.ValueExtraction({
+    termset:[KarnofksyTerms],
+    minimum_value: "0",
+    maximum_value: "100"
+    });
 
 ...
 ```
