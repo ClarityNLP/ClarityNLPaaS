@@ -2,6 +2,8 @@ import json
 import os
 import time
 import uuid
+import base64
+import dateparser
 
 import requests
 from bson.json_util import dumps
@@ -28,7 +30,7 @@ def get_document_set(source):
     }
 
 
-def upload_report(data):
+def upload_reports(data):
     """
     Uploading reports with unique source
     """
@@ -45,6 +47,7 @@ def upload_report(data):
     payload = list()
     report_list = list()
     nlpaas_id = 1
+    fhir_resource = False
 
     for report in data['reports']:
         report_id = '{}_{}'.format(source_id, str(nlpaas_id))
@@ -53,20 +56,64 @@ def upload_report(data):
             "id": report_id,
             "report_id": report_id,
             "source": source_id,
+            "nlpaas_id": str(nlpaas_id),
+            "subject": "ClarityNLPaaS Subject",
             "report_date": "1970-01-01T00:00:00Z",
-            "subject": "ClarityNLPaaS Document",
-            "report_text": report,
-            "nlpaas_id": str(nlpaas_id)
+            'original_report_id': ''
         }
+        if type(report) == str:
+            json_body["report_text"] = report
+        else:
+            resource_type = ''
+            if 'resourceType' in report:
+                resource_type = report['resourceType']
+
+            report_date = None
+            if 'created' in report:
+                report_date = dateparser.parse(report['created'])
+            if not report_date and 'indexed' in report:
+                report_date = dateparser.parse(report['indexed'])
+            if report_date:
+                json_body['report_date'] = str(report_date.isoformat())
+
+            if 'subject' in report:
+                if 'reference' in report['subject']:
+                    subject = report['subject']['reference']
+                else:
+                    subject = str(report['subject'])
+                json_body['subject'] = subject
+
+            if 'id' in report:
+                json_body['original_report_id'] = str(report['id'])
+
+            if 'type' in report:
+                if 'coding' in report['type'] and len(report['type']['coding']) > 0:
+                    coded_type = report['type']['coding'][0]
+                    if 'display' in coded_type:
+                        json_body['report_type'] = coded_type['display']
+
+            if resource_type == 'DocumentReference':
+                fhir_resource = True
+                txt = ''
+                if 'content' in report:
+                    for c in report['content']:
+                        if 'attachment' in c:
+                            decoded_txt = base64.b64decode(c['attachment']['data']).decode("utf-8")
+                            txt += decoded_txt
+                            txt += '\n'
+
+                json_body["report_text"] = txt
+            else:
+                json_body["report_text"] = str(report)
         payload.append(json_body)
         report_list.append(report_id)
         nlpaas_id += 1
 
     response = requests.post(url, headers=headers, data=json.dumps(payload, indent=4))
     if response.status_code == 200:
-        return True, source_id, report_list
+        return True, source_id, report_list, fhir_resource, payload
     else:
-        return False, response.reason, report_list
+        return False, response.reason, report_list, fhir_resource, payload
 
 
 def delete_report(source_id):
@@ -259,7 +306,7 @@ def get_results(job_id: int, source_data=None, status_endpoint=None, report_ids=
                 doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
                 if len(source_data) > 0 and doc_index < len(source_data):
                     source_doc = source_data[doc_index]
-                    r['report_text'] = source_doc
+                    r['report_text'] = source_doc['report_text']
                 else:
                     r['report_text'] = r['sentence']
                 final_list.append(r)
@@ -287,7 +334,7 @@ def clean_output(data, report_list=None):
     if not report_list:
         report_list = list()
     data = json.loads(data)
-
+    matched_reports = list()
     # iterate through to check for report_ids that are empty and assign report count from original report_list
     for obj in data:
         report_id = obj["report_id"].split('_')
@@ -295,13 +342,19 @@ def clean_output(data, report_list=None):
             nlpaas_array_id = report_id[1]
             if obj["report_id"] in report_list:
                 obj.update({'nlpaas_report_list_id': nlpaas_array_id})
-                report_list.remove(obj["report_id"])
+                matched_reports.append(obj["report_id"])
     # return null response for reports with no results
-    for item in report_list:
+    for report in report_list:
+        item = report['report_id']
+        if item in matched_reports:
+            continue
         item_id = item.split('_')
         if len(item_id) > 1:
             nlpaas_array_id = int(item_id[1])
-            data += [{'nlpaas_report_list_id': nlpaas_array_id, 'nlpql_feature': 'null'}]
+            data_object = report
+            data_object['nlpaas_report_list_id'] = nlpaas_array_id
+            data_object['nlpql_feature'] = 'null'
+            data.append(data_object)
 
     # keys = ['_id', 'experiencer', 'report_id', 'source', 'phenotype_final', 'temporality', 'subject', 'concept_code',
     #         'report_type', 'inserted_date', 'negation', 'solr_id', 'end', 'start', 'report_date', 'batch', 
@@ -319,6 +372,11 @@ def worker(job_file_path, data):
     Main worker function
     """
     start = time.time()
+    if 'reports' not in data or len(data['reports']) == 0:
+        return Response(json.dumps({'message': 'No reports passed into service'}, indent=4),
+                        status=500,
+                        mimetype='application/json')
+
     # Checking for active Job
     if has_active_job(data):
         return Response(
@@ -326,7 +384,7 @@ def worker(job_file_path, data):
             status=200, mimetype='application/json')
 
     # Uploading report to Solr
-    status, source_id, report_ids = upload_report(data)
+    status, source_id, report_ids, is_fhir_resource, report_payload = upload_reports(data)
     if not status:
         return Response(json.dumps({'message': 'Could not upload report. Reason: ' + source_id}, indent=4),
                         status=500,
@@ -349,7 +407,7 @@ def worker(job_file_path, data):
     fhir_auth_type = ''
     fhir_auth_token = ''
     patient_id = -1
-    if data['fhir']:
+    if 'fhir' in data:
         fhir = data['fhir']
         if 'serviceUrl' in fhir:
             fhir_url = fhir['serviceUrl']
@@ -379,7 +437,7 @@ def worker(job_file_path, data):
     # Getting the results of the Job
     job_id = int(job_info['job_id'])
     print("\n\njob_id = " + str(job_id))
-    results = get_results(job_id, source_data=data['reports'], status_endpoint=job_info['status_endpoint'],
+    results = get_results(job_id, source_data=report_payload, status_endpoint=job_info['status_endpoint'],
                           report_ids=report_ids)
 
     # Deleting uploaded documents
@@ -390,4 +448,4 @@ def worker(job_file_path, data):
                         mimetype='application/json')
 
     print("\n\nRun Time = %s \n\n" % (time.time() - start))
-    return Response(clean_output(results, report_list=report_ids), status=200, mimetype='application/json')
+    return Response(clean_output(results, report_list=report_payload), status=200, mimetype='application/json')
