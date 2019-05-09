@@ -334,14 +334,21 @@ def clean_output(data, report_list=None):
     if not report_list:
         report_list = list()
     data = json.loads(data)
+    report_dictionary = {x['report_id']: x for x in report_list}
+    report_ids = list(report_dictionary.keys())
     matched_reports = list()
+
     # iterate through to check for report_ids that are empty and assign report count from original report_list
     for obj in data:
         report_id = obj["report_id"].split('_')
         if len(report_id) > 1:
             nlpaas_array_id = report_id[1]
-            if obj["report_id"] in report_list:
-                obj.update({'nlpaas_report_list_id': nlpaas_array_id})
+            if obj["report_id"] in report_ids:
+                orig_report = report_dictionary[obj["report_id"]]
+                obj.update({
+                    'nlpaas_report_list_id': nlpaas_array_id,
+                    'original_report_id': orig_report['original_report_id']
+                })
                 matched_reports.append(obj["report_id"])
     # return null response for reports with no results
     for report in report_list:
