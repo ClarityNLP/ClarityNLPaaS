@@ -267,12 +267,9 @@ def get_results(job_id: int, source_data=None, status_endpoint=None, report_ids=
         report_ids = list()
 
     # Checking if it is a dev box
-    if util.development_mode == "dev" and status_endpoint:
-        url = status_endpoint
-    else:
-        status = "status/%s" % job_id
-        url = util.claritynlp_url + status
-        print(url)
+    status = "status/%s" % job_id
+    url = util.claritynlp_url + status
+    print(url)
 
     # Polling for job completion
     while True:
