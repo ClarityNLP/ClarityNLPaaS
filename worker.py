@@ -11,12 +11,6 @@ from bson.json_util import dumps
 from flask import Response
 from requests.auth import HTTPBasicAuth
 
-solr_auth = HTTPBasicAuth('admin', 'u0z4@VpPE')
-solr_headers = {
-    'Content-type': 'application/json',
-}
-
-
 def get_document_set(source):
     return {
         "alias": "",
@@ -49,6 +43,7 @@ def upload_reports(data):
     Uploading reports with unique source
     """
     url = util.solr_url + '/update?commit=true'
+    # url = util.claritynlp_url + 'solr/sample/update?commit=true'
 
     # Generating a source_id
     rand_uuid = uuid.uuid1()
@@ -119,7 +114,8 @@ def upload_reports(data):
         report_list.append(report_id)
         nlpaas_id += 1
 
-    response = requests.post(url, headers=solr_headers, auth=solr_auth, data=json.dumps(payload, indent=4))
+    token, oauth = util.app_token()
+    response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4))
     if response.status_code == 200:
         return True, source_id, report_list, fhir_resource, payload
     else:
@@ -134,7 +130,8 @@ def delete_report(source_id):
 
     data = '<delete><query>source:%s</query></delete>' % source_id
 
-    response = requests.post(url, headers=solr_headers, auth=solr_auth, data=data)
+    token, oauth = util.app_token()
+    response = requests.post(url, headers=get_headers(token), data=json.dumps(data, indent=4))
     if response.status_code == 200:
         return True, response.reason
     else:
