@@ -5,12 +5,11 @@ import uuid
 import base64
 import dateparser
 
+import util
 import requests
 from bson.json_util import dumps
 from flask import Response
-
-import util
-
+from requests.auth import HTTPBasicAuth
 
 def get_document_set(source):
     return {
@@ -30,15 +29,21 @@ def get_document_set(source):
     }
 
 
+def get_headers(token):
+    headers = {
+        'Content-type': 'application/json',
+        'Authorization': '{} {}'.format(token['token_type'], token['access_token'])
+    }
+    print(json.dumps(headers, indent=4))
+    return headers
+
+
 def upload_reports(data):
     """
     Uploading reports with unique source
     """
     url = util.solr_url + '/update?commit=true'
-
-    headers = {
-        'Content-type': 'application/json'
-    }
+    # url = util.claritynlp_url + 'solr/sample/update?commit=true'
 
     # Generating a source_id
     rand_uuid = uuid.uuid1()
@@ -109,7 +114,8 @@ def upload_reports(data):
         report_list.append(report_id)
         nlpaas_id += 1
 
-    response = requests.post(url, headers=headers, data=json.dumps(payload, indent=4))
+    token, oauth = util.app_token()
+    response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4))
     if response.status_code == 200:
         return True, source_id, report_list, fhir_resource, payload
     else:
@@ -122,13 +128,10 @@ def delete_report(source_id):
     """
     url = util.solr_url + '/update?commit=true'
 
-    headers = {
-        'Content-type': 'text/xml; charset=utf-8',
-    }
-
     data = '<delete><query>source:%s</query></delete>' % source_id
 
-    response = requests.post(url, headers=headers, data=data)
+    token, oauth = util.app_token()
+    response = requests.post(url, headers=get_headers(token), data=json.dumps(data, indent=4))
     if response.status_code == 200:
         return True, response.reason
     else:
@@ -154,10 +157,9 @@ def submit_job(nlpql_json):
     print("")
     print(phenotype_string)
     print("")
-    headers = {
-        'Content-type': 'application/json'
-    }
-    response = requests.post(url, headers=headers, data=phenotype_string)
+
+    token, oauth = util.app_token()
+    response = requests.post(url, headers=get_headers(token), data=phenotype_string)
     if response.status_code == 200:
         data = response.json()
         if 'success' in data:
@@ -178,7 +180,8 @@ def submit_test(nlpql):
     Testing ClarityNLP job
     """
     url = util.claritynlp_url + "nlpql_tester"
-    response = requests.post(url, data=nlpql)
+    token, oauth = util.app_token()
+    response = requests.post(url, headers=get_headers(token), data=nlpql)
     if response.status_code == 200:
         data = response.json()
         if 'success' in data:
@@ -261,16 +264,14 @@ def get_results(job_id: int, source_data=None, status_endpoint=None, report_ids=
         report_ids = list()
 
     # Checking if it is a dev box
-    if util.development_mode == "dev" and status_endpoint:
-        url = status_endpoint
-    else:
-        status = "status/%s" % job_id
-        url = util.claritynlp_url + status
-        print(url)
+    status = "status/%s" % job_id
+    url = util.claritynlp_url + status
+    print(url)
 
     # Polling for job completion
     while True:
-        r = requests.get(url)
+        token, oauth = util.app_token()
+        r = oauth.get(url)
 
         if r.status_code != 200:
             return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}, indent=4),
@@ -290,11 +291,12 @@ def get_results(job_id: int, source_data=None, status_endpoint=None, report_ids=
     url = "{}phenotype_paged_results/{}/{}".format(util.claritynlp_url, job_id, 'true')
     url2 = "{}phenotype_paged_results/{}/{}".format(util.claritynlp_url, job_id, 'false')
 
-    response = requests.get(url)
-    response2 = requests.get(url2)
+    response = oauth.get(url)
+    response2 = oauth.get(url2)
     final_list = list()
     if response.status_code == 200 and response2.status_code == 200:
         try:
+
             results.extend(response.json()['results'])
             results.extend(response2.json()['results'])
 
