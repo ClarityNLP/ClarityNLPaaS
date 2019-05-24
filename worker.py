@@ -412,28 +412,39 @@ def worker(job_file_path, data):
 
     docs = ["Docs"]
     data_entities = nlpql_json['data_entities']
-    fhir_url = ''
+    fhir_data_service_uri = ''
     fhir_auth_type = ''
     fhir_auth_token = ''
     patient_id = -1
     if 'fhir' in data:
         fhir = data['fhir']
         if 'serviceUrl' in fhir:
-            fhir_url = fhir['serviceUrl']
+            fhir_data_service_uri = fhir['serviceUrl']
         if 'auth' in fhir:
             auth = fhir['auth']
             if 'type' in auth:
                 fhir_auth_type = auth['type']
             if 'token' in auth:
                 fhir_auth_token = auth['token']
+        if 'terminologyServiceUri' in fhir:
+            fhir_terminology_service_uri = fhir['terminologyServiceUri']
+        if 'terminologyUser' in fhir:
+            fhir_terminology_user_name = fhir['terminologyUser']
+        if 'terminologyPass' in fhir:
+            fhir_terminology_user_password = fhir['terminologyPass']
     if 'patient_id' in data:
         patient_id = data['patient_id']
     for de in data_entities:
         de['named_arguments']['documentset'] = docs
+        de['named_arguments']['cql_eval_url'] = 'https://gt-apps.hdap.gatech.edu/cql/evaluate'
         de['named_arguments']['patient_id'] = patient_id
-        de['named_arguments']['fhir_url'] = fhir_url
+        de['named_arguments']['fhir_data_service_uri'] = fhir_data_service_uri
         de['named_arguments']['fhir_auth_type'] = fhir_auth_type
         de['named_arguments']['fhir_auth_token'] = fhir_auth_token
+        de['named_arguments']['fhir_terminology_service_uri'] = 'https://cts.nlm.nih.gov/fhir/'
+        de['named_arguments']['fhir_terminology_service_endpoint'] = 'Terminology Service Endpoint'
+        de['named_arguments']['fhir_terminology_user_name'] = 'username'
+        de['named_arguments']['fhir_terminology_user_password'] = 'password'
     nlpql_json['data_entities'] = data_entities
 
     # Submitting the job
