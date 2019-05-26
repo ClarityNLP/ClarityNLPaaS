@@ -42,9 +42,10 @@ def upload_reports(data):
     """
     Uploading reports with unique source
     """
-    url = util.solr_url + '/update?commit=true'
-    # url = util.claritynlp_url + 'solr/sample/update?commit=true'
-
+    
+    url = util.solr_url + 'update?commit=true'
+    print('URL from upload_reports: "{0}"'.format(url))
+    
     # Generating a source_id
     rand_uuid = uuid.uuid1()
     source_id = str(rand_uuid)
@@ -126,7 +127,8 @@ def delete_report(source_id):
     """
     Deleting reports based on generated source
     """
-    url = util.solr_url + '/update?commit=true'
+    url = util.solr_url + 'update?commit=true'
+    print('URL from delete_report: "{0}"'.format(url))
 
     data = '<delete><query>source:%s</query></delete>' % source_id
 
@@ -152,7 +154,10 @@ def submit_job(nlpql_json):
     """
     Submitting ClarityNLP job
     """
-    url = util.claritynlp_url + "phenotype"
+
+    url = util.claritynlp_url + 'phenotype'
+    print('URL from submit_job: "{0}"'.format(url))
+    
     phenotype_string = json.dumps(nlpql_json)
     print("")
     print(phenotype_string)
@@ -179,7 +184,10 @@ def submit_test(nlpql):
     """
     Testing ClarityNLP job
     """
-    url = util.claritynlp_url + "nlpql_tester"
+
+    url = util.claritynlp_url + 'nlpql_tester'
+    print('URL from submit_test: "{0}"'.format(url))
+
     token, oauth = util.app_token()
     response = requests.post(url, headers=get_headers(token), data=nlpql)
     if response.status_code == 200:
@@ -266,8 +274,8 @@ def get_results(job_id: int, source_data=None, status_endpoint=None, report_ids=
     # Checking if it is a dev box
     status = "status/%s" % job_id
     url = util.claritynlp_url + status
-    print(url)
-
+    print('URL from get_results: "{0}"'.format(url))    
+    
     # Polling for job completion
     while True:
         token, oauth = util.app_token()
@@ -426,25 +434,19 @@ def worker(job_file_path, data):
                 fhir_auth_type = auth['type']
             if 'token' in auth:
                 fhir_auth_token = auth['token']
-        if 'terminologyServiceUri' in fhir:
-            fhir_terminology_service_uri = fhir['terminologyServiceUri']
-        if 'terminologyUser' in fhir:
-            fhir_terminology_user_name = fhir['terminologyUser']
-        if 'terminologyPass' in fhir:
-            fhir_terminology_user_password = fhir['terminologyPass']
     if 'patient_id' in data:
         patient_id = data['patient_id']
     for de in data_entities:
-        de['named_arguments']['documentset'] = docs
-        de['named_arguments']['cql_eval_url'] = 'https://gt-apps.hdap.gatech.edu/cql/evaluate'
-        de['named_arguments']['patient_id'] = patient_id
-        de['named_arguments']['fhir_data_service_uri'] = fhir_data_service_uri
-        de['named_arguments']['fhir_auth_type'] = fhir_auth_type
-        de['named_arguments']['fhir_auth_token'] = fhir_auth_token
-        de['named_arguments']['fhir_terminology_service_uri'] = 'https://cts.nlm.nih.gov/fhir/'
-        de['named_arguments']['fhir_terminology_service_endpoint'] = 'Terminology Service Endpoint'
-        de['named_arguments']['fhir_terminology_user_name'] = 'username'
-        de['named_arguments']['fhir_terminology_user_password'] = 'password'
+        de['named_arguments']['documentset']                       = docs
+        de['named_arguments']['cql_eval_url']                      = util.cql_eval_url
+        de['named_arguments']['patient_id']                        = patient_id
+        de['named_arguments']['fhir_data_service_uri']             = fhir_data_service_uri
+        de['named_arguments']['fhir_auth_type']                    = fhir_auth_type
+        de['named_arguments']['fhir_auth_token']                   = fhir_auth_token
+        de['named_arguments']['fhir_terminology_service_uri']      = util.fhir_terminology_service_uri
+        de['named_arguments']['fhir_terminology_service_endpoint'] = util.fhir_terminology_service_endpoint
+        de['named_arguments']['fhir_terminology_user_name']        = util.fhir_terminology_user_name
+        de['named_arguments']['fhir_terminology_user_password']    = util.fhir_terminology_user_password
     nlpql_json['data_entities'] = data_entities
 
     # Submitting the job
