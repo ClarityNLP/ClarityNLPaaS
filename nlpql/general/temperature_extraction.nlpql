@@ -23,8 +23,6 @@ define final WBC:
     Clarity.CQLExecutionTask({
         documentset: [PatientDocs],
         "task_index": 0,
-        "patient_id":"38587",
-        "fhir_url":"https://gt-apps.hdap.gatech.edu/cql/evaluate",
         cql: """
                  library Retrieve2 version '1.0'
 
