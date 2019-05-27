@@ -3,6 +3,7 @@ import os
 import time
 import uuid
 import base64
+import datetime
 import dateparser
 
 import util
@@ -80,13 +81,21 @@ def upload_reports(data):
             if not report_date and 'indexed' in report:
                 report_date = dateparser.parse(report['indexed'])
             if report_date:
-                json_body['report_date'] = str(report_date.isoformat())
+                # The 'report_date' variable is a python 'datetime' object.
+                # For Solr ingest, need to:
+                #     1) convert to UTC
+                #     2) format as Solr wants it
+                utc_report_date = report_date.astimezone(tz=datetime.timezone.utc)
+                json_body['report_date'] = utc_report_date.strftime('%Y-%m-%dT%H:%M:%SZ')
 
             if 'subject' in report:
                 if 'reference' in report['subject']:
                     subject = report['subject']['reference']
                 else:
                     subject = str(report['subject'])
+                if '/' in subject:
+                    # subject usually returned as 'Patient/12345' or similar
+                    subject = subject.split('/')[-1]
                 json_body['subject'] = subject
 
             if 'id' in report:
