@@ -319,10 +319,33 @@ def get_results(job_id: int, source_data=None, status_endpoint=None, report_ids=
 
             for r in results:
                 report_id = r['report_id']
+                source = r['source']
+
+                # Three types of result objects 'r' to handle:
+                # 1) Result objects from ClarityNLP, computed via NLPQL
+                #       These have been ingested into Solr, static
+                #       All the expected fields present
+                # 2) Result objects temporarily loaded into Solr via JSON blob
+                #        The JSON blob is POSTed to NLPaaS
+                #        The doc_index and source fields constructed differently
+                #            from normal Solr ingest process 
+                # 3) Result objects obtained from FHIR server via CQL call
+                #        CQLExecutionTask returns this data
+                #        No underlying source document at all, so no report_text
+                
+                pipeline_type = r['pipeline_type'].lower()
+                if 'cqlexecutiontask' == pipeline_type and 'fhir' == source.lower():
+                    # no source docs, data obtained via CQL query
+                    r['report_text'] = ''
+                    final_list.append(r)
+                    continue
+                    
                 if len(report_ids) > 0 and report_id not in report_ids:
                     continue
-                source = r['source']
+
+                # compute the doc_index encoded in the source field
                 doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
+                
                 if len(source_data) > 0 and doc_index < len(source_data):
                     source_doc = source_data[doc_index]
                     r['report_text'] = source_doc['report_text']
