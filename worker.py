@@ -3,6 +3,7 @@ import os
 import time
 import uuid
 import base64
+import datetime
 import dateparser
 
 import util
@@ -42,9 +43,10 @@ def upload_reports(data):
     """
     Uploading reports with unique source
     """
-    url = util.solr_url + '/update?commit=true'
-    # url = util.claritynlp_url + 'solr/sample/update?commit=true'
-
+    
+    url = util.solr_url + 'update?commit=true'
+    print('URL from upload_reports: "{0}"'.format(url))
+    
     # Generating a source_id
     rand_uuid = uuid.uuid1()
     source_id = str(rand_uuid)
@@ -79,13 +81,21 @@ def upload_reports(data):
             if not report_date and 'indexed' in report:
                 report_date = dateparser.parse(report['indexed'])
             if report_date:
-                json_body['report_date'] = str(report_date.isoformat())
+                # The 'report_date' variable is a python 'datetime' object.
+                # For Solr ingest, need to:
+                #     1) convert to UTC
+                #     2) format as Solr wants it
+                utc_report_date = report_date.astimezone(tz=datetime.timezone.utc)
+                json_body['report_date'] = utc_report_date.strftime('%Y-%m-%dT%H:%M:%SZ')
 
             if 'subject' in report:
                 if 'reference' in report['subject']:
                     subject = report['subject']['reference']
                 else:
                     subject = str(report['subject'])
+                if '/' in subject:
+                    # subject usually returned as 'Patient/12345' or similar
+                    subject = subject.split('/')[-1]
                 json_body['subject'] = subject
 
             if 'id' in report:
@@ -126,7 +136,8 @@ def delete_report(source_id):
     """
     Deleting reports based on generated source
     """
-    url = util.solr_url + '/update?commit=true'
+    url = util.solr_url + 'update?commit=true'
+    print('URL from delete_report: "{0}"'.format(url))
 
     data = '<delete><query>source:%s</query></delete>' % source_id
 
@@ -152,7 +163,10 @@ def submit_job(nlpql_json):
     """
     Submitting ClarityNLP job
     """
-    url = util.claritynlp_url + "phenotype"
+
+    url = util.claritynlp_url + 'phenotype'
+    print('URL from submit_job: "{0}"'.format(url))
+    
     phenotype_string = json.dumps(nlpql_json)
     print("")
     print(phenotype_string)
@@ -179,7 +193,10 @@ def submit_test(nlpql):
     """
     Testing ClarityNLP job
     """
-    url = util.claritynlp_url + "nlpql_tester"
+
+    url = util.claritynlp_url + 'nlpql_tester'
+    print('URL from submit_test: "{0}"'.format(url))
+
     token, oauth = util.app_token()
     response = requests.post(url, headers=get_headers(token), data=nlpql)
     if response.status_code == 200:
@@ -266,8 +283,8 @@ def get_results(job_id: int, source_data=None, status_endpoint=None, report_ids=
     # Checking if it is a dev box
     status = "status/%s" % job_id
     url = util.claritynlp_url + status
-    print(url)
-
+    print('URL from get_results: "{0}"'.format(url))    
+    
     # Polling for job completion
     while True:
         token, oauth = util.app_token()
@@ -302,10 +319,33 @@ def get_results(job_id: int, source_data=None, status_endpoint=None, report_ids=
 
             for r in results:
                 report_id = r['report_id']
+                source = r['source']
+
+                # Three types of result objects 'r' to handle:
+                # 1) Result objects from ClarityNLP, computed via NLPQL
+                #       These have been ingested into Solr, static
+                #       All the expected fields present
+                # 2) Result objects temporarily loaded into Solr via JSON blob
+                #        The JSON blob is POSTed to NLPaaS
+                #        The doc_index and source fields constructed differently
+                #            from normal Solr ingest process 
+                # 3) Result objects obtained from FHIR server via CQL call
+                #        CQLExecutionTask returns this data
+                #        No underlying source document at all, so no report_text
+                
+                pipeline_type = r['pipeline_type'].lower()
+                if 'cqlexecutiontask' == pipeline_type and 'fhir' == source.lower():
+                    # no source docs, data obtained via CQL query
+                    r['report_text'] = ''
+                    final_list.append(r)
+                    continue
+                    
                 if len(report_ids) > 0 and report_id not in report_ids:
                     continue
-                source = r['source']
+
+                # compute the doc_index encoded in the source field
                 doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
+                
                 if len(source_data) > 0 and doc_index < len(source_data):
                     source_doc = source_data[doc_index]
                     r['report_text'] = source_doc['report_text']
@@ -412,14 +452,14 @@ def worker(job_file_path, data):
 
     docs = ["Docs"]
     data_entities = nlpql_json['data_entities']
-    fhir_url = ''
+    fhir_data_service_uri = ''
     fhir_auth_type = ''
     fhir_auth_token = ''
     patient_id = -1
     if 'fhir' in data:
         fhir = data['fhir']
         if 'serviceUrl' in fhir:
-            fhir_url = fhir['serviceUrl']
+            fhir_data_service_uri = fhir['serviceUrl']
         if 'auth' in fhir:
             auth = fhir['auth']
             if 'type' in auth:
@@ -429,11 +469,16 @@ def worker(job_file_path, data):
     if 'patient_id' in data:
         patient_id = data['patient_id']
     for de in data_entities:
-        de['named_arguments']['documentset'] = docs
-        de['named_arguments']['patient_id'] = patient_id
-        de['named_arguments']['fhir_url'] = fhir_url
-        de['named_arguments']['fhir_auth_type'] = fhir_auth_type
-        de['named_arguments']['fhir_auth_token'] = fhir_auth_token
+        de['named_arguments']['documentset']                       = docs
+        de['named_arguments']['cql_eval_url']                      = util.cql_eval_url
+        de['named_arguments']['patient_id']                        = patient_id
+        de['named_arguments']['fhir_data_service_uri']             = fhir_data_service_uri
+        de['named_arguments']['fhir_auth_type']                    = fhir_auth_type
+        de['named_arguments']['fhir_auth_token']                   = fhir_auth_token
+        de['named_arguments']['fhir_terminology_service_uri']      = util.fhir_terminology_service_uri
+        de['named_arguments']['fhir_terminology_service_endpoint'] = util.fhir_terminology_service_endpoint
+        de['named_arguments']['fhir_terminology_user_name']        = util.fhir_terminology_user_name
+        de['named_arguments']['fhir_terminology_user_password']    = util.fhir_terminology_user_password
     nlpql_json['data_entities'] = data_entities
 
     # Submitting the job
