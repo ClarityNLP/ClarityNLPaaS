@@ -9,7 +9,8 @@ import util
 import requests
 from bson.json_util import dumps
 from flask import Response
-from requests.auth import HTTPBasicAuth
+import traceback
+
 
 def get_document_set(source):
     return {
@@ -138,6 +139,25 @@ def delete_report(source_id):
         return False, response.reason
 
 
+def get_reports(source_id):
+    """
+    Get reports based on generated source
+    """
+    url = '{}/select?indent=on&q=source:{}&wt=json&rows=1000'.format(util.solr_url, source_id)
+
+    token, oauth = util.app_token()
+    response = requests.get(url, headers=get_headers(token))
+    if response.status_code == 200:
+        res = response.json()['response']
+        if not res:
+            res = {
+                'docs': []
+            }
+        return True, res['docs']
+    else:
+        return False, {'reason': response.reason}
+
+
 def get_nlpql(file_path):
     """
     Getting required NLPQL based on API route
@@ -210,6 +230,7 @@ def add_custom_nlpql(nlpql):
     try:
         os.makedirs('./nlpql/custom/')
     except OSError as ex:
+        traceback.print_exc()
         print(ex)
 
     success, test_json = submit_test(nlpql)
@@ -253,7 +274,7 @@ def has_active_job(data):
     return False
 
 
-def get_results(job_id: int, source_data=None, status_endpoint=None, report_ids=None):
+def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_complete=False):
     """
     Reading Results from Mongo
     TODO use API endpoing
@@ -276,12 +297,29 @@ def get_results(job_id: int, source_data=None, status_endpoint=None, report_ids=
         if r.status_code != 200:
             return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}, indent=4),
                             status=500,
-                            mimetype='application/json')
+                            mimetype='application/json'), False
 
-        if r.json()["status"] == "COMPLETED":
+        try:
+            status = r.json()["status"]
+        except Exception as ex1:
+            traceback.print_exc()
+            status = "ERROR"
+            break
+        if status == "COMPLETED":
+            break
+        if return_only_if_complete:
             break
 
         time.sleep(2.0)
+
+    if return_only_if_complete and status != "COMPLETED":
+        return '''
+            {
+                "job_completed": false,
+                "job_id":{},
+                "status":{}
+            }
+        '''.format(job_id, status), False
 
     # /phenotype_paged_results/<int:job_id>/<string:phenotype_final_str>
     """
@@ -314,19 +352,20 @@ def get_results(job_id: int, source_data=None, status_endpoint=None, report_ids=
                 final_list.append(r)
 
             result_string = dumps(final_list)
-            return result_string
+            return result_string, True
         except Exception as ex:
+            traceback.print_exc()
             return '''
                 "success":"false",
                 "message":{}
-            '''.format(str(ex))
+            '''.format(str(ex)), False
 
     else:
 
         return '''
             "success":"false",
             "message":{}
-        '''.format(response.reason)
+        '''.format(response.reason), False
 
 
 def clean_output(data, report_list=None):
@@ -376,7 +415,7 @@ def clean_output(data, report_list=None):
     return json.dumps(data, indent=4, sort_keys=True)
 
 
-def worker(job_file_path, data):
+def worker(job_file_path, data, synchronous=True):
     """
     Main worker function
     """
@@ -443,11 +482,17 @@ def worker(job_file_path, data):
                         status=500,
                         mimetype='application/json')
 
+    if not synchronous:
+        job_info['source_id'] = source_id
+        job_info['completed'] = False
+        return Response(json.dumps(job_info, indent=4),
+                        status=200,
+                        mimetype='application/json')
+
     # Getting the results of the Job
     job_id = int(job_info['job_id'])
     print("\n\njob_id = " + str(job_id))
-    results = get_results(job_id, source_data=report_payload, status_endpoint=job_info['status_endpoint'],
-                          report_ids=report_ids)
+    results, got_results = get_results(job_id, source_data=report_payload, report_ids=report_ids)
 
     # Deleting uploaded documents
     delete_obj = delete_report(source_id)
@@ -458,3 +503,37 @@ def worker(job_file_path, data):
 
     print("\n\nRun Time = %s \n\n" % (time.time() - start))
     return Response(clean_output(results, report_list=report_payload), status=200, mimetype='application/json')
+
+
+def async_results(job_id, source_id):
+    """
+    Main worker function
+    """
+    start = time.time()
+    report_success, reports = get_reports(source_id)
+    if not report_success:
+        return Response('''
+        {
+            "success": false,
+            "message": "No reports found in document data store.
+        }
+        ''', status=200, mimetype='application/json')
+    report_ids = [x['report_id'] for x in reports]
+
+    job_id = int(job_id)
+    print("\n\njob_id = " + str(job_id))
+    results, got_results = get_results(job_id, source_data=reports, report_ids=report_ids)
+
+    if got_results:
+        # Deleting uploaded documents
+        delete_obj = delete_report(source_id)
+        if not delete_obj[0]:
+            return Response(json.dumps({'message': 'Could not delete report. Reason: ' + delete_obj[1]}, indent=4),
+                            status=500,
+                            mimetype='application/json')
+
+        print("\n\nRun Time = %s \n\n" % (time.time() - start))
+        return Response(clean_output(results, report_list=reports), status=200, mimetype='application/json')
+    else:
+        return Response(results, status=200, mimetype='application/json')
+

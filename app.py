@@ -5,7 +5,7 @@ import util
 from flask import Flask, request, Response
 from flask_cors import CORS
 
-from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql
+from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, async_results
 
 app = Flask(__name__)
 CORS(app)
@@ -49,6 +49,11 @@ def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_nam
     """
     API for triggering jobs
     """
+    try:
+        async_job = request.args.get('async') == 'true'
+    except:
+        async_job = False
+    synchronous = not async_job
     job_type = "{}/{}/{}".format(job_category, job_subcategory, job_name)
     job_file_path = "./nlpql/" + job_type + ".nlpql"
     if not valid_job(job_type):
@@ -58,7 +63,7 @@ def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_nam
     if request.method == 'POST':
         # Checking if the selected job is valid
         data = request.get_json()
-        return worker(job_file_path, data)
+        return worker(job_file_path, data, synchronous=synchronous)
     else:
 
         return Response(get_nlpql(job_file_path),
@@ -71,6 +76,12 @@ def submit_job_with_category(job_category: str, job_name: str):
     """
     API for triggering jobs
     """
+    try:
+        async_arg = request.args.get('async').lower()
+        async_job = async_arg == 'true' or async_arg == 't' or async_arg == '1'
+    except:
+        async_job = False
+    synchronous = not async_job
     job_type = "{}/{}".format(job_category, job_name)
     job_file_path = "./nlpql/" + job_type + ".nlpql"
     if not valid_job(job_type):
@@ -80,7 +91,7 @@ def submit_job_with_category(job_category: str, job_name: str):
     if request.method == 'POST':
         # Checking if the selected job is valid
         data = request.get_json()
-        return worker(job_file_path, data)
+        return worker(job_file_path, data, synchronous=synchronous)
     else:
 
         return Response(get_nlpql(job_file_path),
@@ -96,6 +107,11 @@ def submit_job(job_type: str):
     job_type = job_type.replace('~', '/')
     job_file_path = "./nlpql/" + job_type + ".nlpql"
     valid = valid_job(job_type)
+    try:
+        async_job = request.args.get('async') == 'true'
+    except:
+        async_job = False
+    synchronous = not async_job
 
     if request.method == 'POST':
         # Checking if the selected job is valid
@@ -105,6 +121,9 @@ def submit_job(job_type: str):
         elif job_type == 'register_nlpql' and request.data:
             res = request.data.decode("utf-8")
             return json.dumps(add_custom_nlpql(res), indent=4, sort_keys=True)
+        elif job_type == 'results' and request.data:
+            res = request.get_json()
+            return async_results(res['job_id'], res['source_id'])
         else:
             if not valid:
                 return Response(
@@ -112,7 +131,7 @@ def submit_job(job_type: str):
                                sort_keys=True), status=400,
                     mimetype='application/json')
             data = request.get_json()
-            return worker(job_file_path, data)
+            return worker(job_file_path, data, synchronous=synchronous)
     else:
         if not valid:
             return Response(json.dumps({'message': 'Invalid API route. Valid Routes: ' + get_api_routes()}, indent=4,

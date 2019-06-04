@@ -57,7 +57,7 @@ def app_token():
         print('clientid: ', claritynlp_clientid)
         print('scope: ', claritynlp_scope)
         print('tokenurl: ', claritynlp_tokenurl)
-        print('clientsecret: ', claritynlp_clientsecret)
+        print('clientsecret found?: ', len(claritynlp_clientsecret) > 0)
         if _token_time:
             total_time = time.time() - _token_time
             expired = abs(total_time) > abs(_token['expires_in'])
