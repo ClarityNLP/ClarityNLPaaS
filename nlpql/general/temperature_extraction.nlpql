@@ -19,7 +19,33 @@ define Temperature:
     maximum_value: "107"
     });
 
+define final WBC:
+    Clarity.CQLExecutionTask({
+        documentset: [PatientDocs],
+        "task_index": 0,
+        cql: """
+                 library Retrieve2 version '1.0'
+
+                 using FHIR version '3.0.0'
+
+                 include FHIRHelpers version '3.0.0' called FHIRHelpers
+
+                 codesystem "LOINC": 'http://loinc.org'
+
+                 define "WBC": Concept {
+                     Code '26464-8' from "LOINC",
+                     Code '804-5' from "LOINC",
+                     Code '6690-2' from "LOINC",
+                     Code '49498-9' from "LOINC"
+                 }
+
+
+                 define "result":
+                     [Observation: Code in "WBC"]
+             """
+    });
+
 context Patient;
 
-define hasFever:
+define final hasFever:
     where Temperature.value >= 100.5;

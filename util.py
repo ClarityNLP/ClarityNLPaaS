@@ -23,6 +23,16 @@ def read_property(env_name, config_tuple):
             print(ex)
     return property_name
 
+def ensure_termination(url):
+    """
+    Ensure that the url ends with a '/' character.
+    """
+
+    if not url.endswith('/'):
+        return url + '/'
+    else:
+        return url
+
 
 _token = None
 _token_time = None
@@ -30,11 +40,13 @@ _oauth = None
 
 # Solr
 solr_url = read_property('NLP_SOLR_URL', ('solr', 'url'))
+solr_url = ensure_termination(solr_url)
 solr_username = read_property('NLP_SOLR_USER', ('solr', 'username'))
 solr_password = read_property('NLP_SOLR_PASSWORD', ('solr', 'password'))
 
 # ClarityNLP
 claritynlp_url = read_property('CLARITY_NLP_URL', ('claritynlp', 'url')).strip()
+claritynlp_url = ensure_termination(claritynlp_url)
 claritynlp_clientid = 'nlpass'
 # claritynlp_scope = ['solr_api', 'nlp_api']
 claritynlp_scope = 'nlp_api solr_api'
@@ -44,6 +56,16 @@ claritynlp_clientsecret = read_property('CLARITY_NLP_SECRET', ('claritynlp', 'se
 # Dev mode
 development_mode = read_property('DEV_ENV', ('development', 'mode'))
 
+# FHIR
+cql_eval_url = read_property('CQL_EVAL_URL', ('fhir', 'cql_eval_url'))
+fhir_terminology_service_uri = read_property('FHIR_TERMINOLOGY_SERVICE_URI',
+                                             ('fhir', 'fhir_terminology_service_uri'))
+fhir_terminology_service_endpoint = read_property('FHIR_TERMINOLOGY_SERVICE_ENDPOINT',
+                                                  ('fhir', 'fhir_terminology_service_endpoint'))
+fhir_terminology_user_name = read_property('FHIR_TERMINOLOGY_USER_NAME',
+                                           ('fhir', 'fhir_terminology_user_name'))
+fhir_terminology_user_password = read_property('FHIR_TERMINOLOGY_USER_PASSWORD',
+                                               ('fhir', 'fhir_terminology_user_password'))
 
 def app_token():
     if not claritynlp_clientsecret or len(claritynlp_clientsecret.strip()) == 0:
