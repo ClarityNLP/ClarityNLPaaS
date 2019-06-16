@@ -75,11 +75,8 @@ def app_token():
     global _oauth
     expired = False
     try:
-        print('claritynlpurl: ', claritynlp_url)
-        print('clientid: ', claritynlp_clientid)
-        print('scope: ', claritynlp_scope)
-        print('tokenurl: ', claritynlp_tokenurl)
-        print('clientsecret found?: ', len(claritynlp_clientsecret) > 0)
+        print('claritynlpurl: ', claritynlp_url, ', clientid: ', claritynlp_clientid, ', scope: ', claritynlp_scope,
+              ', tokenurl: ', claritynlp_tokenurl, ', clientsecret found?: ', len(claritynlp_clientsecret) > 0)
         if _token_time:
             total_time = time.time() - _token_time
             expired = abs(total_time) > abs(_token['expires_in'])

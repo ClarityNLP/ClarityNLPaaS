@@ -312,7 +312,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
         r = oauth.get(url)
 
         if r.status_code != 200:
-            return Response(json.dumps({'message': 'Could not query job status. Reason: ' + r.reason}, indent=4),
+            return Response(json.dumps({'message': 'Could not query job status from NLP API. Reason: ' + r.reason}, indent=4),
                             status=500,
                             mimetype='application/json'), False
 
@@ -327,7 +327,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
         if return_only_if_complete:
             break
 
-        time.sleep(2.0)
+        time.sleep(5.0)
 
     if return_only_if_complete and status != "COMPLETED":
         return '''
@@ -461,7 +461,7 @@ def worker(job_file_path, data, synchronous=True):
     """
     start = time.time()
     if 'reports' not in data or len(data['reports']) == 0:
-        return Response(json.dumps({'message': 'No reports passed into service'}, indent=4),
+        return Response(json.dumps({'message': 'No reports passed into service.'}, indent=4),
                         status=500,
                         mimetype='application/json')
 
@@ -474,7 +474,7 @@ def worker(job_file_path, data, synchronous=True):
     # Uploading report to Solr
     status, source_id, report_ids, is_fhir_resource, report_payload = upload_reports(data)
     if not status:
-        return Response(json.dumps({'message': 'Could not upload report. Reason: ' + source_id}, indent=4),
+        return Response(json.dumps({'message': 'Could not upload reports to Solr. Reason: ' + source_id}, indent=4),
                         status=500,
                         mimetype='application/json')
 
@@ -523,7 +523,7 @@ def worker(job_file_path, data, synchronous=True):
     # Submitting the job
     job_success, job_info = submit_job(nlpql_json)
     if not job_success:
-        return Response(json.dumps({'message': 'Could not submit job. Reason: ' + job_info}, indent=4),
+        return Response(json.dumps({'message': 'Could not submit job to NLP API. Reason: ' + job_info}, indent=4),
                         status=500,
                         mimetype='application/json')
 
@@ -542,7 +542,7 @@ def worker(job_file_path, data, synchronous=True):
     # Deleting uploaded documents
     delete_obj = delete_report(source_id)
     if not delete_obj[0]:
-        return Response(json.dumps({'message': 'Could not delete report. Reason: ' + delete_obj[1]}, indent=4),
+        return Response(json.dumps({'message': 'Could not delete reports from Solr. Reason: ' + delete_obj[1]}, indent=4),
                         status=500,
                         mimetype='application/json')
 
@@ -560,7 +560,7 @@ def async_results(job_id, source_id):
         return Response('''
         {
             "success": false,
-            "message": "No reports found in document data store.
+            "message": "No matching reports found in Solr.
         }
         ''', status=200, mimetype='application/json')
     report_ids = [x['report_id'] for x in reports]
@@ -573,7 +573,7 @@ def async_results(job_id, source_id):
         # Deleting uploaded documents
         delete_obj = delete_report(source_id)
         if not delete_obj[0]:
-            return Response(json.dumps({'message': 'Could not delete report. Reason: ' + delete_obj[1]}, indent=4),
+            return Response(json.dumps({'message': 'Could not delete reports from Solr. Reason: ' + delete_obj[1]}, indent=4),
                             status=500,
                             mimetype='application/json')
 
