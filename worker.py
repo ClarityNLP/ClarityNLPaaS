@@ -327,7 +327,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
         if return_only_if_complete:
             break
 
-        time.sleep(2.0)
+        time.sleep(5.0)
 
     if return_only_if_complete and status != "COMPLETED":
         return '''
