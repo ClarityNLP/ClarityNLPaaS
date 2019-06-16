@@ -2,3 +2,4 @@ __pycache__
 .idea/
 project.cfg
 custom/
+CIBMTR_knowledge_base/
