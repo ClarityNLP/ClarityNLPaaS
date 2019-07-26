@@ -5,6 +5,9 @@ import uuid
 import base64
 import datetime
 import dateparser
+import tempfile
+import PyPDF2
+import re
 
 import util
 import requests
@@ -108,15 +111,58 @@ def upload_reports(data):
                     if 'display' in coded_type:
                         json_body['report_type'] = coded_type['display']
 
-            if resource_type == 'DocumentReference':
+            if resource_type == 'DocumentReference' or resource_type == 'DiagnosticReport':
                 fhir_resource = True
                 txt = ''
-                if 'content' in report:
+                if resource_type == 'DiagnosticReport':
+                    if 'text' in report:
+                        diagnostic_report = report['text']
+                        if 'div' in diagnostic_report:
+                            clean_txt = re.sub('<[^<]+?>', '', diagnostic_report['div'])
+                            txt += clean_txt
+                            txt += '\n'
+                elif resource_type == 'DocumentReference' and 'content' in report:
                     for c in report['content']:
                         if 'attachment' in c:
-                            decoded_txt = base64.b64decode(c['attachment']['data']).decode("utf-8")
-                            txt += decoded_txt
-                            txt += '\n'
+                            if 'contentType' in c['attachment']:
+                                content_type = c['attachment']['contentType']
+                                if content_type == 'application/pdf':
+                                    if 'url' in c['attachment']:
+                                        url = c['attachment']['url']
+                                        response = requests.get(url)
+                                        raw_data = response.content
+
+                                        with open(tempfile.NamedTemporaryFile(), 'wb') as temp_file:
+                                            temp_file.write(raw_data)
+
+                                        file_name = temp_file.name
+                                        pdf_file = open(file_name, 'rb')
+                                        pdf_reader = PyPDF2.PdfFileReader(pdf_file)
+                                        num_pages = pdf_reader.getNumPages()
+
+                                        for page_num in range(num_pages):
+                                            if pdf_reader.isEncrypted:
+                                                pdf_reader.decrypt("")
+                                                page_text = pdf_reader.getPage(page_num).extractText()
+                                                txt += page_text
+                                                txt += '\n'
+                                            else:
+                                                page_text = pdf_reader.getPage(page_num).extractText()
+                                                txt += page_text
+                                                txt += '\n'
+                                        # TODO base64 encoded PDF
+
+                                        os.remove(file_name)
+                                elif 'xml' in content_type or 'html' in content_type:
+                                    if 'data' in c['attachment']:
+                                        clean_txt = re.sub('<[^<]+?>', '', c['attachment']['data'])
+                                        txt += clean_txt
+                                        txt += '\n'
+
+                            elif 'data' in c['attachment']:
+                                decoded_txt = base64.b64decode(c['attachment']['data']).decode("utf-8")
+                                txt += decoded_txt
+                                txt += '\n'
 
                 json_body["report_text"] = txt
             else:

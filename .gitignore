@@ -3,3 +3,4 @@ __pycache__
 project.cfg
 custom/
 CIBMTR_knowledge_base/
+.env

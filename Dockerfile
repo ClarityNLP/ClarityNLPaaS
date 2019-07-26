@@ -10,6 +10,9 @@ COPY requirements.txt $APP_HOME
 
 RUN pip3 install -r requirements.txt
 
+COPY load_nlpql.sh $APP_HOME
+RUN sh ./load_nlpql.sh
+
 COPY . .
 
 CMD ["python3", "app.py"]
