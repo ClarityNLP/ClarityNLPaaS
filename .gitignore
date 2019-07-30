@@ -4,3 +4,4 @@ project.cfg
 custom/
 CIBMTR_knowledge_base/
 .env
+.run.sh
