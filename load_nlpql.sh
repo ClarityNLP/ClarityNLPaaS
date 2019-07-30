@@ -1,15 +1,15 @@
 #!/bin/bash
 
 
-if [[ -z "$1" ]]
+if [ -z "$1" ]
 then
       exit 0
 fi
-if [[ -z "$2" ]]
+if [ -z "$2" ]
 then
       exit 0
 fi
-if [[ -z "$3" ]]
+if [ -z "$3" ]
 then
       exit 0
 fi
