@@ -28,6 +28,5 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 RUN sh ./load_nlpql.sh $APP_HOME $CUSTOM_S3_URL $CUSTOM_DIR
-RUN unzip "${APP_HOME}/nlpql/${CUSTOM_DIR}/*.zip" -d ${APP_HOME}/nlpql/${CUSTOM_DIR}
 
 CMD ["python3", "app.py"]
