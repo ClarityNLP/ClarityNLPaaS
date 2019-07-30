@@ -1,19 +1,23 @@
-#!/usr/bin/env bash
-
-read_var() {
-    VAR=$(grep $1 $2 | xargs)
-    IFS="=" read -ra VAR <<< "$VAR"
-    echo ${VAR[1]}
-}
-
-CUSTOM_GITHUB_DIRECTORY=$(read_var CUSTOM_GITHUB_DIRECTORY .env)
-CUSTOM_GITHUB_SSH_KEY=$(read_var CUSTOM_GITHUB_SSH_KEY .env)
-CUSTOM_GITHUB_REPO=$(read_var CUSTOM_GITHUB_REPO .env)
+#!/bin/bash
 
 
-RUN mkdir /root/.ssh/
-RUN echo "${CUSTOM_GITHUB_SSH_KEY}" > /root/.ssh/id_rsa
+if [[ -z "$1" ]]
+then
+      exit 0
+fi
+if [[ -z "$2" ]]
+then
+      exit 0
+fi
+if [[ -z "$3" ]]
+then
+      exit 0
+fi
 
-git clone ${CUSTOM_GITHUB_REPO} nlpql/${CUSTOM_GITHUB_DIRECTORY}
 
-RUN rm /root/.ssh/id_rsa
+
+dirname="${1}/nlpql/${3}"
+mkdir ${dirname}
+echo ${dirname}
+
+wget  -P ${dirname} ${2}
