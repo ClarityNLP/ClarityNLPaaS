@@ -15,9 +15,6 @@ RUN apt-get install -y p7zip \
 
 EXPOSE 5000
 
-ARG CUSTOM_S3_URL
-ARG CUSTOM_DIR
-
 ENV APP_HOME /api
 RUN mkdir $APP_HOME
 WORKDIR $APP_HOME
@@ -27,6 +24,7 @@ COPY requirements.txt $APP_HOME
 RUN pip3 install -r requirements.txt
 
 COPY . .
-RUN sh ./load_nlpql.sh $APP_HOME $CUSTOM_S3_URL $CUSTOM_DIR
 
-CMD ["python3", "app.py"]
+RUN chmod +x load_nlpql.sh
+
+CMD ["/api/load_nlpql.sh", "python3", "app.py"]
