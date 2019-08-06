@@ -5,8 +5,7 @@ pipeline{
     environment {
       GTRI_IMAGE_REGISTRY = credentials('gtri-image-registry')
       GTRI_RANCHER_API_ENDPOINT = credentials('gtri-rancher-api-endpoint')
-      // GTRI_CLARITY_ENV_ID = credentials('gtri-clarity-env-id')
-      GTRI_HDAP_ENV_ID = credentials('gtri-hdap-env-id')
+      GTRI_HDAP_ENV_ID = credentials('hdap-aws-rancher-env')
     }
 
     stages{
@@ -24,10 +23,7 @@ pipeline{
         stage('Notify'){
             steps{
                 script{
-                    //deploy to GTRI Clarity
-                    // rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_CLARITY_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/clarity-paas:latest", ports: '', service: 'ClarityNLP/paas', timeout: 600
-                    //deploy to GTRI HDAP
-                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/clarity-paas:latest", ports: '', service: 'ClarityNLP/paas', timeout: 600
+                     rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/clarity-paas:latest", ports: '', service: 'ClarityNLP-PaaS/paas', timeout: 600
                 }
             }
         }
