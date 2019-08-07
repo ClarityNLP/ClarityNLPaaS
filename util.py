@@ -67,6 +67,7 @@ fhir_terminology_user_name = read_property('FHIR_TERMINOLOGY_USER_NAME',
 fhir_terminology_user_password = read_property('FHIR_TERMINOLOGY_USER_PASSWORD',
                                                ('fhir', 'fhir_terminology_user_password'))
 
+
 def app_token():
     if not claritynlp_clientsecret or len(claritynlp_clientsecret.strip()) == 0:
         return None, requests

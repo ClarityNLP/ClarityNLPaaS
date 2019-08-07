@@ -1,19 +1,20 @@
-import json
-import os
-import time
-import uuid
 import base64
 import datetime
-import dateparser
-import tempfile
-import PyPDF2
+import json
+import os
 import re
+import tempfile
+import time
+import traceback
+import uuid
 
-import util
+import PyPDF2
+import dateparser
 import requests
 from bson.json_util import dumps
 from flask import Response
-import traceback
+
+import util
 
 
 def get_document_set(source):
@@ -35,22 +36,56 @@ def get_document_set(source):
 
 
 def get_headers(token):
-    headers = {
-        'Content-type': 'application/json',
-        'Authorization': '{} {}'.format(token['token_type'], token['access_token'])
-    }
+    if not token:
+        headers = {
+            'Content-type': 'application/json'
+        }
+    else:
+        headers = {
+            'Content-type': 'application/json',
+            'Authorization': '{} {}'.format(token['token_type'], token['access_token'])
+        }
     print(json.dumps(headers, indent=4))
     return headers
 
 
-def upload_reports(data):
+def get_pdf(url, headers):
+    txt = ''
+    response = requests.get(url, headers=headers)
+
+    raw_data = response.content
+    new_file, file_name = tempfile.mkstemp()
+    os.write(new_file, raw_data)
+    os.close(new_file)
+
+    pdf_file = open(file_name, 'rb')
+    pdf_reader = PyPDF2.PdfFileReader(pdf_file)
+    num_pages = pdf_reader.getNumPages()
+
+    for page_num in range(num_pages):
+        if pdf_reader.isEncrypted:
+            pdf_reader.decrypt("")
+            page_text = pdf_reader.getPage(page_num).extractText()
+            txt += page_text
+            txt += '\n'
+        else:
+            page_text = pdf_reader.getPage(page_num).extractText()
+            txt += page_text
+            txt += '\n'
+    # TODO base64 encoded PDF
+
+    os.remove(file_name)
+    return txt
+
+
+def upload_reports(data, access_token=None):
     """
     Uploading reports with unique source
     """
-    
+
     url = util.solr_url + 'update?commit=true'
     print('URL from upload_reports: "{0}"'.format(url))
-    
+
     # Generating a source_id
     rand_uuid = uuid.uuid1()
     source_id = str(rand_uuid)
@@ -76,6 +111,11 @@ def upload_reports(data):
             json_body["report_text"] = report
         else:
             resource_type = ''
+            if 'resource' in report:
+                report_resource = report.get('resource')
+                report_resource['fullUrl'] = report.get('fullUrl')
+                report = report_resource
+
             if 'resourceType' in report:
                 resource_type = report['resourceType']
 
@@ -114,14 +154,7 @@ def upload_reports(data):
             if resource_type == 'DocumentReference' or resource_type == 'DiagnosticReport':
                 fhir_resource = True
                 txt = ''
-                if resource_type == 'DiagnosticReport':
-                    if 'text' in report:
-                        diagnostic_report = report['text']
-                        if 'div' in diagnostic_report:
-                            clean_txt = re.sub('<[^<]+?>', '', diagnostic_report['div'])
-                            txt += clean_txt
-                            txt += '\n'
-                elif resource_type == 'DocumentReference' and 'content' in report:
+                if 'content' in report:
                     for c in report['content']:
                         if 'attachment' in c:
                             if 'contentType' in c['attachment']:
@@ -129,30 +162,13 @@ def upload_reports(data):
                                 if content_type == 'application/pdf':
                                     if 'url' in c['attachment']:
                                         url = c['attachment']['url']
-                                        response = requests.get(url)
-                                        raw_data = response.content
-
-                                        with open(tempfile.NamedTemporaryFile(), 'wb') as temp_file:
-                                            temp_file.write(raw_data)
-
-                                        file_name = temp_file.name
-                                        pdf_file = open(file_name, 'rb')
-                                        pdf_reader = PyPDF2.PdfFileReader(pdf_file)
-                                        num_pages = pdf_reader.getNumPages()
-
-                                        for page_num in range(num_pages):
-                                            if pdf_reader.isEncrypted:
-                                                pdf_reader.decrypt("")
-                                                page_text = pdf_reader.getPage(page_num).extractText()
-                                                txt += page_text
-                                                txt += '\n'
-                                            else:
-                                                page_text = pdf_reader.getPage(page_num).extractText()
-                                                txt += page_text
-                                                txt += '\n'
-                                        # TODO base64 encoded PDF
-
-                                        os.remove(file_name)
+                                        headers = None
+                                        if access_token:
+                                            headers = {
+                                                'Content-type': "application/pdf",
+                                                'Authorization': 'Bearer {}'.format(access_token)
+                                            }
+                                        txt = get_pdf(url, headers)
                                 elif 'xml' in content_type or 'html' in content_type:
                                     if 'data' in c['attachment']:
                                         clean_txt = re.sub('<[^<]+?>', '', c['attachment']['data'])
@@ -171,6 +187,7 @@ def upload_reports(data):
         report_list.append(report_id)
         nlpaas_id += 1
 
+    print('{} total documents'.format(len(payload)))
     token, oauth = util.app_token()
     response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4))
     if response.status_code == 200:
@@ -232,7 +249,7 @@ def submit_job(nlpql_json):
 
     url = util.claritynlp_url + 'phenotype'
     print('URL from submit_job: "{0}"'.format(url))
-    
+
     phenotype_string = json.dumps(nlpql_json)
     print("")
     print(phenotype_string)
@@ -350,17 +367,18 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
     # Checking if it is a dev box
     status = "status/%s" % job_id
     url = util.claritynlp_url + status
-    print('URL from get_results: "{0}"'.format(url))    
-    
+    print('URL from get_results: "{0}"'.format(url))
+
     # Polling for job completion
     while True:
         token, oauth = util.app_token()
         r = oauth.get(url)
 
         if r.status_code != 200:
-            return Response(json.dumps({'message': 'Could not query job status from NLP API. Reason: ' + r.reason}, indent=4),
-                            status=500,
-                            mimetype='application/json'), False
+            return Response(
+                json.dumps({'message': 'Could not query job status from NLP API. Reason: ' + r.reason}, indent=4),
+                status=500,
+                mimetype='application/json'), False
 
         try:
             status = r.json()["status"]
@@ -416,20 +434,20 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
                 # 3) Result objects obtained from FHIR server via CQL call
                 #        CQLExecutionTask returns this data
                 #        No underlying source document at all, so no report_text
-                
+
                 pipeline_type = r['pipeline_type'].lower()
                 if 'cqlexecutiontask' == pipeline_type and 'fhir' == source.lower():
                     # no source docs, data obtained via CQL query
                     r['report_text'] = ''
                     final_list.append(r)
                     continue
-                    
+
                 if len(report_ids) > 0 and report_id not in report_ids:
                     continue
 
                 # compute the doc_index encoded in the source field
                 doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
-                
+
                 if len(source_data) > 0 and doc_index < len(source_data):
                     source_doc = source_data[doc_index]
                     r['report_text'] = source_doc['report_text']
@@ -506,10 +524,70 @@ def worker(job_file_path, data, synchronous=True):
     Main worker function
     """
     start = time.time()
-    if 'reports' not in data or len(data['reports']) == 0:
+    if 'reports' not in data or not data['reports'] or len(data['reports']) == 0:
         return Response(json.dumps({'message': 'No reports passed into service.'}, indent=4),
                         status=500,
                         mimetype='application/json')
+    # check for fhir
+    fhir_data_service_uri = ''
+    fhir_auth_type = ''
+    fhir_auth_token = ''
+    fhir_auth_id_token = ''
+    fhir_auth_patient = ''
+    fhir_auth_expires_in = -1
+    fhir_auth_scope = ''
+    fhir_client_id = ''
+    fhir_scope = ''
+    fhir_redirect_uri = ''
+    fhir_key = ''
+    fhir_registration_uri = ''
+    fhir_authorize_uri = ''
+    fhir_token_uri = ''
+    patient_id = -1
+    encounter_id = -1
+    if 'fhir' in data:
+        fhir = data['fhir']
+        if 'state' in fhir:
+            fhir_state = fhir.get('state')
+            fhir_client_id = fhir_state.get('clientId')
+            fhir_scope = fhir_state.get('scope')
+            fhir_data_service_uri = fhir_state.get('serverUrl')
+            fhir_redirect_uri = fhir_state.get('redirectUri')
+            if 'tokenResponse' in fhir_state:
+                token_response = fhir_state['tokenResponse']
+                fhir_auth_token = token_response.get('access_token')
+                fhir_auth_patient = token_response.get('patient')
+                fhir_auth_scope = token_response.get('scope')
+                fhir_auth_id_token = token_response.get('id_token')
+                fhir_auth_type = token_response.get('token_type')
+                fhir_auth_expires_in = token_response.get('expires_in')
+            fhir_key = fhir_state.get('key')
+            fhir_registration_uri = fhir_state.get('registrationUri')
+            fhir_authorize_uri = fhir_state.get('authorizeUri')
+            fhir_token_uri = fhir_state.get('tokenUri')
+        else:
+            fhir_data_service_uri = fhir.get('serviceUrl')
+
+            if 'auth' in fhir:
+                auth = fhir['auth']
+                if 'type' in auth:
+                    fhir_auth_type = auth['type']
+                if 'token' in auth:
+                    fhir_auth_token = auth['token']
+
+    if 'patient' in data:
+        patient = data['patient']
+        if 'id' in patient:
+            patient_id = patient['id']
+    elif 'patient_id' in data:
+        patient_id = data['patient_id']
+
+    if 'encounter' in data:
+        encounter = data['encounter']
+        if 'id' in encounter:
+            encounter_id = encounter['id']
+    elif 'encounter_id' in data:
+        encounter_id = data['encounter_id']
 
     # Checking for active Job
     if has_active_job(data):
@@ -518,7 +596,7 @@ def worker(job_file_path, data, synchronous=True):
             status=200, mimetype='application/json')
 
     # Uploading report to Solr
-    status, source_id, report_ids, is_fhir_resource, report_payload = upload_reports(data)
+    status, source_id, report_ids, is_fhir_resource, report_payload = upload_reports(data, access_token=fhir_auth_token)
     if not status:
         return Response(json.dumps({'message': 'Could not upload reports to Solr. Reason: ' + source_id}, indent=4),
                         status=500,
@@ -537,33 +615,32 @@ def worker(job_file_path, data, synchronous=True):
 
     docs = ["Docs"]
     data_entities = nlpql_json['data_entities']
-    fhir_data_service_uri = ''
-    fhir_auth_type = ''
-    fhir_auth_token = ''
-    patient_id = -1
-    if 'fhir' in data:
-        fhir = data['fhir']
-        if 'serviceUrl' in fhir:
-            fhir_data_service_uri = fhir['serviceUrl']
-        if 'auth' in fhir:
-            auth = fhir['auth']
-            if 'type' in auth:
-                fhir_auth_type = auth['type']
-            if 'token' in auth:
-                fhir_auth_token = auth['token']
-    if 'patient_id' in data:
-        patient_id = data['patient_id']
+
     for de in data_entities:
-        de['named_arguments']['documentset']                       = docs
-        de['named_arguments']['cql_eval_url']                      = util.cql_eval_url
-        de['named_arguments']['patient_id']                        = patient_id
-        de['named_arguments']['fhir_data_service_uri']             = fhir_data_service_uri
-        de['named_arguments']['fhir_auth_type']                    = fhir_auth_type
-        de['named_arguments']['fhir_auth_token']                   = fhir_auth_token
-        de['named_arguments']['fhir_terminology_service_uri']      = util.fhir_terminology_service_uri
+        de['named_arguments']['documentset'] = docs
+        de['named_arguments']['cql_eval_url'] = util.cql_eval_url
+        de['named_arguments']['patient_id'] = patient_id
+        de['named_arguments']['encounter_id'] = encounter_id
+        de['named_arguments']['fhir_data_service_uri'] = fhir_data_service_uri
+        de['named_arguments']['fhir_auth_type'] = fhir_auth_type
+        de['named_arguments']['fhir_auth_token'] = fhir_auth_token
+        de['named_arguments']['fhir_terminology_service_uri'] = util.fhir_terminology_service_uri
         de['named_arguments']['fhir_terminology_service_endpoint'] = util.fhir_terminology_service_endpoint
-        de['named_arguments']['fhir_terminology_user_name']        = util.fhir_terminology_user_name
-        de['named_arguments']['fhir_terminology_user_password']    = util.fhir_terminology_user_password
+        de['named_arguments']['fhir_terminology_user_name'] = util.fhir_terminology_user_name
+        de['named_arguments']['fhir_terminology_user_password'] = util.fhir_terminology_user_password
+
+        de['named_arguments']['fhir_auth_id_token'] = fhir_auth_id_token
+        de['named_arguments']['fhir_auth_patient'] = fhir_auth_patient
+        de['named_arguments']['fhir_auth_expires_in'] = fhir_auth_expires_in
+        de['named_arguments']['fhir_auth_scope'] = fhir_auth_scope
+        de['named_arguments']['fhir_client_id'] = fhir_client_id
+        de['named_arguments']['fhir_scope'] = fhir_scope
+        de['named_arguments']['fhir_redirect_uri'] = fhir_redirect_uri
+        de['named_arguments']['fhir_key'] = fhir_key
+        de['named_arguments']['fhir_registration_uri'] = fhir_registration_uri
+        de['named_arguments']['fhir_authorize_uri'] = fhir_authorize_uri
+        de['named_arguments']['fhir_token_uri'] = fhir_token_uri
+
     nlpql_json['data_entities'] = data_entities
 
     # Submitting the job
@@ -588,9 +665,10 @@ def worker(job_file_path, data, synchronous=True):
     # Deleting uploaded documents
     delete_obj = delete_report(source_id)
     if not delete_obj[0]:
-        return Response(json.dumps({'message': 'Could not delete reports from Solr. Reason: ' + delete_obj[1]}, indent=4),
-                        status=500,
-                        mimetype='application/json')
+        return Response(
+            json.dumps({'message': 'Could not delete reports from Solr. Reason: ' + delete_obj[1]}, indent=4),
+            status=500,
+            mimetype='application/json')
 
     print("\n\nRun Time = %s \n\n" % (time.time() - start))
     return Response(clean_output(results, report_list=report_payload), status=200, mimetype='application/json')
@@ -619,12 +697,19 @@ def async_results(job_id, source_id):
         # Deleting uploaded documents
         delete_obj = delete_report(source_id)
         if not delete_obj[0]:
-            return Response(json.dumps({'message': 'Could not delete reports from Solr. Reason: ' + delete_obj[1]}, indent=4),
-                            status=500,
-                            mimetype='application/json')
+            return Response(
+                json.dumps({'message': 'Could not delete reports from Solr. Reason: ' + delete_obj[1]}, indent=4),
+                status=500,
+                mimetype='application/json')
 
         print("\n\nRun Time = %s \n\n" % (time.time() - start))
         return Response(clean_output(results, report_list=reports), status=200, mimetype='application/json')
     else:
         return Response(results, status=200, mimetype='application/json')
 
+
+if __name__ == '__main__':
+    headers = None
+    url = 'https://www.cdc.gov/about/pdf/facts/cdcfastfacts/cdcfastfacts.pdf'
+    text = get_pdf(url, headers)
+    print(text)
