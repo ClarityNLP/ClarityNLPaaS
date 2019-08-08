@@ -52,28 +52,30 @@ def get_headers(token):
 def get_pdf(url, headers):
     txt = ''
     response = requests.get(url, headers=headers)
+    print(response.status_code, response.reason)
 
     raw_data = response.content
     new_file, file_name = tempfile.mkstemp()
     os.write(new_file, raw_data)
     os.close(new_file)
 
-    pdf_file = open(file_name, 'rb')
-    pdf_reader = PyPDF2.PdfFileReader(pdf_file)
-    num_pages = pdf_reader.getNumPages()
+    with open(file_name, 'rb') as pdf_file:
+        try:
+            pdf_reader = PyPDF2.PdfFileReader(pdf_file)
+            num_pages = pdf_reader.getNumPages()
 
-    for page_num in range(num_pages):
-        if pdf_reader.isEncrypted:
-            pdf_reader.decrypt("")
-            page_text = pdf_reader.getPage(page_num).extractText()
-            txt += page_text
-            txt += '\n'
-        else:
-            page_text = pdf_reader.getPage(page_num).extractText()
-            txt += page_text
-            txt += '\n'
-    # TODO base64 encoded PDF
-
+            for page_num in range(num_pages):
+                if pdf_reader.isEncrypted:
+                    pdf_reader.decrypt("")
+                    page_text = pdf_reader.getPage(page_num).extractText()
+                    txt += page_text
+                    txt += '\n'
+                else:
+                    page_text = pdf_reader.getPage(page_num).extractText()
+                    txt += page_text
+                    txt += '\n'
+        except Exception as ex1:
+            print(ex1)
     os.remove(file_name)
     return txt
 
@@ -183,9 +185,10 @@ def upload_reports(data, access_token=None):
                 json_body["report_text"] = txt
             else:
                 json_body["report_text"] = str(report)
-        payload.append(json_body)
-        report_list.append(report_id)
-        nlpaas_id += 1
+        if len(json_body["report_text"]) > 0:
+            payload.append(json_body)
+            report_list.append(report_id)
+            nlpaas_id += 1
 
     print('{} total documents'.format(len(payload)))
     token, oauth = util.app_token()
