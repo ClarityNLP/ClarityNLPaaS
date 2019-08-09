@@ -44,11 +44,22 @@ def hello():
     return "Welcome to ClarityNLPaaS."
 
 
+def get_host(r):
+    print(request.headers)
+    if r.is_secure:
+        return 'https://{0}/'.format(r.host)
+    else:
+        return 'http://{0}/'.format(r.host)
+
+
 @app.route("/job/<job_category>/<job_subcategory>/<job_name>", methods=['POST', 'GET'])
 def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_name: str):
     """
     API for triggering jobs
     """
+    h = get_host(request)
+    print(h)
+
     try:
         async_job = request.args.get('async') == 'true'
     except:
@@ -76,6 +87,9 @@ def submit_job_with_category(job_category: str, job_name: str):
     """
     API for triggering jobs
     """
+    h = get_host(request)
+    print(h)
+
     try:
         async_arg = request.args.get('async').lower()
         async_job = async_arg == 'true' or async_arg == 't' or async_arg == '1'
@@ -104,6 +118,9 @@ def submit_job(job_type: str):
     """
     API for triggering jobs
     """
+    h = get_host(request)
+    print(h)
+
     job_type = job_type.replace('~', '/')
     job_file_path = "./nlpql/" + job_type + ".nlpql"
     valid = valid_job(job_type)

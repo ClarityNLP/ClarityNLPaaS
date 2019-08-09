@@ -52,7 +52,17 @@ def get_headers(token):
 def get_pdf(url, headers):
     txt = ''
     response = requests.get(url, headers=headers)
+    if not headers:
+        headers = {}
+    headers['Authorization'] = 'hidden'
+    print(url, headers)
     print(response.status_code, response.reason)
+
+    if response.status_code != 200:
+        print(response.content)
+        return ''
+    else:
+        print('SUCCESS get_pdf')
 
     raw_data = response.content
     new_file, file_name = tempfile.mkstemp()
@@ -163,14 +173,26 @@ def upload_reports(data, access_token=None):
                                 content_type = c['attachment']['contentType']
                                 if content_type == 'application/pdf':
                                     if 'url' in c['attachment']:
-                                        url = c['attachment']['url']
-                                        headers = None
-                                        if access_token:
-                                            headers = {
-                                                'Content-type': "application/pdf",
-                                                'Authorization': 'Bearer {}'.format(access_token)
-                                            }
-                                        txt = get_pdf(url, headers)
+                                        url = c['attachment'].get('url')
+                                        ct = c['attachment'].get('contentType')
+                                        types = [ct]
+                                        # 'application/json+fhir', 'application/json', 'application/fhir+json',
+                                        #          'application/pdf', 'application/xml', 'text/plain',
+                                        #          'application/octet-stream',
+                                        #          'application/xhtml+xml', 'text/html']
+                                        txt = ''
+                                        for t in list(set(types)):
+                                            if txt == '':
+                                                if access_token:
+                                                    headers = {
+                                                        'Accept': t,
+                                                        'Authorization': 'Bearer {}'.format(access_token)
+                                                    }
+                                                else:
+                                                    headers = {
+                                                        'Accept': t
+                                                    }
+                                                txt = get_pdf(url, headers)
                                 elif 'xml' in content_type or 'html' in content_type:
                                     if 'data' in c['attachment']:
                                         clean_txt = re.sub('<[^<]+?>', '', c['attachment']['data'])
