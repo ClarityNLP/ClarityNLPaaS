@@ -19,3 +19,4 @@ Werkzeug==0.14.1
 dateparser==0.7.1
 requests_oauthlib
 PyPDF2==1.26.0
+tika==1.19

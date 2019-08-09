@@ -8,11 +8,12 @@ import time
 import traceback
 import uuid
 
-import PyPDF2
 import dateparser
 import requests
 from bson.json_util import dumps
 from flask import Response
+from tika import parser
+from string import printable
 
 import util
 
@@ -49,7 +50,7 @@ def get_headers(token):
     return headers
 
 
-def get_pdf(url, headers):
+def get_text(url, headers=None, key=None, base64_encoded=True):
     txt = ''
     response = requests.get(url, headers=headers)
     if not headers:
@@ -62,28 +63,34 @@ def get_pdf(url, headers):
         print(response.content)
         return ''
     else:
-        print('SUCCESS get_pdf')
+        print('SUCCESS get_text')
 
-    raw_data = response.content
+    if key:
+        raw_data_json = response.json()
+        raw_data = raw_data_json[key]
+    else:
+        raw_data = response.content
+
+    if base64_encoded:
+        raw_data = base64.b64decode(raw_data)
+
     new_file, file_name = tempfile.mkstemp()
     os.write(new_file, raw_data)
     os.close(new_file)
 
-    with open(file_name, 'rb') as pdf_file:
+    with open(file_name, 'rb'):
         try:
-            pdf_reader = PyPDF2.PdfFileReader(pdf_file)
-            num_pages = pdf_reader.getNumPages()
+            content = parser.from_file(file_name)
+            if 'content' in content:
+                t = content['content']
+            else:
+                print('No content from file {}'.format(file_name))
+                return ''
+            safe_text = str(t)
+            safe_text = safe_text.encode('utf-8', errors='ignore')
+            safe_text = safe_text.decode("utf-8")
+            txt = ''.join(char for char in safe_text if char in printable)
 
-            for page_num in range(num_pages):
-                if pdf_reader.isEncrypted:
-                    pdf_reader.decrypt("")
-                    page_text = pdf_reader.getPage(page_num).extractText()
-                    txt += page_text
-                    txt += '\n'
-                else:
-                    page_text = pdf_reader.getPage(page_num).extractText()
-                    txt += page_text
-                    txt += '\n'
         except Exception as ex1:
             print(ex1)
     os.remove(file_name)
@@ -175,8 +182,9 @@ def upload_reports(data, access_token=None):
                                     if 'url' in c['attachment']:
                                         url = c['attachment'].get('url')
                                         ct = c['attachment'].get('contentType')
-                                        types = [ct]
-                                        # 'application/json+fhir', 'application/json', 'application/fhir+json',
+                                        types = [ct, 'application/json+fhir', 'application/fhir+json',
+                                                 'application/json']
+                                        # , ,
                                         #          'application/pdf', 'application/xml', 'text/plain',
                                         #          'application/octet-stream',
                                         #          'application/xhtml+xml', 'text/html']
@@ -192,7 +200,10 @@ def upload_reports(data, access_token=None):
                                                     headers = {
                                                         'Accept': t
                                                     }
-                                                txt = get_pdf(url, headers)
+                                                if 'json' in t:
+                                                    txt = get_text(url, headers, key='content')
+                                                else:
+                                                    txt = get_text(url, headers)
                                 elif 'xml' in content_type or 'html' in content_type:
                                     if 'data' in c['attachment']:
                                         clean_txt = re.sub('<[^<]+?>', '', c['attachment']['data'])
@@ -734,7 +745,11 @@ def async_results(job_id, source_id):
 
 
 if __name__ == '__main__':
-    headers = None
-    url = 'https://www.cdc.gov/about/pdf/facts/cdcfastfacts/cdcfastfacts.pdf'
-    text = get_pdf(url, headers)
-    print(text)
+    y = 'https://www.cdc.gov/about/pdf/facts/cdcfastfacts/cdcfastfacts.pdf'
+    print(get_text(y, base64_encoded=False))
+
+    h = {
+        'Accept': 'application/json+fhir'
+    }
+    u = 'https://fhir-open.sandboxcerner.com/dstu2/0b8a0111-e8e6-4c26-a91c-5069cbc6b1ca/Binary/TR-5927259'
+    print(get_text(u, h, key="content"))
