@@ -11,7 +11,7 @@ pipeline{
     }
 
     stages{
-      stage('Building images') {
+      stage('Building image') {
         steps{
           script {
             paasImage = docker.build("claritynlp/clarity-paas:1.0", ".")
@@ -36,12 +36,12 @@ pipeline{
           }
         }
       }
-      // stage('Notify orchestrator'){
-      //   steps{
-      //     script{
-      //       rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/clarity-paas:latest", ports: '', service: 'ClarityNLP-PaaS/paas', timeout: 600
-      //     }
-      //   }
-      // }
+      stage('Notify orchestrator'){
+        steps{
+          script{
+            rancher confirm: true, credentialId: 'gt-rancher-server', endpoint: "${GTRI_RANCHER_API_ENDPOINT}", environmentId: "${GTRI_HDAP_ENV_ID}", environments: '', image: "${GTRI_IMAGE_REGISTRY}/claritynlp/clarity-paas:latest", ports: '', service: 'ClarityNLP-PaaS/paas', timeout: 600
+          }
+        }
+      }
     }
 }
