@@ -14,7 +14,7 @@ pipeline{
       stage('Building images') {
         steps{
           script {
-            paasImage = docker.build("clarity-paas:1.0", ".")
+            paasImage = docker.build("claritynlp/clarity-paas:1.0", ".")
           }
         }
       }
