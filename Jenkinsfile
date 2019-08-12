@@ -31,7 +31,7 @@ pipeline{
         steps{
           script{
             docker.withRegistry('', CLARITYNLP_DOCKERHUB_CREDS){
-              paas.push("latest")
+              paasImage.push("latest")
             }
           }
         }
