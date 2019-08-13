@@ -7,13 +7,13 @@ import tempfile
 import time
 import traceback
 import uuid
+from string import printable
 
 import dateparser
 import requests
 from bson.json_util import dumps
 from flask import Response
 from tika import parser
-from string import printable
 
 import util
 
@@ -182,12 +182,13 @@ def upload_reports(data, access_token=None):
                                     if 'url' in c['attachment']:
                                         url = c['attachment'].get('url')
                                         ct = c['attachment'].get('contentType')
-                                        types = [ct, 'application/json+fhir', 'application/fhir+json',
-                                                 'application/json']
+                                        # types = [ct, 'application/json+fhir', 'application/fhir+json',
+                                        #          'application/json']
                                         # , ,
                                         #          'application/pdf', 'application/xml', 'text/plain',
                                         #          'application/octet-stream',
                                         #          'application/xhtml+xml', 'text/html']
+                                        types = ['application/json+fhir', ct]
                                         txt = ''
                                         for t in list(set(types)):
                                             if txt == '':
@@ -224,12 +225,15 @@ def upload_reports(data, access_token=None):
             nlpaas_id += 1
 
     print('{} total documents'.format(len(payload)))
-    token, oauth = util.app_token()
-    response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4))
-    if response.status_code == 200:
-        return True, source_id, report_list, fhir_resource, payload
+    if len(payload) > 0:
+        token, oauth = util.app_token()
+        response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4))
+        if response.status_code == 200:
+            return True, source_id, report_list, fhir_resource, payload
+        else:
+            return False, response.reason, report_list, fhir_resource, payload
     else:
-        return False, response.reason, report_list, fhir_resource, payload
+        return False, "All documents were empty or invalid, or no documents were passed in.", report_list, fhir_resource, payload
 
 
 def delete_report(source_id):
@@ -560,10 +564,6 @@ def worker(job_file_path, data, synchronous=True):
     Main worker function
     """
     start = time.time()
-    if 'reports' not in data or not data['reports'] or len(data['reports']) == 0:
-        return Response(json.dumps({'message': 'No reports passed into service.'}, indent=4),
-                        status=500,
-                        mimetype='application/json')
     # check for fhir
     fhir_data_service_uri = ''
     fhir_auth_type = ''
@@ -610,6 +610,19 @@ def worker(job_file_path, data, synchronous=True):
                     fhir_auth_type = auth['type']
                 if 'token' in auth:
                     fhir_auth_token = auth['token']
+        if 'patient' in fhir:
+            patient = fhir['patient']
+            if 'id' in patient:
+                patient_id = patient['id']
+        elif 'patient_id' in fhir:
+            patient_id = fhir['patient_id']
+
+        if 'encounter' in fhir:
+            encounter = fhir['encounter']
+            if 'id' in encounter:
+                encounter_id = encounter['id']
+        elif 'encounter_id' in fhir:
+            encounter_id = fhir['encounter_id']
 
     if 'patient' in data:
         patient = data['patient']
@@ -625,6 +638,12 @@ def worker(job_file_path, data, synchronous=True):
     elif 'encounter_id' in data:
         encounter_id = data['encounter_id']
 
+    print('Patient {}'.format(patient_id))
+    if patient_id == -1 and ('reports' not in data or not data['reports'] or len(data['reports']) == 0):
+        return Response(json.dumps({'message': 'No reports passed into service.'}, indent=4),
+                        status=500,
+                        mimetype='application/json')
+
     # Checking for active Job
     if has_active_job(data):
         return Response(
@@ -634,9 +653,10 @@ def worker(job_file_path, data, synchronous=True):
     # Uploading report to Solr
     status, source_id, report_ids, is_fhir_resource, report_payload = upload_reports(data, access_token=fhir_auth_token)
     if not status:
-        return Response(json.dumps({'message': 'Could not upload reports to Solr. Reason: ' + source_id}, indent=4),
-                        status=500,
-                        mimetype='application/json')
+        if patient_id == -1:
+            return Response(json.dumps({'message': 'Could not upload reports to Solr. Reason: ' + source_id}, indent=4),
+                            status=500,
+                            mimetype='application/json')
 
     # Getting the nlpql from disk
     nlpql = get_nlpql(job_file_path)
