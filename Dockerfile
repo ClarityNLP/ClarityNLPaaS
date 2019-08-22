@@ -25,6 +25,6 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-RUN chmod +x load_nlpql.sh
+RUN chmod +x load_nlpql.sh wait-for-it-extra.sh
 
 CMD ["/api/load_nlpql.sh", "python3", "app.py"]
