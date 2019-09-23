@@ -394,7 +394,7 @@ def has_active_job(data):
     return False
 
 
-def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_complete=False):
+def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_complete=False, patient_id=-1):
     """
     Reading Results from Mongo
     TODO use API endpoing
@@ -486,9 +486,15 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
                     continue
 
                 # compute the doc_index encoded in the source field
-                doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
+                try:
+                    doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
+                except ValueError as ve:
+                    doc_index = -1
+                    print(ve)
 
-                if len(source_data) > 0 and doc_index < len(source_data):
+                if doc_index == -1 and patient_id != -1:
+                    r['report_text'] = ''
+                elif len(source_data) > 0 and doc_index < len(source_data):
                     source_doc = source_data[doc_index]
                     r['report_text'] = source_doc['report_text']
                 else:
@@ -716,7 +722,7 @@ def worker(job_file_path, data, synchronous=True):
     # Getting the results of the Job
     job_id = int(job_info['job_id'])
     print("\n\njob_id = " + str(job_id))
-    results, got_results = get_results(job_id, source_data=report_payload, report_ids=report_ids)
+    results, got_results = get_results(job_id, source_data=report_payload, report_ids=report_ids, patient_id=patient_id)
 
     # Deleting uploaded documents
     delete_obj = delete_report(source_id)
