@@ -287,7 +287,7 @@ def submit_job(nlpql_json):
     Submitting ClarityNLP job
     """
 
-    url = util.claritynlp_url + 'phenotype'
+    url = util.claritynlp_url + 'phenotype?background=false'
     print('URL from submit_job: "{0}"'.format(url))
 
     phenotype_string = json.dumps(nlpql_json)
