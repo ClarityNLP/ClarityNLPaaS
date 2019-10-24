@@ -14,8 +14,74 @@ import requests
 from bson.json_util import dumps
 from flask import Response
 from tika import parser
+from time import strftime, localtime
+from os import environ
+import logging
+
+import sys
 
 import util
+
+DEBUG = "DEBUG"
+INFO = "INFO"
+WARNING = "WARNING"
+ERROR = "ERROR"
+CRITICAL = "CRITICAL"
+logger = None
+
+
+def set_logger(l):
+    global logger
+    logger = l
+
+    use_gunicorn_logger = environ.get('USE_GUNICORN', "false")
+    if l and use_gunicorn_logger == "true":
+        gunicorn_logger = logging.getLogger("gunicorn.error")
+        logger.handlers = gunicorn_logger.handlers
+        logger.setLevel(gunicorn_logger.level)
+
+
+def log(obj=None, level=INFO, file=sys.stdout):
+    if not obj:
+        obj = ''
+
+    if isinstance(obj, Exception):
+        log("EXCEPTION: {}".format(repr(obj), level=ERROR))
+        for t in traceback.format_tb(obj.__traceback__):
+            lines = t.split('\n')
+            for l in lines:
+                if l.strip() == '':
+                    continue
+                log("     {}".format(l), level=ERROR)
+        return
+
+    repr_obj = repr(obj)
+    if '\n' in repr_obj:
+        for l in repr_obj.split('\n'):
+            log(l, level=level)
+        return
+
+    if level == ERROR or level == CRITICAL:
+        if file == sys.stdout:
+            file = sys.stderr
+    global logger
+
+    if logger:
+        message = repr_obj
+        if level == DEBUG:
+            logger.debug(message)
+        elif level == WARNING:
+            logger.warning(message)
+        elif level == ERROR:
+            logger.error(message)
+        elif level == CRITICAL:
+            logger.critical(message)
+        else:
+            logger.info(message)
+    else:
+        message = repr_obj
+        the_time = strftime("%Y-%m-%d %H:%M:%S-%Z", localtime())
+        print("[{}] {} in worker: {}".format(the_time, level, message), file=file)
 
 
 def get_document_set(source):
@@ -46,7 +112,7 @@ def get_headers(token):
             'Content-type': 'application/json',
             'Authorization': '{} {}'.format(token['token_type'], token['access_token'])
         }
-    print(json.dumps(headers, indent=4))
+    # log(json.dumps(headers, indent=4))
     return headers
 
 
@@ -56,14 +122,14 @@ def get_text(url, headers=None, key=None, base64_encoded=True):
     if not headers:
         headers = {}
     headers['Authorization'] = 'hidden'
-    print(url, headers)
-    print(response.status_code, response.reason)
+    # log(url, headers)
+    log(response.status_code, response.reason)
 
     if response.status_code != 200:
-        print(response.content)
+        log(response.content)
         return ''
     else:
-        print('SUCCESS get_text')
+        log('SUCCESS get_text')
 
     if key:
         raw_data_json = response.json()
@@ -84,7 +150,7 @@ def get_text(url, headers=None, key=None, base64_encoded=True):
             if 'content' in content:
                 t = content['content']
             else:
-                print('No content from file {}'.format(file_name))
+                log('No content from file {}'.format(file_name))
                 return ''
             safe_text = str(t)
             safe_text = safe_text.encode('utf-8', errors='ignore')
@@ -92,7 +158,7 @@ def get_text(url, headers=None, key=None, base64_encoded=True):
             txt = ''.join(char for char in safe_text if char in printable)
 
         except Exception as ex1:
-            print(ex1)
+            log(ex1)
     os.remove(file_name)
     return txt
 
@@ -103,7 +169,7 @@ def upload_reports(data, access_token=None):
     """
 
     url = util.solr_url + 'update?commit=true'
-    print('URL from upload_reports: "{0}"'.format(url))
+    log('URL from upload_reports: "{0}"'.format(url))
 
     # Generating a source_id
     rand_uuid = uuid.uuid1()
@@ -224,7 +290,7 @@ def upload_reports(data, access_token=None):
             report_list.append(report_id)
             nlpaas_id += 1
 
-    print('{} total documents'.format(len(payload)))
+    log('{} total documents'.format(len(payload)))
     if len(payload) > 0:
         token, oauth = util.app_token()
         response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4))
@@ -241,7 +307,7 @@ def delete_report(source_id):
     Deleting reports based on generated source
     """
     url = util.solr_url + 'update?commit=true'
-    print('URL from delete_report: "{0}"'.format(url))
+    log('URL from delete_report: "{0}"'.format(url))
 
     data = '<delete><query>source:%s</query></delete>' % source_id
 
@@ -288,12 +354,12 @@ def submit_job(nlpql_json):
     """
 
     url = util.claritynlp_url + 'phenotype?background=false'
-    print('URL from submit_job: "{0}"'.format(url))
+    log('URL from submit_job: "{0}"'.format(url))
 
     phenotype_string = json.dumps(nlpql_json)
-    print("")
-    print(phenotype_string)
-    print("")
+    log("")
+    log(phenotype_string)
+    log("")
 
     token, oauth = util.app_token()
     response = requests.post(url, headers=get_headers(token), data=phenotype_string)
@@ -301,14 +367,14 @@ def submit_job(nlpql_json):
         data = response.json()
         if 'success' in data:
             if not data['success']:
-                print(data['error'])
+                log(data['error'])
                 return False, data['error']
-        print("\n\nJob Response:\n")
-        print(data)
+        log("\n\nJob Response:\n")
+        log(data)
         return True, data
     else:
-        print(response.status_code)
-        print(response.reason)
+        log(response.status_code)
+        log(response.reason)
         return False, response.reason
 
 
@@ -318,7 +384,7 @@ def submit_test(nlpql):
     """
 
     url = util.claritynlp_url + 'nlpql_tester'
-    print('URL from submit_test: "{0}"'.format(url))
+    log('URL from submit_test: "{0}"'.format(url))
 
     token, oauth = util.app_token()
     response = requests.post(url, headers=get_headers(token), data=nlpql)
@@ -326,18 +392,18 @@ def submit_test(nlpql):
         data = response.json()
         if 'success' in data:
             if not data['success']:
-                print(data['error'])
+                log(data['error'])
                 return False, data['error']
         if 'valid' in data:
             if not data['valid']:
-                print(data['valid'])
+                log(data['valid'])
                 return False, data['valid']
-        print("\n\nJob Response:\n")
-        print(data)
+        log("\n\nJob Response:\n")
+        log(data)
         return True, data
     else:
-        print(response.status_code)
-        print(response.reason)
+        log(response.status_code)
+        log(response.reason)
         return False, {
             'success': False,
             'status_code': response.status_code,
@@ -351,7 +417,7 @@ def add_custom_nlpql(nlpql):
         os.makedirs('./nlpql/custom/')
     except OSError as ex:
         traceback.print_exc()
-        print(ex)
+        log(ex)
 
     success, test_json = submit_test(nlpql)
     if not success:
@@ -407,7 +473,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
     # Checking if it is a dev box
     status = "status/%s" % job_id
     url = util.claritynlp_url + status
-    print('URL from get_results: "{0}"'.format(url))
+    log('URL from get_results: "{0}"'.format(url))
 
     # Polling for job completion
     while True:
@@ -490,7 +556,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
                     doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
                 except ValueError as ve:
                     doc_index = -1
-                    print(ve)
+                    log(ve)
 
                 if doc_index == -1 and patient_id != -1:
                     r['report_text'] = ''
@@ -644,7 +710,7 @@ def worker(job_file_path, data, synchronous=True):
     elif 'encounter_id' in data:
         encounter_id = data['encounter_id']
 
-    print('Patient {}'.format(patient_id))
+    log('Patient {}'.format(patient_id))
     if patient_id == -1 and ('reports' not in data or not data['reports'] or len(data['reports']) == 0):
         return Response(json.dumps({'message': 'No reports passed into service.'}, indent=4),
                         status=500,
@@ -721,7 +787,7 @@ def worker(job_file_path, data, synchronous=True):
 
     # Getting the results of the Job
     job_id = int(job_info['job_id'])
-    print("\n\njob_id = " + str(job_id))
+    log("\n\njob_id = " + str(job_id))
     results, got_results = get_results(job_id, source_data=report_payload, report_ids=report_ids, patient_id=patient_id)
 
     # Deleting uploaded documents
@@ -732,7 +798,7 @@ def worker(job_file_path, data, synchronous=True):
             status=500,
             mimetype='application/json')
 
-    print("\n\nRun Time = %s \n\n" % (time.time() - start))
+    log("\n\nRun Time = %s \n\n" % (time.time() - start))
     return Response(clean_output(results, report_list=report_payload), status=200, mimetype='application/json')
 
 
@@ -752,7 +818,7 @@ def async_results(job_id, source_id):
     report_ids = [x['report_id'] for x in reports]
 
     job_id = int(job_id)
-    print("\n\njob_id = " + str(job_id))
+    log("\n\njob_id = " + str(job_id))
     results, got_results = get_results(job_id, source_data=reports, report_ids=report_ids)
 
     if got_results:
@@ -764,18 +830,19 @@ def async_results(job_id, source_id):
                 status=500,
                 mimetype='application/json')
 
-        print("\n\nRun Time = %s \n\n" % (time.time() - start))
+        log("\n\nRun Time = %s \n\n" % (time.time() - start))
         return Response(clean_output(results, report_list=reports), status=200, mimetype='application/json')
     else:
         return Response(results, status=200, mimetype='application/json')
 
 
 if __name__ == '__main__':
-    y = 'https://www.cdc.gov/about/pdf/facts/cdcfastfacts/cdcfastfacts.pdf'
-    print(get_text(y, base64_encoded=False))
-
-    h = {
-        'Accept': 'application/json+fhir'
-    }
-    u = 'https://fhir-open.sandboxcerner.com/dstu2/0b8a0111-e8e6-4c26-a91c-5069cbc6b1ca/Binary/TR-5927259'
-    print(get_text(u, h, key="content"))
+    # y = 'https://www.cdc.gov/about/pdf/facts/cdcfastfacts/cdcfastfacts.pdf'
+    # log(get_text(y, base64_encoded=False))
+    #
+    # h = {
+    #     'Accept': 'application/json+fhir'
+    # }
+    # u = 'https://fhir-open.sandboxcerner.com/dstu2/0b8a0111-e8e6-4c26-a91c-5069cbc6b1ca/Binary/TR-5927259'
+    # log(get_text(u, h, key="content"))
+    log('nlpaas')
