@@ -5,7 +5,7 @@ import util
 from flask import Flask, request, Response
 from flask_cors import CORS
 
-from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, async_results, set_logger
+from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, async_results
 
 app = Flask(__name__)
 CORS(app)
@@ -186,4 +186,4 @@ def get_nlpql_list():
 if __name__ == '__main__':
     util.app_token()
     app.run(host='0.0.0.0', port=5000, debug=True)
-    set_logger(app.logger)
+    util.set_logger(app.logger)

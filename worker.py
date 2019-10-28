@@ -5,7 +5,6 @@ import os
 import re
 import tempfile
 import time
-import traceback
 import uuid
 from string import printable
 
@@ -14,74 +13,9 @@ import requests
 from bson.json_util import dumps
 from flask import Response
 from tika import parser
-from time import strftime, localtime
-from os import environ
-import logging
-
-import sys
 
 import util
-
-DEBUG = "DEBUG"
-INFO = "INFO"
-WARNING = "WARNING"
-ERROR = "ERROR"
-CRITICAL = "CRITICAL"
-logger = None
-
-
-def set_logger(l):
-    global logger
-    logger = l
-
-    use_gunicorn_logger = environ.get('USE_GUNICORN', "false")
-    if l and use_gunicorn_logger == "true":
-        gunicorn_logger = logging.getLogger("gunicorn.error")
-        logger.handlers = gunicorn_logger.handlers
-        logger.setLevel(gunicorn_logger.level)
-
-
-def log(obj=None, level=INFO, file=sys.stdout):
-    if not obj:
-        obj = ''
-
-    if isinstance(obj, Exception):
-        log("EXCEPTION: {}".format(repr(obj), level=ERROR))
-        for t in traceback.format_tb(obj.__traceback__):
-            lines = t.split('\n')
-            for l in lines:
-                if l.strip() == '':
-                    continue
-                log("     {}".format(l), level=ERROR)
-        return
-
-    repr_obj = repr(obj)
-    if '\n' in repr_obj:
-        for l in repr_obj.split('\n'):
-            log(l, level=level)
-        return
-
-    if level == ERROR or level == CRITICAL:
-        if file == sys.stdout:
-            file = sys.stderr
-    global logger
-
-    if logger:
-        message = repr_obj
-        if level == DEBUG:
-            logger.debug(message)
-        elif level == WARNING:
-            logger.warning(message)
-        elif level == ERROR:
-            logger.error(message)
-        elif level == CRITICAL:
-            logger.critical(message)
-        else:
-            logger.info(message)
-    else:
-        message = repr_obj
-        the_time = strftime("%Y-%m-%d %H:%M:%S-%Z", localtime())
-        print("[{}] {} in worker: {}".format(the_time, level, message), file=file)
+from util import log
 
 
 def get_document_set(source):
@@ -299,7 +233,8 @@ def upload_reports(data, access_token=None):
         else:
             return False, response.reason, report_list, fhir_resource, payload
     else:
-        return False, "All documents were empty or invalid, or no documents were passed in.", report_list, fhir_resource, payload
+        return False, "All documents were empty or invalid, or no documents were passed in.", report_list, \
+               fhir_resource, payload
 
 
 def delete_report(source_id):
@@ -357,7 +292,7 @@ def submit_job(nlpql_json):
     log('URL from submit_job: "{0}"'.format(url))
 
     phenotype_string = json.dumps(nlpql_json)
-    log("")
+    log("POSTing phenotype:")
     log(phenotype_string)
     log("")
 
@@ -416,8 +351,7 @@ def add_custom_nlpql(nlpql):
     try:
         os.makedirs('./nlpql/custom/')
     except OSError as ex:
-        traceback.print_exc()
-        log(ex)
+        log(ex, ERROR)
 
     success, test_json = submit_test(nlpql)
     if not success:
@@ -489,9 +423,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
         try:
             status = r.json()["status"]
         except Exception as ex1:
-            traceback.print_exc()
-            status = "ERROR"
-            break
+            log(ex1, ERROR)
         if status == "COMPLETED":
             break
         if return_only_if_complete:
@@ -570,7 +502,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
             result_string = dumps(final_list)
             return result_string, True
         except Exception as ex:
-            traceback.print_exc()
+            log(ex, ERROR)
             return '''
                 "success":"false",
                 "message":{}
