@@ -233,7 +233,7 @@ def upload_reports(data, access_token=None):
         else:
             return False, response.reason, report_list, fhir_resource, payload
     else:
-        return False, "All documents were empty or invalid, or no documents were passed in.", report_list, \
+        return True, "All documents were empty or invalid, or no documents were passed in.", report_list, \
                fhir_resource, payload
 
 
@@ -302,7 +302,7 @@ def submit_job(nlpql_json):
         data = response.json()
         if 'success' in data:
             if not data['success']:
-                log(data['error'])
+                log(data['error'], util.ERROR)
                 return False, data['error']
         log("\n\nJob Response:\n")
         log(data)
@@ -327,7 +327,7 @@ def submit_test(nlpql):
         data = response.json()
         if 'success' in data:
             if not data['success']:
-                log(data['error'])
+                log(data['error'], util.ERROR)
                 return False, data['error']
         if 'valid' in data:
             if not data['valid']:
@@ -351,7 +351,7 @@ def add_custom_nlpql(nlpql):
     try:
         os.makedirs('./nlpql/custom/')
     except OSError as ex:
-        log(ex, ERROR)
+        log(ex, util.ERROR)
 
     success, test_json = submit_test(nlpql)
     if not success:
@@ -423,7 +423,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
         try:
             status = r.json()["status"]
         except Exception as ex1:
-            log(ex1, ERROR)
+            log(ex1, util.ERROR)
         if status == "COMPLETED":
             break
         if return_only_if_complete:
@@ -502,7 +502,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
             result_string = dumps(final_list)
             return result_string, True
         except Exception as ex:
-            log(ex, ERROR)
+            log(ex, util.ERROR)
             return '''
                 "success":"false",
                 "message":{}
@@ -614,45 +614,34 @@ def worker(job_file_path, data, synchronous=True):
                     fhir_auth_type = auth['type']
                 if 'token' in auth:
                     fhir_auth_token = auth['token']
-        if 'patient' in fhir:
-            patient = fhir['patient']
-            if 'id' in patient:
-                patient_id = patient['id']
-        elif 'patient_id' in fhir:
-            patient_id = fhir['patient_id']
+    else:
+        fhir = data
 
-        if 'encounter' in fhir:
-            encounter = fhir['encounter']
-            if 'id' in encounter:
-                encounter_id = encounter['id']
-        elif 'encounter_id' in fhir:
-            encounter_id = fhir['encounter_id']
-
-    if 'patient' in data:
-        patient = data['patient']
+    if 'patient' in fhir:
+        patient = fhir['patient']
         if 'id' in patient:
             patient_id = patient['id']
-    elif 'patient_id' in data:
-        patient_id = data['patient_id']
+    elif 'patient_id' in fhir:
+        patient_id = fhir['patient_id']
 
-    if 'encounter' in data:
-        encounter = data['encounter']
+    if 'encounter' in fhir:
+        encounter = fhir['encounter']
         if 'id' in encounter:
             encounter_id = encounter['id']
-    elif 'encounter_id' in data:
-        encounter_id = data['encounter_id']
+    elif 'encounter_id' in fhir:
+        encounter_id = fhir['encounter_id']
 
-    log('Patient {}'.format(patient_id))
-    if patient_id == -1 and ('reports' not in data or not data['reports'] or len(data['reports']) == 0):
-        return Response(json.dumps({'message': 'No reports passed into service.'}, indent=4),
-                        status=500,
-                        mimetype='application/json')
+    log('patient_id {}'.format(patient_id))
+    # if patient_id == -1 and ('reports' not in data or not data['reports'] or len(data['reports']) == 0):
+    #     return Response(json.dumps({'message': 'No reports passed into service.'}, indent=4),
+    #                     status=500,
+    #                     mimetype='application/json')
 
-    # Checking for active Job
-    if has_active_job(data):
-        return Response(
-            json.dumps({'message': 'You currently have an active job. Only one active job allowed'}, indent=4),
-            status=200, mimetype='application/json')
+    # # Checking for active Job
+    # if has_active_job(data):
+    #     return Response(
+    #         json.dumps({'message': 'You currently have an active job. Only one active job allowed'}, indent=4),
+    #         status=200, mimetype='application/json')
 
     # Uploading report to Solr
     status, source_id, report_ids, is_fhir_resource, report_payload = upload_reports(data, access_token=fhir_auth_token)
@@ -730,7 +719,7 @@ def worker(job_file_path, data, synchronous=True):
             status=500,
             mimetype='application/json')
 
-    log("\n\nRun Time = %s \n\n" % (time.time() - start))
+    log("\n\nRun Time = %s \n\n" % (time.time() - start), util.INFO)
     return Response(clean_output(results, report_list=report_payload), status=200, mimetype='application/json')
 
 
