@@ -114,6 +114,9 @@ def upload_reports(data, access_token=None):
     nlpaas_id = 1
     fhir_resource = False
 
+    print('**DATA**')
+    print(json.dumps(data, indent=4))
+
     for report in data['reports']:
         report_id = '{}_{}'.format(source_id, str(nlpaas_id))
         json_body = {
@@ -470,7 +473,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
                 # 2) Result objects temporarily loaded into Solr via JSON blob
                 #        The JSON blob is POSTed to NLPaaS
                 #        The doc_index and source fields constructed differently
-                #            from normal Solr ingest process 
+                #            from normal Solr ingest process
                 # 3) Result objects obtained from FHIR server via CQL call
                 #        CQLExecutionTask returns this data
                 #        No underlying source document at all, so no report_text
@@ -549,7 +552,7 @@ def clean_output(data, report_list=None):
             data.append(data_object)
 
     # keys = ['_id', 'experiencer', 'report_id', 'source', 'phenotype_final', 'temporality', 'subject', 'concept_code',
-    #         'report_type', 'inserted_date', 'negation', 'solr_id', 'end', 'start', 'report_date', 'batch', 
+    #         'report_type', 'inserted_date', 'negation', 'solr_id', 'end', 'start', 'report_date', 'batch',
     #         'nlpaas_id', 'owner', 'pipeline_id']
 
     # for k in keys:
