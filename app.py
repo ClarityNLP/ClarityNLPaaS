@@ -45,7 +45,7 @@ def hello():
 
 
 def get_host(r):
-    print(request.headers)
+    # print(request.headers)
     if r.is_secure:
         return 'https://{0}/'.format(r.host)
     else:
@@ -58,7 +58,7 @@ def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_nam
     API for triggering jobs
     """
     h = get_host(request)
-    print(h)
+    # print(h)
 
     try:
         async_job = request.args.get('async') == 'true'
@@ -88,7 +88,7 @@ def submit_job_with_category(job_category: str, job_name: str):
     API for triggering jobs
     """
     h = get_host(request)
-    print(h)
+    # print(h)
 
     try:
         async_arg = request.args.get('async').lower()
@@ -119,7 +119,7 @@ def submit_job(job_type: str):
     API for triggering jobs
     """
     h = get_host(request)
-    print(h)
+    # print(h)
 
     job_type = job_type.replace('~', '/')
     job_file_path = "./nlpql/" + job_type + ".nlpql"
@@ -186,3 +186,4 @@ def get_nlpql_list():
 if __name__ == '__main__':
     util.app_token()
     app.run(host='0.0.0.0', port=5000, debug=True)
+    util.set_logger(app.logger)

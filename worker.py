@@ -5,7 +5,6 @@ import os
 import re
 import tempfile
 import time
-import traceback
 import uuid
 from string import printable
 
@@ -16,6 +15,7 @@ from flask import Response
 from tika import parser
 
 import util
+from util import log
 
 
 def get_document_set(source):
@@ -46,7 +46,7 @@ def get_headers(token):
             'Content-type': 'application/json',
             'Authorization': '{} {}'.format(token['token_type'], token['access_token'])
         }
-    print(json.dumps(headers, indent=4))
+    # log(json.dumps(headers, indent=4))
     return headers
 
 
@@ -56,14 +56,14 @@ def get_text(url, headers=None, key=None, base64_encoded=True):
     if not headers:
         headers = {}
     headers['Authorization'] = 'hidden'
-    print(url, headers)
-    print(response.status_code, response.reason)
+    # log(url, headers)
+    log(response.status_code, response.reason)
 
     if response.status_code != 200:
-        print(response.content)
+        log(response.content)
         return ''
     else:
-        print('SUCCESS get_text')
+        log('SUCCESS get_text')
 
     if key:
         raw_data_json = response.json()
@@ -84,7 +84,7 @@ def get_text(url, headers=None, key=None, base64_encoded=True):
             if 'content' in content:
                 t = content['content']
             else:
-                print('No content from file {}'.format(file_name))
+                log('No content from file {}'.format(file_name))
                 return ''
             safe_text = str(t)
             safe_text = safe_text.encode('utf-8', errors='ignore')
@@ -92,7 +92,7 @@ def get_text(url, headers=None, key=None, base64_encoded=True):
             txt = ''.join(char for char in safe_text if char in printable)
 
         except Exception as ex1:
-            print(ex1)
+            log(ex1)
     os.remove(file_name)
     return txt
 
@@ -103,7 +103,7 @@ def upload_reports(data, access_token=None):
     """
 
     url = util.solr_url + 'update?commit=true'
-    print('URL from upload_reports: "{0}"'.format(url))
+    log('URL from upload_reports: "{0}"'.format(url))
 
     # Generating a source_id
     rand_uuid = uuid.uuid1()
@@ -227,7 +227,7 @@ def upload_reports(data, access_token=None):
             report_list.append(report_id)
             nlpaas_id += 1
 
-    print('{} total documents'.format(len(payload)))
+    log('{} total documents'.format(len(payload)))
     if len(payload) > 0:
         token, oauth = util.app_token()
         response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4))
@@ -236,7 +236,8 @@ def upload_reports(data, access_token=None):
         else:
             return False, response.reason, report_list, fhir_resource, payload
     else:
-        return False, "All documents were empty or invalid, or no documents were passed in.", report_list, fhir_resource, payload
+        return True, "All documents were empty or invalid, or no documents were passed in.", report_list, \
+               fhir_resource, payload
 
 
 def delete_report(source_id):
@@ -244,7 +245,7 @@ def delete_report(source_id):
     Deleting reports based on generated source
     """
     url = util.solr_url + 'update?commit=true'
-    print('URL from delete_report: "{0}"'.format(url))
+    log('URL from delete_report: "{0}"'.format(url))
 
     data = '<delete><query>source:%s</query></delete>' % source_id
 
@@ -290,13 +291,13 @@ def submit_job(nlpql_json):
     Submitting ClarityNLP job
     """
 
-    url = util.claritynlp_url + 'phenotype'
-    print('URL from submit_job: "{0}"'.format(url))
+    url = util.claritynlp_url + 'phenotype?background=false'
+    log('URL from submit_job: "{0}"'.format(url))
 
     phenotype_string = json.dumps(nlpql_json)
-    print("")
-    print(phenotype_string)
-    print("")
+    log("POSTing phenotype:")
+    log(phenotype_string)
+    log("")
 
     token, oauth = util.app_token()
     response = requests.post(url, headers=get_headers(token), data=phenotype_string)
@@ -304,14 +305,14 @@ def submit_job(nlpql_json):
         data = response.json()
         if 'success' in data:
             if not data['success']:
-                print(data['error'])
+                log(data['error'], util.ERROR)
                 return False, data['error']
-        print("\n\nJob Response:\n")
-        print(data)
+        log("\n\nJob Response:\n")
+        log(data)
         return True, data
     else:
-        print(response.status_code)
-        print(response.reason)
+        log(response.status_code)
+        log(response.reason)
         return False, response.reason
 
 
@@ -321,7 +322,7 @@ def submit_test(nlpql):
     """
 
     url = util.claritynlp_url + 'nlpql_tester'
-    print('URL from submit_test: "{0}"'.format(url))
+    log('URL from submit_test: "{0}"'.format(url))
 
     token, oauth = util.app_token()
     response = requests.post(url, headers=get_headers(token), data=nlpql)
@@ -329,18 +330,18 @@ def submit_test(nlpql):
         data = response.json()
         if 'success' in data:
             if not data['success']:
-                print(data['error'])
+                log(data['error'], util.ERROR)
                 return False, data['error']
         if 'valid' in data:
             if not data['valid']:
-                print(data['valid'])
+                log(data['valid'])
                 return False, data['valid']
-        print("\n\nJob Response:\n")
-        print(data)
+        log("\n\nJob Response:\n")
+        log(data)
         return True, data
     else:
-        print(response.status_code)
-        print(response.reason)
+        log(response.status_code)
+        log(response.reason)
         return False, {
             'success': False,
             'status_code': response.status_code,
@@ -353,8 +354,7 @@ def add_custom_nlpql(nlpql):
     try:
         os.makedirs('./nlpql/custom/')
     except OSError as ex:
-        traceback.print_exc()
-        print(ex)
+        log(ex, util.ERROR)
 
     success, test_json = submit_test(nlpql)
     if not success:
@@ -397,7 +397,7 @@ def has_active_job(data):
     return False
 
 
-def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_complete=False):
+def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_complete=False, patient_id=-1):
     """
     Reading Results from Mongo
     TODO use API endpoing
@@ -410,7 +410,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
     # Checking if it is a dev box
     status = "status/%s" % job_id
     url = util.claritynlp_url + status
-    print('URL from get_results: "{0}"'.format(url))
+    log('URL from get_results: "{0}"'.format(url))
 
     # Polling for job completion
     while True:
@@ -426,9 +426,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
         try:
             status = r.json()["status"]
         except Exception as ex1:
-            traceback.print_exc()
-            status = "ERROR"
-            break
+            log(ex1, util.ERROR)
         if status == "COMPLETED":
             break
         if return_only_if_complete:
@@ -489,9 +487,15 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
                     continue
 
                 # compute the doc_index encoded in the source field
-                doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
+                try:
+                    doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
+                except ValueError as ve:
+                    doc_index = -1
+                    log(ve)
 
-                if len(source_data) > 0 and doc_index < len(source_data):
+                if doc_index == -1 and patient_id != -1:
+                    r['report_text'] = ''
+                elif len(source_data) > 0 and doc_index < len(source_data):
                     source_doc = source_data[doc_index]
                     r['report_text'] = source_doc['report_text']
                 else:
@@ -501,7 +505,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
             result_string = dumps(final_list)
             return result_string, True
         except Exception as ex:
-            traceback.print_exc()
+            log(ex, util.ERROR)
             return '''
                 "success":"false",
                 "message":{}
@@ -613,45 +617,34 @@ def worker(job_file_path, data, synchronous=True):
                     fhir_auth_type = auth['type']
                 if 'token' in auth:
                     fhir_auth_token = auth['token']
-        if 'patient' in fhir:
-            patient = fhir['patient']
-            if 'id' in patient:
-                patient_id = patient['id']
-        elif 'patient_id' in fhir:
-            patient_id = fhir['patient_id']
+    else:
+        fhir = data
 
-        if 'encounter' in fhir:
-            encounter = fhir['encounter']
-            if 'id' in encounter:
-                encounter_id = encounter['id']
-        elif 'encounter_id' in fhir:
-            encounter_id = fhir['encounter_id']
-
-    if 'patient' in data:
-        patient = data['patient']
+    if 'patient' in fhir:
+        patient = fhir['patient']
         if 'id' in patient:
             patient_id = patient['id']
-    elif 'patient_id' in data:
-        patient_id = data['patient_id']
+    elif 'patient_id' in fhir:
+        patient_id = fhir['patient_id']
 
-    if 'encounter' in data:
-        encounter = data['encounter']
+    if 'encounter' in fhir:
+        encounter = fhir['encounter']
         if 'id' in encounter:
             encounter_id = encounter['id']
-    elif 'encounter_id' in data:
-        encounter_id = data['encounter_id']
+    elif 'encounter_id' in fhir:
+        encounter_id = fhir['encounter_id']
 
-    print('Patient {}'.format(patient_id))
-    if patient_id == -1 and ('reports' not in data or not data['reports'] or len(data['reports']) == 0):
-        return Response(json.dumps({'message': 'No reports passed into service.'}, indent=4),
-                        status=500,
-                        mimetype='application/json')
+    log('patient_id {}'.format(patient_id))
+    # if patient_id == -1 and ('reports' not in data or not data['reports'] or len(data['reports']) == 0):
+    #     return Response(json.dumps({'message': 'No reports passed into service.'}, indent=4),
+    #                     status=500,
+    #                     mimetype='application/json')
 
-    # Checking for active Job
-    if has_active_job(data):
-        return Response(
-            json.dumps({'message': 'You currently have an active job. Only one active job allowed'}, indent=4),
-            status=200, mimetype='application/json')
+    # # Checking for active Job
+    # if has_active_job(data):
+    #     return Response(
+    #         json.dumps({'message': 'You currently have an active job. Only one active job allowed'}, indent=4),
+    #         status=200, mimetype='application/json')
 
     # Uploading report to Solr
     status, source_id, report_ids, is_fhir_resource, report_payload = upload_reports(data, access_token=fhir_auth_token)
@@ -718,8 +711,8 @@ def worker(job_file_path, data, synchronous=True):
 
     # Getting the results of the Job
     job_id = int(job_info['job_id'])
-    print("\n\njob_id = " + str(job_id))
-    results, got_results = get_results(job_id, source_data=report_payload, report_ids=report_ids)
+    log("\n\njob_id = " + str(job_id))
+    results, got_results = get_results(job_id, source_data=report_payload, report_ids=report_ids, patient_id=patient_id)
 
     # Deleting uploaded documents
     delete_obj = delete_report(source_id)
@@ -729,7 +722,7 @@ def worker(job_file_path, data, synchronous=True):
             status=500,
             mimetype='application/json')
 
-    print("\n\nRun Time = %s \n\n" % (time.time() - start))
+    log("\n\nRun Time = %s \n\n" % (time.time() - start), util.INFO)
     return Response(clean_output(results, report_list=report_payload), status=200, mimetype='application/json')
 
 
@@ -749,7 +742,7 @@ def async_results(job_id, source_id):
     report_ids = [x['report_id'] for x in reports]
 
     job_id = int(job_id)
-    print("\n\njob_id = " + str(job_id))
+    log("\n\njob_id = " + str(job_id))
     results, got_results = get_results(job_id, source_data=reports, report_ids=report_ids)
 
     if got_results:
@@ -761,18 +754,19 @@ def async_results(job_id, source_id):
                 status=500,
                 mimetype='application/json')
 
-        print("\n\nRun Time = %s \n\n" % (time.time() - start))
+        log("\n\nRun Time = %s \n\n" % (time.time() - start))
         return Response(clean_output(results, report_list=reports), status=200, mimetype='application/json')
     else:
         return Response(results, status=200, mimetype='application/json')
 
 
 if __name__ == '__main__':
-    y = 'https://www.cdc.gov/about/pdf/facts/cdcfastfacts/cdcfastfacts.pdf'
-    print(get_text(y, base64_encoded=False))
-
-    h = {
-        'Accept': 'application/json+fhir'
-    }
-    u = 'https://fhir-open.sandboxcerner.com/dstu2/0b8a0111-e8e6-4c26-a91c-5069cbc6b1ca/Binary/TR-5927259'
-    print(get_text(u, h, key="content"))
+    # y = 'https://www.cdc.gov/about/pdf/facts/cdcfastfacts/cdcfastfacts.pdf'
+    # log(get_text(y, base64_encoded=False))
+    #
+    # h = {
+    #     'Accept': 'application/json+fhir'
+    # }
+    # u = 'https://fhir-open.sandboxcerner.com/dstu2/0b8a0111-e8e6-4c26-a91c-5069cbc6b1ca/Binary/TR-5927259'
+    # log(get_text(u, h, key="content"))
+    log('nlpaas')
