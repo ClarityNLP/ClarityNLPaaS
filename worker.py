@@ -465,6 +465,8 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
             results.extend(response2.json()['results'])
 
             for r in results:
+                print('** REPORT (R)**')
+                print(r)
                 report_id = r['report_id']
                 source = r['source']
 
