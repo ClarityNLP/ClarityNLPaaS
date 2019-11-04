@@ -228,6 +228,8 @@ def upload_reports(data, access_token=None):
             nlpaas_id += 1
 
     log('{} total documents'.format(len(payload)))
+    print('** PAYLOAD **');
+    print(payload);
     if len(payload) > 0:
         token, oauth = util.app_token()
         response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4))
