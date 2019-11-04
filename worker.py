@@ -114,8 +114,8 @@ def upload_reports(data, access_token=None):
     nlpaas_id = 1
     fhir_resource = False
 
-    print('**DATA**')
-    print(json.dumps(data, indent=4))
+    # print('**DATA**')
+    # print(json.dumps(data, indent=4))
 
     for report in data['reports']:
         report_id = '{}_{}'.format(source_id, str(nlpaas_id))
@@ -402,6 +402,8 @@ def has_active_job(data):
 
 
 def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_complete=False, patient_id=-1):
+    print('** JOB ID**')
+    print(job_id)
     """
     Reading Results from Mongo
     TODO use API endpoing
