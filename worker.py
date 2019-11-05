@@ -228,8 +228,8 @@ def upload_reports(data, access_token=None):
             nlpaas_id += 1
 
     log('{} total documents'.format(len(payload)))
-    log('** PAYLOAD **', util.INFO)
-    log(payload, util.INFO)
+    # log('** PAYLOAD **', util.INFO)
+    # log(payload, util.INFO)
     if len(payload) > 0:
         token, oauth = util.app_token()
         log('uploading solr docs...')
@@ -240,11 +240,12 @@ def upload_reports(data, access_token=None):
                 log('checking for solr upload...')
                 data = dict()
                 data['query'] = "*:*"
-                data['filter'] = '"source":{}'.format(source_id)
+                data['filter'] = 'source:"{}"'.format(source_id)
                 doc_results = 0
                 try:
                     post_data = json.dumps(data, indent=4)
                     response = requests.post((util.solr_url + '/select'), headers=get_headers(token), data=post_data)
+                    log(response.text)
                     res = response.json().get('response', None)
                     if res:
                         doc_results = int(res.get('numFound', 0))
