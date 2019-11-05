@@ -57,7 +57,8 @@ def get_text(url, headers=None, key=None, base64_encoded=True):
         headers = {}
     headers['Authorization'] = 'hidden'
     # log(url, headers)
-    log(response.status_code, response.reason)
+    log('get_text')
+    log(response.status_code)
 
     if response.status_code != 200:
         log(response.content)
@@ -565,7 +566,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
         '''.format(response.reason), False
 
 
-def clean_output(data, report_list=None):
+def clean_output(data, report_list=None, return_null_results=False):
     """
     Function to clean output JSON
     """
@@ -593,13 +594,14 @@ def clean_output(data, report_list=None):
         item = report['report_id']
         if item in matched_reports:
             continue
-        item_id = item.split('_')
-        if len(item_id) > 1:
-            nlpaas_array_id = int(item_id[1])
-            data_object = report
-            data_object['nlpaas_report_list_id'] = nlpaas_array_id
-            data_object['nlpql_feature'] = 'null'
-            data.append(data_object)
+        if return_null_results:
+            item_id = item.split('_')
+            if len(item_id) > 1:
+                nlpaas_array_id = int(item_id[1])
+                data_object = report
+                data_object['nlpaas_report_list_id'] = nlpaas_array_id
+                data_object['nlpql_feature'] = 'null'
+                data.append(data_object)
 
     # keys = ['_id', 'experiencer', 'report_id', 'source', 'phenotype_final', 'temporality', 'subject', 'concept_code',
     #         'report_type', 'inserted_date', 'negation', 'solr_id', 'end', 'start', 'report_date', 'batch',
@@ -612,7 +614,7 @@ def clean_output(data, report_list=None):
     return json.dumps(data, indent=4, sort_keys=True)
 
 
-def worker(job_file_path, data, synchronous=True):
+def worker(job_file_path, data, synchronous=True, return_null_results=False):
     """
     Main worker function
     """
@@ -769,10 +771,11 @@ def worker(job_file_path, data, synchronous=True):
             mimetype='application/json')
 
     log("\n\nRun Time = %s \n\n" % (time.time() - start), util.INFO)
-    return Response(clean_output(results, report_list=report_payload), status=200, mimetype='application/json')
+    return Response(clean_output(results, report_list=report_payload, return_null_results=return_null_results),
+                    status=200, mimetype='application/json')
 
 
-def async_results(job_id, source_id):
+def async_results(job_id, source_id, return_null_results=False):
     """
     Main worker function
     """
@@ -801,7 +804,8 @@ def async_results(job_id, source_id):
                 mimetype='application/json')
 
         log("\n\nRun Time = %s \n\n" % (time.time() - start))
-        return Response(clean_output(results, report_list=reports), status=200, mimetype='application/json')
+        return Response(clean_output(results, report_list=reports, return_null_results=return_null_results), status=200,
+                        mimetype='application/json')
     else:
         return Response(results, status=200, mimetype='application/json')
 

@@ -64,6 +64,11 @@ def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_nam
         async_job = request.args.get('async') == 'true'
     except:
         async_job = False
+
+    try:
+        return_null_results = request.args.get('return_null_results') == 'true'
+    except:
+        return_null_results = False
     synchronous = not async_job
     job_type = "{}/{}/{}".format(job_category, job_subcategory, job_name)
     job_file_path = "./nlpql/" + job_type + ".nlpql"
@@ -74,7 +79,7 @@ def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_nam
     if request.method == 'POST':
         # Checking if the selected job is valid
         data = request.get_json()
-        return worker(job_file_path, data, synchronous=synchronous)
+        return worker(job_file_path, data, synchronous=synchronous, return_null_results=return_null_results)
     else:
 
         return Response(get_nlpql(job_file_path),
@@ -128,6 +133,10 @@ def submit_job(job_type: str):
         async_job = request.args.get('async') == 'true'
     except:
         async_job = False
+    try:
+        return_null_results = request.args.get('return_null_results') == 'false'
+    except:
+        return_null_results = False
     synchronous = not async_job
 
     if request.method == 'POST':
@@ -140,7 +149,7 @@ def submit_job(job_type: str):
             return json.dumps(add_custom_nlpql(res), indent=4, sort_keys=True)
         elif job_type == 'results' and request.data:
             res = request.get_json()
-            return async_results(res['job_id'], res['source_id'])
+            return async_results(res['job_id'], res['source_id'], return_null_results=return_null_results)
         else:
             if not valid:
                 return Response(
