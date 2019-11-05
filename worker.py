@@ -102,7 +102,7 @@ def upload_reports(data, access_token=None):
     Uploading reports with unique source
     """
 
-    url = util.solr_url + 'update?commit=true'
+    url = util.solr_url + 'update?commit=true&commitWithin=10000'
     log('URL from upload_reports: "{0}"'.format(url))
 
     # Generating a source_id
@@ -176,8 +176,8 @@ def upload_reports(data, access_token=None):
             if resource_type == 'DocumentReference' or resource_type == 'DiagnosticReport':
                 fhir_resource = True
                 txt = ''
-                print('** REPORT **')
-                print(report)
+                # print('** REPORT **')
+                # print(report)
                 if 'content' in report:
                     for c in report['content']:
                         if 'attachment' in c:
@@ -230,12 +230,32 @@ def upload_reports(data, access_token=None):
             nlpaas_id += 1
 
     log('{} total documents'.format(len(payload)))
-    print('** PAYLOAD **');
-    print(payload);
+    log('** PAYLOAD **', util.INFO)
+    log(payload, util.INFO)
     if len(payload) > 0:
         token, oauth = util.app_token()
         response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4))
         if response.status_code == 200:
+            the_time = 0
+            while True:
+                data = dict()
+                data['query'] = "*:*"
+                data['filter'] = '"source":{}'.format(source_id)
+                post_data = json.dumps(data, indent=4)
+                response = requests.post((util.solr_url + '/select'), headers=get_headers(token), data=post_data)
+                doc_results = int(response.json()['response']['docs'])
+
+                if doc_results > 0:
+                    log("documents uploaded {}".format(doc_results), util.INFO)
+                    break
+
+                the_time += 1
+                time.sleep(1000)
+
+                if the_time > 15:
+                    log("documents not yet loaded in 15 sec", util.ERROR)
+                    break
+
             return True, source_id, report_list, fhir_resource, payload
         else:
             return False, response.reason, report_list, fhir_resource, payload
@@ -402,11 +422,11 @@ def has_active_job(data):
 
 
 def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_complete=False, patient_id=-1):
-    print('** JOB ID**')
-    print(job_id)
+    log('** JOB ID**')
+    log(job_id)
     """
     Reading Results from Mongo
-    TODO use API endpoing
+    TODO use API endpoint
     """
     if not source_data:
         source_data = list()
@@ -459,9 +479,10 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
 
     response = oauth.get(url)
     response2 = oauth.get(url2)
-    print('**RESPONSE 2**')
-    print(response2)
+    log('**RESPONSE 2**')
+    log(response2)
     final_list = list()
+    r_formatted = ''
     if response.status_code == 200 and response2.status_code == 200:
         try:
 
@@ -469,8 +490,9 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
             results.extend(response2.json()['results'])
 
             for r in results:
-                # print('** REPORT (R)**')
-                # print(r)
+                log('** REPORT (R)**', util.INFO)
+                log(r, util.INFO)
+                r_formatted = json.dumps(r, indent=4)
                 report_id = r['report_id']
                 source = r['source']
 
@@ -501,7 +523,9 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
                     doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
                 except ValueError as ve:
                     doc_index = -1
-                    log(ve)
+                    log("non-integer source index", util.ERROR)
+                    log(ve, util.ERROR)
+                    log(r_formatted)
 
                 if doc_index == -1 and patient_id != -1:
                     r['report_text'] = ''
@@ -516,6 +540,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
             return result_string, True
         except Exception as ex:
             log(ex, util.ERROR)
+            log(r_formatted)
             return '''
                 "success":"false",
                 "message":{}
