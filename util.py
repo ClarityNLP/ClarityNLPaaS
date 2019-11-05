@@ -149,9 +149,9 @@ def app_token():
         #     display_secret = ''
         # log('claritynlpurl: ', claritynlp_url, ', clientid: ', claritynlp_clientid, ', scope: ', claritynlp_scope,
         #       ', tokenurl: ', claritynlp_tokenurl, ', clientsecret last 4 chars: ', display_secret)
-        if _token_time:
+        if _token and _token_time:
             total_time = time.time() - _token_time
-            expired = abs(total_time) > abs(_token['expires_in'])
+            expired = abs(total_time) > abs(_token.get('expires_in', total_time + 1))
         if not _token or expired:
             _token_time = time.time()
             # client = BackendApplicationClient(client_id=claritynlp_clientid, scope=claritynlp_scope)
