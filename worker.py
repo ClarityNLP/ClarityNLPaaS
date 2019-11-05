@@ -232,10 +232,12 @@ def upload_reports(data, access_token=None):
     log(payload, util.INFO)
     if len(payload) > 0:
         token, oauth = util.app_token()
+        log('uploading solr docs...')
         response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4))
         if response.status_code == 200:
             the_time = 0
             while True:
+                log('checking for solr upload...')
                 data = dict()
                 data['query'] = "*:*"
                 data['filter'] = '"source":{}'.format(source_id)
@@ -255,7 +257,7 @@ def upload_reports(data, access_token=None):
                     break
 
                 the_time += 1
-                time.sleep(1000)
+                time.sleep(1)
 
                 if the_time > 15:
                     log("documents not yet loaded in 15 sec", util.ERROR)
