@@ -240,12 +240,15 @@ def upload_reports(data, access_token=None):
                 log('checking for solr upload...')
                 data = dict()
                 data['query'] = "*:*"
+                data['params'] = {
+                    'wt': 'json'
+                }
                 data['filter'] = 'source:"{}"'.format(source_id)
                 doc_results = 0
                 try:
                     post_data = json.dumps(data, indent=4)
                     response = requests.post((util.solr_url + '/select'), headers=get_headers(token), data=post_data)
-                    log(response.text)
+                    # log(response.text)
                     res = response.json().get('response', None)
                     if res:
                         doc_results = int(res.get('numFound', 0))
