@@ -176,24 +176,20 @@ def upload_reports(data, access_token=None):
             if resource_type == 'DocumentReference' or resource_type == 'DiagnosticReport':
                 fhir_resource = True
                 txt = ''
-                # print('** REPORT **')
-                # print(report)
+                log('** REPORT **')
+                log(report)
                 if 'content' in report:
                     for c in report['content']:
-                        if 'attachment' in c:
-                            if 'contentType' in c['attachment']:
-                                content_type = c['attachment']['contentType']
+                        attachment = c.get('attachment', None)
+                        if attachment:
+                            content_type = attachment.get('contentType', 'text/plain')
+                            report_data = attachment.get('data', None)
+                            if content_type and report_data:
+                                decoded_txt = base64.b64decode(report_data).decode("utf-8")
                                 if content_type == 'application/pdf':
                                     if 'url' in c['attachment']:
-                                        url = c['attachment'].get('url')
-                                        ct = c['attachment'].get('contentType')
-                                        # types = [ct, 'application/json+fhir', 'application/fhir+json',
-                                        #          'application/json']
-                                        # , ,
-                                        #          'application/pdf', 'application/xml', 'text/plain',
-                                        #          'application/octet-stream',
-                                        #          'application/xhtml+xml', 'text/html']
-                                        types = ['application/json+fhir', ct]
+                                        url = attachment.get('url')
+                                        types = ['application/json+fhir', content_type]
                                         txt = ''
                                         for t in list(set(types)):
                                             if txt == '':
@@ -211,13 +207,15 @@ def upload_reports(data, access_token=None):
                                                 else:
                                                     txt = get_text(url, headers)
                                 elif 'xml' in content_type or 'html' in content_type:
-                                    if 'data' in c['attachment']:
-                                        clean_txt = re.sub('<[^<]+?>', '', c['attachment']['data'])
-                                        txt += clean_txt
-                                        txt += '\n'
+                                    clean_txt = re.sub('<[^<]+?>', '', decoded_txt)
+                                    txt += clean_txt
+                                    txt += '\n'
+                                else:
+                                    txt += decoded_txt
+                                    txt += '\n'
 
                             elif 'data' in c['attachment']:
-                                decoded_txt = base64.b64decode(c['attachment']['data']).decode("utf-8")
+                                decoded_txt = base64.b64decode(report_data).decode("utf-8")
                                 txt += decoded_txt
                                 txt += '\n'
 
