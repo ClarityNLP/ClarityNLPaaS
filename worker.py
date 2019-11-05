@@ -176,8 +176,8 @@ def upload_reports(data, access_token=None):
             if resource_type == 'DocumentReference' or resource_type == 'DiagnosticReport':
                 fhir_resource = True
                 txt = ''
-                log('** REPORT **')
-                log(report)
+                # log('** REPORT **')
+                # log(report)
                 if 'content' in report:
                     for c in report['content']:
                         attachment = c.get('attachment', None)
