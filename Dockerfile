@@ -1,4 +1,4 @@
-FROM python:3.5.5
+FROM python:3.6.8
 
 MAINTAINER Health Data Analytics
 
@@ -11,7 +11,9 @@ RUN apt-get install -y p7zip \
     p7zip-full \
     unace \
     zip \
-    unzip
+    unzip \
+    less \
+    vim
 
 EXPOSE 5000
 
@@ -27,4 +29,5 @@ COPY . .
 
 RUN chmod +x load_nlpql.sh wait-for-it-extra.sh
 
-CMD ["/api/load_nlpql.sh", "python3", "app.py"]
+CMD ["gunicorn", "api", "--config", "config.py", "-b", "5000"]
+

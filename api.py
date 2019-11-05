@@ -7,8 +7,8 @@ from flask_cors import CORS
 
 from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, async_results
 
-app = Flask(__name__)
-CORS(app)
+application = Flask(__name__)
+CORS(application)
 
 
 def get_files(files, path):
@@ -39,7 +39,7 @@ def get_api_routes():
     return ', '.join(get_nlpql_options())
 
 
-@app.route("/")
+@application.route("/")
 def hello():
     return "Welcome to ClarityNLPaaS."
 
@@ -52,7 +52,7 @@ def get_host(r):
         return 'http://{0}/'.format(r.host)
 
 
-@app.route("/job/<job_category>/<job_subcategory>/<job_name>", methods=['POST', 'GET'])
+@application.route("/job/<job_category>/<job_subcategory>/<job_name>", methods=['POST', 'GET'])
 def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_name: str):
     """
     API for triggering jobs
@@ -82,7 +82,7 @@ def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_nam
                         mimetype='text/plain')
 
 
-@app.route("/job/<job_category>/<job_name>", methods=['POST', 'GET'])
+@application.route("/job/<job_category>/<job_name>", methods=['POST', 'GET'])
 def submit_job_with_category(job_category: str, job_name: str):
     """
     API for triggering jobs
@@ -113,7 +113,7 @@ def submit_job_with_category(job_category: str, job_name: str):
                         mimetype='text/plain')
 
 
-@app.route("/job/<job_type>", methods=['POST', 'GET'])
+@application.route("/job/<job_type>", methods=['POST', 'GET'])
 def submit_job(job_type: str):
     """
     API for triggering jobs
@@ -159,7 +159,7 @@ def submit_job(job_type: str):
                         mimetype='text/plain')
 
 
-@app.route("/job/results/<job_id>", methods=['GET'])
+@application.route("/job/results/<job_id>", methods=['GET'])
 def get_results(job_id):
     """
     API for getting Job results
@@ -171,7 +171,7 @@ def get_results(job_id):
                         mimetype='application/json')
 
 
-@app.route("/job/list/all", methods=['GET'])
+@application.route("/job/list/all", methods=['GET'])
 def get_nlpql_list():
     """
     API for getting NLPQL Options
@@ -185,5 +185,5 @@ def get_nlpql_list():
 
 if __name__ == '__main__':
     util.app_token()
-    app.run(host='0.0.0.0', port=5000, debug=True)
-    util.set_logger(app.logger)
+    application.run(host='0.0.0.0', port=5000, debug=True)
+    util.set_logger(application.logger)

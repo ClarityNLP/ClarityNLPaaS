@@ -75,7 +75,7 @@ def log(obj=None, level=INFO, file=sys.stdout):
     else:
         message = repr_obj
         the_time = strftime("%Y-%m-%d %H:%M:%S-%Z", localtime())
-        print("[{}] {} in worker: {}".format(the_time, level, message), file=file)
+        print("[{}] {} in worker: {}".format(the_time, level, message))
 
 
 def read_property(env_name, config_tuple):
