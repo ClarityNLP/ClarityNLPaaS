@@ -239,9 +239,16 @@ def upload_reports(data, access_token=None):
                 data = dict()
                 data['query'] = "*:*"
                 data['filter'] = '"source":{}'.format(source_id)
-                post_data = json.dumps(data, indent=4)
-                response = requests.post((util.solr_url + '/select'), headers=get_headers(token), data=post_data)
-                doc_results = int(response.json()['response']['docs'])
+                doc_results = 0
+                try:
+                    post_data = json.dumps(data, indent=4)
+                    response = requests.post((util.solr_url + '/select'), headers=get_headers(token), data=post_data)
+                    res = response.json().get('response', None)
+                    if res:
+                        doc_results = int(res.get('numFound', 0))
+                except Exception as ex:
+                    log(ex, util.ERROR)
+                    log("unable to query docs", util.ERROR)
 
                 if doc_results > 0:
                     log("documents uploaded {}".format(doc_results), util.INFO)
@@ -488,8 +495,8 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
             results.extend(response2.json()['results'])
 
             for r in results:
-                log('** REPORT (R)**', util.INFO)
-                log(r, util.INFO)
+                # log('** REPORT (R)**', util.INFO)
+                # log(r, util.INFO)
                 r_formatted = json.dumps(r, indent=4)
                 report_id = r['report_id']
                 source = r['source']
