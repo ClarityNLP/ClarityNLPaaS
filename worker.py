@@ -509,7 +509,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
                 #        No underlying source document at all, so no report_text
 
                 pipeline_type = r['pipeline_type'].lower()
-                if 'cqlexecutiontask' == pipeline_type and 'fhir' == source.lower():
+                if 'cqlexecutiontask' == pipeline_type:
                     # no source docs, data obtained via CQL query
                     r['report_text'] = ''
                     final_list.append(r)
