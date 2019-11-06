@@ -524,6 +524,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
                 if 'cqlexecutiontask' == pipeline_type:
                     # no source docs, data obtained via CQL query
                     r['report_text'] = ''
+                    r['report_type'] = r.get('resourceType', 'Unknown')
                     final_list.append(r)
                     continue
 
