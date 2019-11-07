@@ -312,9 +312,23 @@ def get_reports(source_id):
         return False, {'reason': response.reason}
 
 
-def get_nlpql(file_path):
+def get_file(file_path):
     """
-    Getting required NLPQL based on API route
+    Getting required file based on API route
+    """
+    with open(file_path, "r") as file:
+        content = file.read()
+
+    return content
+
+
+def get_nlpql(file_path):
+    return get_file(file_path)
+
+
+def get_json(file_path):
+    """
+    Getting required form based on API route
     """
     with open(file_path, "r") as file:
         content = file.read()

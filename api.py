@@ -5,7 +5,7 @@ import util
 from flask import Flask, request, Response
 from flask_cors import CORS
 
-from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, async_results
+from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, get_file, async_results
 
 application = Flask(__name__)
 CORS(application)
@@ -23,6 +23,27 @@ def get_files(files, path):
 def get_nlpql_options(with_sorting=True):
     results = list()
     get_files(results, 'nlpql')
+
+    unique = list(set(results))
+    if with_sorting:
+        return sorted(unique)
+    else:
+        return unique
+
+
+def get_json(files, path):
+    for (directory_path, directory_names, file_names) in os.walk(path):
+        for d in directory_names:
+            get_json(files, directory_path + '/' + d)
+        for f in file_names:
+            if f.endswith('json'):
+                path = (directory_path + '/' + f[0:f.find('.')]).replace('nlpql/', '')
+                files.append(path)
+
+
+def get_nlpql_questions(results=None, with_sorting=True):
+    results = list()
+    get_json(results, 'nlpql')
 
     unique = list(set(results))
     if with_sorting:
@@ -190,6 +211,46 @@ def get_nlpql_list():
     else:
         return Response(json.dumps({'message': 'API supports only GET requests'}, indent=4, sort_keys=True), status=400,
                         mimetype='application/json')
+
+
+@application.route("/form/questions/all", methods=['GET'])
+def get_question_list():
+    """
+    API for getting NLPQL questions
+    """
+    if request.method == 'GET':
+        return Response(json.dumps(get_nlpql_questions()), status=200, mimetype='application/json')
+    else:
+        return Response(json.dumps({'message': 'API supports only GET requests'}, indent=4, sort_keys=True), status=400,
+                        mimetype='application/json')
+
+
+@application.route("/form/<form_category>/<form_subcategory>/<form_name>", methods=['POST', 'GET'])
+def get_form_with_subcategory(form_category: str, form_subcategory: str, form_name: str):
+    file_type = "{}/{}/{}".format(form_category, form_subcategory, form_name)
+    file_path = "./nlpql/" + file_type + ".json"
+    return Response(get_file(file_path),
+                    status=200,
+                    mimetype='application/json')
+
+
+@application.route("/form/<form_category>/<form_name>", methods=['POST', 'GET'])
+def get_form_with_category(form_category: str, form_name: str):
+    file_type = "{}/{}".format(form_category, form_name)
+    file_path = "./nlpql/" + file_type + ".json"
+    return Response(get_file(file_path),
+                    status=200,
+                    mimetype='application/json')
+
+
+@application.route("/form/<form_type>", methods=['POST', 'GET'])
+def get_form(form_type: str):
+    form_type = form_type.replace('~', '/')
+    file_path = "./nlpql/" + form_type + ".json"
+
+    return Response(get_file(file_path),
+                    status=200,
+                    mimetype='application/json')
 
 
 if __name__ == '__main__':
