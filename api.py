@@ -35,8 +35,9 @@ def get_files(files, path):
         for d in directory_names:
             get_files(files, directory_path + '/' + d)
         for f in file_names:
-            path = (directory_path + '/' + f[0:f.find('.')]).replace('nlpql/', '')
-            files.append(path)
+            if f.endswith('nlpql'):
+                path = (directory_path + '/' + f[0:f.find('.')]).replace('nlpql/', '')
+                files.append(path)
 
 
 def get_nlpql_options(with_sorting=True):
