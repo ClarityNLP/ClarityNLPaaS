@@ -29,5 +29,5 @@ COPY . .
 
 RUN chmod +x load_nlpql.sh wait-for-it-extra.sh
 
-CMD ["gunicorn", "api", "--config", "config.py", "-b", "5000"]
+CMD ["gunicorn", "api", " --preload", "--config", "config.py", "-b", "5000"]
 
