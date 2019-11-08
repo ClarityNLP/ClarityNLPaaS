@@ -22,3 +22,4 @@ requests_oauthlib==0.8.0
 oauthlib==3.0.0
 PyPDF2==1.26.0
 tika==1.19
+nltk==3.4.5
