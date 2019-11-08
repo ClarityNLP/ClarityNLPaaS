@@ -6,9 +6,6 @@ import string
 from os import path
 
 import nltk
-import requests
-import tika
-from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 
 nlpql_template = '''
@@ -120,19 +117,13 @@ define final %s:
     });
 '''
 
-headers = [
-]
-questions_dict = dict()
-
-
-# -
 
 def question_number(line):
     question_string = ''
     spl = line.split(':')
     try:
         n = int(spl[-1])
-    except:
+    except ValueError:
         n = -1
 
     if len(spl) > 1:
@@ -141,96 +132,6 @@ def question_number(line):
         return question_string, n
     else:
         return None, None
-
-
-def get_pdfs():
-    tika.initVM()
-    from tika import parser
-
-    page = requests.get('http://www.cibmtr.org/DataManagement/DataCollectionForms/Pages/index.aspx')
-    soup = BeautifulSoup(page.text, 'html.parser')
-
-    locs = soup.find_all('a')
-    for loc in locs:
-        href = loc.get('href', '')
-        if href.startswith('javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions'):
-            args = href.split('"')
-            for a in args:
-                if a.startswith('http') and a.endswith('pdf') and not a.endswith('EC.pdf') and not \
-                        a.endswith('+.pdf') and 'Log' not in a:
-                    print(a)
-                    name = a.split('/')[-1]
-                    if name.startswith('Form'):
-                        continue
-                    response = requests.get(a)
-
-                    pdf_name = './cimbtr_forms/{}'.format(name)
-                    with open(pdf_name, 'wb') as f:
-                        f.write(response.content)
-
-                    parsed = parser.from_file(pdf_name)
-                    with open('./cimbtr_forms/{}.txt'.format(name.split('.')[0]), 'w') as f:
-                        f.write(parsed['content'].strip())
-
-
-def parse_questions():
-    forms = {}
-    for p in pdfs:
-        name = p.split('.')[-2]
-        question_dict = {}
-        with open('./cimbtr_forms/{}'.format(p), 'r') as txt_file:
-            lines = txt_file.readlines()
-            questions = list()
-            header = 'UNKNOWN'
-            txt = ''
-            last_question = 0
-            for l in lines:
-                if len(l.strip()) == 0:
-                    continue
-                is_header = False
-                for h in headers:
-                    if l.startswith(h):
-                        header = h
-                        is_header = True
-                        break
-                if not is_header:
-                    q_text, q_number = question_number(l)
-                    if q_number and last_question < q_number and q_number > 1:
-                        last_question = q_number
-                        if len(txt) > 0:
-                            out_txt = "{} {}\n\n{}".format(q_number, q_text, txt)
-                            question_dict[q_number] = out_txt
-                        # print('is_a_new_question', q_number)
-                        txt = ''
-                    else:
-                        txt += l
-
-        forms[name] = question_dict
-    return forms
-
-
-def stubs(form="4100R4", form_data=None):
-    if not form_data:
-        form_data = dict()
-
-    form_questions = form_data[form]
-    if not form_questions:
-        form_questions = dict()
-    new_dir = '/Users/charityhilton/repos/CIBMTRaaS/forms/{}/'.format(form)
-    if not os.path.exists(new_dir):
-        os.makedirs(new_dir)
-
-    max_questions = 300
-    keys = list(form_questions.keys())
-    if len(keys) > 0:
-        max_questions = max(keys) + 1
-    for i in range(1, max_questions):
-        print('form {}, question {}'.format(file, i))
-        with open('/Users/charityhilton/repos/CIBMTRaaS/forms/{}/question_{}.nlpql'.format(form, i), 'w') as f:
-            entities = ""
-            operations = ""
-            comments = ""
-            f.write(nlpql_template.format(form, i, entities, operations, comments))
 
 
 def value_set(set_name, final_str, *args):
@@ -351,7 +252,7 @@ def is_numeric(test):
         int(test)
         float(test)
         return True
-    except:
+    except ValueError:
         return False
 
 
@@ -377,84 +278,6 @@ def cleanup_name(name):
     if clean_name.endswith('_'):
         clean_name = clean_name[0:-1]
     return clean_name, key_length
-
-
-def parse_questions_to_features(
-        file_name='/Users/charityhilton/Downloads/CIBMTR - Form 4100 Mapping - QuestionAnalysis.csv'):
-    with open(file_name, 'r', encoding='utf-8-sig', errors='ignore') as csvfile:
-        reader = csv.DictReader(csvfile, delimiter=',', quotechar='"')
-
-        with open('/Users/charityhilton/Downloads/cibmtr_features.csv', 'w') as csvfile_output:
-            writer = csv.writer(csvfile_output)
-            writer.writerow(
-                ['#', 'question_name', 'answers', 'group', 'question_type', 'evidence_bundle', 'feature_name',
-                 'fhir_resource_type', 'code_system',
-                 'codes', 'valueset_oid', 'nlp_task_type', 'text_terms', 'value_min', 'value_max',
-                 'value_enum_set', 'logic'])
-            for r in reader:
-                row = json.loads(json.dumps(r, indent=4, sort_keys=True).replace('\\u00a0', ' ').replace('\\u00ad', '-')
-                                 .replace('\\u2265', '>=').replace('\\u2264', '<=').replace('\\u00b3', '3').replace(
-                    '\\u00b0', ' degrees')
-                                 .replace('\\u03b3', 'gamma').replace('\\u03b1', 'alpha').replace('\\u00b5', 'u'))
-                question_num = row['Question'].strip().lower()
-                evidence = row['Evidence Bundle'].strip().lower()
-                group = row['Group'].strip().lower()
-                name = row['Name'].strip().lower()
-                answers = row['Answers'].strip().lower()
-                codes = row['Codes'].strip()
-                oid = row['OID'].strip()
-                code_sys = row['Code_System'].strip()
-                q_type = row['Type'].strip()
-                terms = row['Terms'].strip()
-                value_min = row['Value_Min'].strip()
-                value_max = row['Value_Max'].strip()
-                value_ex = row['Value_Extraction'].strip()
-                resource = 'Observation'
-                if code_sys == 'RxNorm':
-                    resource = 'Medication'
-
-                clean_name, key_length = cleanup_name(name)
-                clean_group_name, group_key_length = cleanup_name(group)
-
-                if key_length <= 2:
-                    clean_name += ('_' + clean_group_name)
-
-                if len(question_num) > 0:
-                    found = False
-                    if not evidence or len(evidence) == 0:
-                        evidence = clean_name
-                    if len(codes) > 0 and q_type != 'DATE':
-                        writer.writerow(
-                            [question_num, name, answers, group, q_type, evidence, clean_name + '_structured', resource,
-                             code_sys,
-                             codes, oid, 'CQLTask', '', '', '',
-                             '', ''])
-                        found = True
-
-                    if (len(value_min) > 0 or len(value_max) > 0 or len(value_min) > 0 or len(
-                            value_ex) > 0) and value_ex \
-                            != 'N/A' and q_type != 'DATE':
-                        writer.writerow(
-                            [question_num, name, answers, group, q_type, evidence, clean_name + '_value_extraction', '',
-                             '',
-                             '', '', 'ValueExtraction', terms, value_min, value_max,
-                             '', value_ex])
-                        found = True
-                    elif len(terms) > 0 and q_type != 'DATE':
-                        writer.writerow(
-                            [question_num, name, answers, group, q_type, evidence, clean_name + '_unstructured', '', '',
-                             '', '', 'ProviderAssertion', terms, '', '',
-                             '', ''])
-                        found = True
-
-                    if not found:
-                        writer.writerow([question_num, name, answers, group, q_type, '', '', '', '',
-                                         '', '', '', '', '', ''
-                                                             '', ''])
-
-                    writer.writerow(['', '', '', '', '', '', '', '', '',
-                                     '', '', '', '', '', ''
-                                                         '', ''])
 
 
 def merger(dict1, dict2):

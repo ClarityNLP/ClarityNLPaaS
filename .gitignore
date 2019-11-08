@@ -4,3 +4,6 @@ project.cfg
 CIBMTR_knowledge_base/
 .env
 .run.sh
+custom/*.csv
+custon/*.nlpql
+custom/*.json

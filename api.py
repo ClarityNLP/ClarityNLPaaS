@@ -13,9 +13,6 @@ from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql
 
 application = Flask(__name__)
 CORS(application)
-UPLOAD_FOLDER = './nlpql/custom'
-ALLOWED_EXTENSIONS = {'csv'}
-
 
 def clean_text(text):
     return (re.sub(r"""
@@ -27,8 +24,9 @@ def clean_text(text):
 
 
 def allowed_file(filename):
+    allowed_extensions = {'csv'}
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+           filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 
 def get_files(files, path):
@@ -314,6 +312,8 @@ def get_form(form_type: str):
 
 @application.route("/upload/form", methods=['POST', 'GET'])
 def upload_form():
+    upload_folder = './nlpql/custom'
+
     if request.method == 'POST':
         if 'file' not in request.files:
             flash('No file part')
@@ -328,7 +328,7 @@ def upload_form():
             return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            filepath = os.path.join(upload_folder, filename)
             file.save(filepath)
 
             status = "File parsed successfully. Added to available forms."
