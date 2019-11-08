@@ -41,7 +41,7 @@ def get_json(files, path):
                 files.append(path)
 
 
-def get_nlpql_questions(results=None, with_sorting=True):
+def get_nlpql_forms(results=None, with_sorting=True):
     results = list()
     get_json(results, 'nlpql')
 
@@ -213,13 +213,52 @@ def get_nlpql_list():
                         mimetype='application/json')
 
 
-@application.route("/form/questions/all", methods=['GET'])
+@application.route("/forms", methods=['GET'])
 def get_question_list():
     """
     API for getting NLPQL questions
     """
     if request.method == 'GET':
-        return Response(json.dumps(get_nlpql_questions()), status=200, mimetype='application/json')
+        form_display = list()
+        forms = get_nlpql_forms()
+        for f in forms:
+            form_obj = dict()
+            form_obj['url'] = f
+
+            keys = f.split('/')
+            if len(keys) == 0:
+                slug = "unknown"
+            elif len(keys) > 1:
+                slug = keys[-2]
+            else:
+                slug = keys[-1]
+            form_obj['slug'] = slug
+
+            if len(keys) == 3:
+                form_res = get_form_with_subcategory(keys[0], keys[1], keys[2])
+            elif len(keys) == 2:
+                form_res = get_form_with_category(keys[0], keys[1])
+            else:
+                form_res = get_form(keys[0])
+
+            try:
+                the_form = form_res.get_json()
+            except Exception as ex:
+                the_form = dict()
+                util.log(ex, util.ERROR)
+
+            the_form_name = the_form.get("name", "Unknown")
+            form_obj['name'] = the_form_name
+
+            the_form_owner = the_form.get("owner", "Unknown")
+            form_obj['owner'] = the_form_owner
+
+            the_form_version = the_form.get("version", "-1")
+            form_obj['version'] = the_form_version
+
+            form_display.append(form_obj)
+
+        return Response(json.dumps(form_display), status=200, mimetype='application/json')
     else:
         return Response(json.dumps({'message': 'API supports only GET requests'}, indent=4, sort_keys=True), status=400,
                         mimetype='application/json')
