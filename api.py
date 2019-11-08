@@ -312,7 +312,7 @@ def get_form(form_type: str):
 
 @application.route("/upload/form", methods=['POST', 'GET'])
 def upload_form():
-    upload_folder = './nlpql/custom'
+    upload_folder = 'nlpql/custom'
 
     if request.method == 'POST':
         if 'file' not in request.files:
@@ -336,7 +336,7 @@ def upload_form():
                 parse_questions(folder_prefix=clean_text(form_name),
                                 form_name=form_name.replace('_', ' '),
                                 file_name=filepath,
-                                output_dir='./nlpql/custom')
+                                output_dir='nlpql/custom')
             except Exception as ex:
                 status = "Failed to upload, {}".format(repr(ex))
                 util.log(ex, util.ERROR)
