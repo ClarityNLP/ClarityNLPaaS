@@ -1,14 +1,34 @@
 import json
 import os
-import util
+import re
 
-from flask import Flask, request, Response
+from flask import Flask, flash, request, redirect
+from flask import Response
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
 
+import util
+from csv_to_form import parse_questions_from_feature_csv as parse_questions
 from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, get_file, async_results
 
 application = Flask(__name__)
 CORS(application)
+UPLOAD_FOLDER = './nlpql/custom'
+ALLOWED_EXTENSIONS = {'csv'}
+
+
+def clean_text(text):
+    return (re.sub(r"""
+                   [,.;@#?!&$]+  
+                   \ *
+                   """,
+                   "_",
+                   text.lower(), flags=re.VERBOSE)).replace(' ', '_')
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def get_files(files, path):
@@ -258,7 +278,7 @@ def get_question_list():
 
             form_display.append(form_obj)
 
-        return Response(json.dumps(form_display), status=200, mimetype='application/json')
+        return Response(json.dumps(form_display, indent=4), status=200, mimetype='application/json')
     else:
         return Response(json.dumps({'message': 'API supports only GET requests'}, indent=4, sort_keys=True), status=400,
                         mimetype='application/json')
@@ -290,6 +310,73 @@ def get_form(form_type: str):
     return Response(get_file(file_path),
                     status=200,
                     mimetype='application/json')
+
+
+@application.route("/upload/form", methods=['POST', 'GET'])
+def upload_form():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        form_name = request.form['formname']
+
+        if not form_name or len(form_name) == 0:
+            return redirect(request.url)
+
+        if file.filename == '':
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            file.save(filepath)
+
+            status = "File parsed successfully. Added to available forms."
+            try:
+                parse_questions(folder_prefix=clean_text(form_name),
+                                form_name=form_name.replace('_', ' '),
+                                file_name=filepath,
+                                output_dir='./nlpql/custom')
+            except Exception as ex:
+                status = "Failed to upload, {}".format(repr(ex))
+                util.log(ex, util.ERROR)
+
+            response_data = {
+                'status': status,
+                'available_forms': get_nlpql_forms()
+            }
+            return Response(json.dumps(response_data, indent=4),
+                            status=200,
+                            mimetype='application/json')
+    else:
+        return '''
+        <!doctype html>
+        <head>
+        <title>Upload CSV for NLPQL Form Parsing</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+        </head>
+        <body>
+        
+        <div class="container">
+        <h1>Upload CSV for NLPQL Form Parsing</h1>
+        <br>
+        
+        <div>
+            <a href="https://github.com/ClarityNLP/Utilities/blob/master/custom_query/afib.csv" target="_blank">
+                (See sample CSV)
+            </a>
+        </div>
+        <form method=post enctype=multipart/form-data>
+          <br>
+          <input type=text name="formname" class="form-control" placeholder="Form Name">
+          <br>
+          <input type=file name=file class="form-control-file">
+          <br>
+          <input type=submit value=Upload class="btn btn-primary">
+        </form>
+        </div>
+        </body>
+        '''
 
 
 if __name__ == '__main__':
