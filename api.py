@@ -313,7 +313,7 @@ def get_form(form_type: str):
 
 @application.route("/upload/form", methods=['POST', 'GET'])
 def upload_form():
-    upload_folder = 'nlpql/custom'
+    upload_folder = 'nlpql/NLPQL_form_content'
 
     if not os.path.exists(upload_folder):
         os.makedirs(upload_folder)
