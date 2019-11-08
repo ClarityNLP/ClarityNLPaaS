@@ -14,6 +14,7 @@ from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql
 application = Flask(__name__)
 CORS(application)
 
+
 def clean_text(text):
     return (re.sub(r"""
                    [,.;@#?!&$]+  
@@ -314,6 +315,9 @@ def get_form(form_type: str):
 def upload_form():
     upload_folder = 'nlpql/custom'
 
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder)
+
     if request.method == 'POST':
         if 'file' not in request.files:
             flash('No file part')
@@ -336,7 +340,7 @@ def upload_form():
                 parse_questions(folder_prefix=clean_text(form_name),
                                 form_name=form_name.replace('_', ' '),
                                 file_name=filepath,
-                                output_dir='nlpql/custom')
+                                output_dir=upload_folder)
             except Exception as ex:
                 status = "Failed to upload, {}".format(repr(ex))
                 util.log(ex, util.ERROR)
