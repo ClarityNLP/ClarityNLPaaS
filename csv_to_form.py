@@ -76,6 +76,8 @@ cql_template = '''
         codesystem "SNOMED": 'urn:oid:2.16.840.1.113883.6.96'
         codesystem "RxNorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
         codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
+        codesystem "ICD9": '2.16.840.1.113883.6.42'
+        codesystem "ICD10": '2.16.840.1.113883.6.3'
 
         context Patient
 
@@ -630,7 +632,7 @@ if __name__ == "__main__":
     #                                  form_name="Atrial Fibrilation",
     #                                  file_name='./custom_query/afib.csv',
     #                                  output_dir='./custom_query/output')
-    # parse_questions_from_feature_csv(folder_prefix='afib',
-    #                                  form_name="Atrial Fibrilation",
-    #                                  file_name='./custom_query/afib.csv',
-    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
+    parse_questions_from_feature_csv(folder_prefix='afib',
+                                     form_name="Atrial Fibrilation",
+                                     file_name='./nlpql/afib/afib.csv',
+                                     output_dir='/Users/charityhilton/repos/custom_nlpql')
