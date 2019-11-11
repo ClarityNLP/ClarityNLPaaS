@@ -291,8 +291,10 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                                      form_name="Form 4100 R4.0",
                                      file_name='/Users/charityhilton/Downloads/feature2question.csv',
                                      output_dir='/Users/charityhilton/repos/CIBMTR_knowledge_base'):
-    if not os.path.exists(os.path.join(output_dir, folder_prefix)):
-        os.mkdir(os.path.join(output_dir, folder_prefix))
+    output_folder_path = os.path.join(output_dir, folder_prefix)
+    print(output_folder_path)
+    if not os.path.exists(output_folder_path):
+        os.mkdir(output_folder_path)
 
     with open(file_name, 'r', encoding='utf-8', errors='ignore') as csvfile:
         reader = csv.DictReader(csvfile, delimiter=',', quotechar='"')
@@ -307,6 +309,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
         }
 
         n = 0
+
 
         groups = set()
         grouping = None
@@ -338,7 +341,10 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                              .replace('\\u2265', '>=').replace('\\u2264', '<=').replace('\\u00b3', '3').replace(
                 '\\u00b0', ' degrees')
                              .replace('\\u03b3', 'gamma').replace('\\u03b1', 'alpha').replace('\\u00b5', 'u'))
-
+            row_copy = row.copy()
+            for ro in row_copy.keys():
+                new_key = ro.strip().lower()
+                row[new_key] = row_copy[ro]
             if len(row['evidence_bundle']) > 0 and len(row['#']) == 0:
 
                 if last_row:
@@ -628,11 +634,11 @@ if __name__ == "__main__":
     #                                  form_name="Form 4100 R4.0",
     #                                  file_name='/Users/charityhilton/Downloads/feature2question.csv',
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
-    # parse_questions_from_feature_csv(folder_prefix='afib',
-    #                                  form_name="Atrial Fibrilation",
-    #                                  file_name='./custom_query/afib.csv',
-    #                                  output_dir='./custom_query/output')
     parse_questions_from_feature_csv(folder_prefix='afib',
                                      form_name="Atrial Fibrilation",
                                      file_name='./nlpql/afib/afib.csv',
+                                     output_dir='/Users/charityhilton/repos/custom_nlpql')
+    parse_questions_from_feature_csv(folder_prefix='sickle_cell',
+                                     form_name="Sickle Cell",
+                                     file_name='/Users/charityhilton/Downloads/sicklecell.csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql')
