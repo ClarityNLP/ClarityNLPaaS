@@ -101,14 +101,18 @@ def upload_report():
         data = request.get_json()
         status, source_id, report_ids, is_fhir_resource, report_payload = upload_reports(data)
         if not status:
-            return Response(json.dumps({'message': 'Could not upload reports to Solr. Reason: ' + source_id}, indent=4),
-                            status=500,
-                            mimetype='application/json')
+            return Response(json.dumps({
+                'message': 'Could not upload reports to Solr. Reason: ' + source_id,
+                'success': 'false'
+            }, indent=4),
+                status=500,
+                mimetype='application/json')
         else:
             return Response(json.dumps({
                 'message': 'Success',
                 'source_id': source_id,
-                'reports': report_ids
+                'reports': report_ids,
+                'success': 'true'
             }, indent=4),
                 status=200,
                 mimetype='application/json')
@@ -124,15 +128,18 @@ def upload_report():
 def delete_reports(source_id: str):
     if request.method == 'POST':
         # Checking if the selected job is valid
-        data = request.get_json()
         delete_obj = delete_report(source_id)
         if not delete_obj[0]:
             return Response(
-                json.dumps({'message': 'Could not delete reports from Solr. Reason: ' + delete_obj[1]}, indent=4),
+                json.dumps({
+                    'message': 'Could not delete reports from Solr. Reason: ' + delete_obj[1],
+                    'success': 'false'
+                }, indent=4),
                 status=500,
                 mimetype='application/json')
         else:
             return Response(json.dumps({
+                'success': 'true',
                 'message': 'Success',
                 'reason': delete_obj[1]
             }, indent=4),
