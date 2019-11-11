@@ -9,7 +9,8 @@ from werkzeug.utils import secure_filename
 
 import util
 from csv_to_form import parse_questions_from_feature_csv as parse_questions
-from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, get_file, async_results
+from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, get_file, async_results, \
+    upload_reports, delete_report
 
 application = Flask(__name__)
 CORS(application)
@@ -91,6 +92,57 @@ def get_host(r):
         return 'https://{0}/'.format(r.host)
     else:
         return 'http://{0}/'.format(r.host)
+
+
+@application.route("/report/upload", methods=['POST'])
+def upload_report():
+    if request.method == 'POST':
+        # Checking if the selected job is valid
+        data = request.get_json()
+        status, source_id, report_ids, is_fhir_resource, report_payload = upload_reports(data)
+        if not status:
+            return Response(json.dumps({'message': 'Could not upload reports to Solr. Reason: ' + source_id}, indent=4),
+                            status=500,
+                            mimetype='application/json')
+        else:
+            return Response(json.dumps({
+                'message': 'Success',
+                'source_id': source_id,
+                'reports': report_ids
+            }, indent=4),
+                status=200,
+                mimetype='application/json')
+
+    else:
+
+        return Response("Invalid route. Only POST accepted",
+                        status=200,
+                        mimetype='text/plain')
+
+
+@application.route("/report/delete/<source_id>", methods=['POST'])
+def delete_reports(source_id: str):
+    if request.method == 'POST':
+        # Checking if the selected job is valid
+        data = request.get_json()
+        delete_obj = delete_report(source_id)
+        if not delete_obj[0]:
+            return Response(
+                json.dumps({'message': 'Could not delete reports from Solr. Reason: ' + delete_obj[1]}, indent=4),
+                status=500,
+                mimetype='application/json')
+        else:
+            return Response(json.dumps({
+                'message': 'Success',
+                'reason': delete_obj[1]
+            }, indent=4),
+                status=200,
+                mimetype='application/json')
+    else:
+
+        return Response("Invalid route. Only POST accepted",
+                        status=200,
+                        mimetype='text/plain')
 
 
 @application.route("/job/<job_category>/<job_subcategory>/<job_name>", methods=['POST', 'GET'])

@@ -698,25 +698,21 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False):
         encounter_id = fhir['encounter_id']
 
     log('patient_id {}'.format(patient_id))
-    # if patient_id == -1 and ('reports' not in data or not data['reports'] or len(data['reports']) == 0):
-    #     return Response(json.dumps({'message': 'No reports passed into service.'}, indent=4),
-    #                     status=500,
-    #                     mimetype='application/json')
+    source_id = data.get('source_id', 'UNKNOWN')
+    reports = data.get('reports', [])
 
-    # # Checking for active Job
-    # if has_active_job(data):
-    #     return Response(
-    #         json.dumps({'message': 'You currently have an active job. Only one active job allowed'}, indent=4),
-    #         status=200, mimetype='application/json')
-
-    # Uploading report to Solr
-    status, source_id, report_ids, is_fhir_resource, report_payload = upload_reports(data, access_token=fhir_auth_token)
-    if not status:
-        if patient_id == -1:
+    if reports and len(reports) > 0:
+        status, source_id, report_ids, is_fhir_resource, report_payload = upload_reports(data,
+                                                                                         access_token=fhir_auth_token)
+        if not status:
             return Response(json.dumps({'message': 'Could not upload reports to Solr. Reason: ' + source_id}, indent=4),
                             status=500,
                             mimetype='application/json')
 
+    if not source_id or len(source_id) == 0 or source_id == 'UNKNOWN':
+        return Response(json.dumps({'message': 'invalid source_id provided'}, indent=4),
+                        status=500,
+                        mimetype='application/json')
     # Getting the nlpql from disk
     nlpql = get_nlpql(job_file_path)
 
