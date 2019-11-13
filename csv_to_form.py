@@ -8,6 +8,10 @@ from os import path
 import nltk
 from nltk.corpus import stopwords
 
+valid = list(string.digits)
+valid.extend(list(string.ascii_letters))
+valid.append('_')
+
 nlpql_template = '''
 // Phenotype library name
 phenotype "Form {}, Question {}" version "1";
@@ -628,10 +632,6 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 new_grouping = False
 
             if not no_evidence:
-                valid = list(string.digits)
-                valid.extend(list(string.ascii_letters))
-                valid.append('_')
-
                 feature_name = ''.join([t for t in feature_name if t in valid])
                 if len(name.strip()) == 0:
                     continue
