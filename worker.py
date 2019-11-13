@@ -633,6 +633,7 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False):
     """
     Main worker function
     """
+    results = list()
     start = time.time()
     # check for fhir
     fhir_data_service_uri = ''
@@ -775,15 +776,10 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False):
     num_data_entities = len(filtered_data_entities)
 
     if num_data_entities == 0:
-        return Response(json.dumps({
-            'message': 'No valid NLPQL tasks for this query. This subject likely has no documents, '
-                       'and no structured tasks were queried OR this subject has no documents, and also no '
-                       'patient identifier was provided. Try passing in "fhir" metadata.',
-            'no_reports': no_docs,
-            "success": True,
-        }, indent=4),
-            status=200,
-            mimetype='application/json')
+        util.log('No valid NLPQL tasks for this query. This subject likely has no documents, and no structured tasks'
+                 ' were queried OR this subject has no documents, and also no patient identifier was provided. Try '
+                 'passing in "fhir" metadata.', util.ERROR)
+        return Response(json.dumps(results, indent=4), status=200, mimetype='application/json')
 
     nlpql_json['data_entities'] = filtered_data_entities
     # Submitting the job
