@@ -720,43 +720,72 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False):
     if not success:
         return Response(json.dumps(nlpql_json, indent=4, sort_keys=True), status=400, mimetype='application/json')
     nlpql_json['document_sets'] = list()
+    no_docs = False
+    docs = ["Docs"]
     if not source_id or len(source_id) == 0 or source_id == 'UNKNOWN':
         util.log("no or invalid source id provided", util.ERROR)
-        docs = []
+        no_docs = True
     else:
         doc_set = get_document_set(source_id)
         nlpql_json['document_sets'].append(doc_set)
-        docs = ["Docs"]
 
     data_entities = nlpql_json['data_entities']
 
+    filtered_data_entities = list()
     for de in data_entities:
-        de['named_arguments']['documentset'] = docs
-        de['named_arguments']['cql_eval_url'] = util.cql_eval_url
-        de['named_arguments']['patient_id'] = patient_id
-        de['named_arguments']['encounter_id'] = encounter_id
-        de['named_arguments']['fhir_data_service_uri'] = fhir_data_service_uri
-        de['named_arguments']['fhir_auth_type'] = fhir_auth_type
-        de['named_arguments']['fhir_auth_token'] = fhir_auth_token
-        de['named_arguments']['fhir_terminology_service_uri'] = util.fhir_terminology_service_uri
-        de['named_arguments']['fhir_terminology_service_endpoint'] = util.fhir_terminology_service_endpoint
-        de['named_arguments']['fhir_terminology_user_name'] = util.fhir_terminology_user_name
-        de['named_arguments']['fhir_terminology_user_password'] = util.fhir_terminology_user_password
+        is_valid_task = True
 
-        de['named_arguments']['fhir_auth_id_token'] = fhir_auth_id_token
-        de['named_arguments']['fhir_auth_patient'] = fhir_auth_patient
-        de['named_arguments']['fhir_auth_expires_in'] = fhir_auth_expires_in
-        de['named_arguments']['fhir_auth_scope'] = fhir_auth_scope
-        de['named_arguments']['fhir_client_id'] = fhir_client_id
-        de['named_arguments']['fhir_scope'] = fhir_scope
-        de['named_arguments']['fhir_redirect_uri'] = fhir_redirect_uri
-        de['named_arguments']['fhir_key'] = fhir_key
-        de['named_arguments']['fhir_registration_uri'] = fhir_registration_uri
-        de['named_arguments']['fhir_authorize_uri'] = fhir_authorize_uri
-        de['named_arguments']['fhir_token_uri'] = fhir_token_uri
+        if no_docs:
+            funct = de.get('funct', '').lower()
+            if 'cql' in funct:
+                if patient_id and len(str(patient_id)) > 0 and patient_id != -1:
+                    is_valid_task = True
+                else:
+                    is_valid_task = False
+            else:
+                is_valid_task = False
 
-    nlpql_json['data_entities'] = data_entities
+        if is_valid_task:
+            de['named_arguments']['documentset'] = docs
+            de['named_arguments']['cql_eval_url'] = util.cql_eval_url
+            de['named_arguments']['patient_id'] = patient_id
+            de['named_arguments']['encounter_id'] = encounter_id
+            de['named_arguments']['fhir_data_service_uri'] = fhir_data_service_uri
+            de['named_arguments']['fhir_auth_type'] = fhir_auth_type
+            de['named_arguments']['fhir_auth_token'] = fhir_auth_token
+            de['named_arguments']['fhir_terminology_service_uri'] = util.fhir_terminology_service_uri
+            de['named_arguments']['fhir_terminology_service_endpoint'] = util.fhir_terminology_service_endpoint
+            de['named_arguments']['fhir_terminology_user_name'] = util.fhir_terminology_user_name
+            de['named_arguments']['fhir_terminology_user_password'] = util.fhir_terminology_user_password
 
+            de['named_arguments']['fhir_auth_id_token'] = fhir_auth_id_token
+            de['named_arguments']['fhir_auth_patient'] = fhir_auth_patient
+            de['named_arguments']['fhir_auth_expires_in'] = fhir_auth_expires_in
+            de['named_arguments']['fhir_auth_scope'] = fhir_auth_scope
+            de['named_arguments']['fhir_client_id'] = fhir_client_id
+            de['named_arguments']['fhir_scope'] = fhir_scope
+            de['named_arguments']['fhir_redirect_uri'] = fhir_redirect_uri
+            de['named_arguments']['fhir_key'] = fhir_key
+            de['named_arguments']['fhir_registration_uri'] = fhir_registration_uri
+            de['named_arguments']['fhir_authorize_uri'] = fhir_authorize_uri
+            de['named_arguments']['fhir_token_uri'] = fhir_token_uri
+
+            filtered_data_entities.append(de)
+
+    num_data_entities = len(filtered_data_entities)
+
+    if num_data_entities == 0:
+        return Response(json.dumps({
+            'message': 'No valid NLPQL tasks for this query. This subject likely has no documents, '
+                       'and no structured tasks were queried OR this subject has no documents, and also no '
+                       'patient identifier was provided. Try passing in "fhir" metadata.',
+            'no_reports': no_docs,
+            "success": True,
+        }, indent=4),
+            status=200,
+            mimetype='application/json')
+
+    nlpql_json['data_entities'] = filtered_data_entities
     # Submitting the job
     job_success, job_info = submit_job(nlpql_json)
     if not job_success:
