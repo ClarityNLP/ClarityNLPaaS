@@ -708,11 +708,10 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False):
             return Response(json.dumps({'message': 'Could not upload reports to Solr. Reason: ' + source_id}, indent=4),
                             status=500,
                             mimetype='application/json')
+    else:
+        report_payload = list()
+        report_ids = list()
 
-    if not source_id or len(source_id) == 0 or source_id == 'UNKNOWN':
-        return Response(json.dumps({'message': 'invalid source_id provided'}, indent=4),
-                        status=500,
-                        mimetype='application/json')
     # Getting the nlpql from disk
     nlpql = get_nlpql(job_file_path)
 
@@ -720,11 +719,15 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False):
     success, nlpql_json = submit_test(nlpql)
     if not success:
         return Response(json.dumps(nlpql_json, indent=4, sort_keys=True), status=400, mimetype='application/json')
-    doc_set = get_document_set(source_id)
     nlpql_json['document_sets'] = list()
-    nlpql_json['document_sets'].append(doc_set)
+    if not source_id or len(source_id) == 0 or source_id == 'UNKNOWN':
+        util.log("no or invalid source id provided", util.ERROR)
+        docs = []
+    else:
+        doc_set = get_document_set(source_id)
+        nlpql_json['document_sets'].append(doc_set)
+        docs = ["Docs"]
 
-    docs = ["Docs"]
     data_entities = nlpql_json['data_entities']
 
     for de in data_entities:
