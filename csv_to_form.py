@@ -68,7 +68,10 @@ basic_data_entity_template = '''
 define final {}:
     {}
 '''
+cql_vsac_header = '''
+        valueset "{}_valueset": '{}'
 
+'''
 cql_template = '''
         library Retrieve2 version '1.0'
 
@@ -82,6 +85,8 @@ cql_template = '''
         codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
         codesystem "ICD9": '2.16.840.1.113883.6.42'
         codesystem "ICD10": '2.16.840.1.113883.6.3'
+        
+        {}
 
         context Patient
 
@@ -93,7 +98,7 @@ cql_template = '''
 
 # +
 cql_concept_template = '''
-        define "%s_concept": Concept {
+        define "%s_concepts": Concept {
             %s
         }
 
@@ -109,9 +114,13 @@ cql_concept_template = '''
 # +
 
 cql_result_template = '''
-        define "{}":
-            [{}: Code in "{}_concept"]
+       define "{}": 
+            {}
 '''
+
+cql_result_template_cs = ''' [{}: Code in "{}_concepts"]'''
+
+cql_result_template_vs = '''[{}:"{}_valueset"]'''
 
 cql_task_template = '''
 define final %s:
@@ -447,19 +456,53 @@ def map_value_extraction(terms, termsets, feature_name, value_min, value_max, va
         entities.append(pa)
 
 
-def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features):
+def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features, value_set_oid):
     c_string = ''
-    for c in codes:
-        if len(c_string) > 0:
-            c_string += ', \n            '
-        code = c.replace('?', '').replace('"', '').replace("'", '')
-        c_string += 'Code \'{}\' from "{}"'.format(code, code_sys)
-    cql_concept = cql_concept_template % (feature_name, c_string)
-    concepts.append(cql_concept)
     resource = fhir_resource_type
 
-    cql_res = cql_result_template.format(feature_name, resource, feature_name)
-    cql = cql_template.format(cql_concept, cql_res)
+    cql_res = ''
+    cql_concept = ''
+    cql_header = ''
+    cql_result_members = list()
+    #
+    # define "Conditions Indicating Sexual Activity":
+    # 	["Condition": "Other Female Reproductive Conditions"]
+    # 	union ["Condition": "Genital Herpes"]
+    #     union ["Condition": "Genococcal Infections and Venereal Diseases"]
+    #     union ["Condition": "Inflammatory Diseases of Female Reproductive Organs"]
+    #     union ["Condition": "Chlamydia"]
+    #     union ["Condition": "HIV"]
+    #     union ["Condition": "Syphilis"]
+    #     union ["Condition": "Complications of Pregnancy, Childbirth and the Puerperium"]
+
+    if not resource or len(resource) == 0:
+        resource = 'Observation'
+    if codes and len(codes) > 0:
+        for c in codes:
+            if len(c_string) > 0:
+                c_string += ', \n            '
+            code = c.replace('?', '').replace('"', '').replace("'", '')
+            c_string += 'Code \'{}\' from "{}"'.format(code, code_sys)
+        cql_concept = cql_concept_template % (feature_name, c_string)
+        concepts.append(cql_concept)
+        cql_result_members.append(cql_result_template_cs.format(resource, feature_name))
+    if value_set_oid and len(value_set_oid) > 0:
+        value_set_oid = value_set_oid.replace('?', '').replace('"', '').replace("'", '')
+        cql_define_name = feature_name
+        cql_header = cql_vsac_header.format(cql_define_name, value_set_oid)
+        cql_result_members.append(cql_result_template_vs.format(resource, cql_define_name))
+
+    if len(cql_header) == 0 and len(cql_concept) == 0 and len(cql_result_members) == 0:
+        print('no valid cql params')
+        return
+
+    if len(cql_result_members) == 1:
+        cql_res = '\t' + cql_result_members[0]
+    else:
+        cql_res = '''\n\t\t\t\tunion '''.join(cql_result_members)
+
+    cql_res = cql_result_template.format(feature_name, cql_res)
+    cql = cql_template.format(cql_header, cql_concept, cql_res)
     entities.append(cql_task_template % (feature_name, cql))
     features.append(feature_name)
 
@@ -663,8 +706,9 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 elif len(terms) > 0 and 'value' in nlp_task_type:
                     map_value_extraction(terms, termsets, feature_name, value_min, value_max, value_enum_set, features,
                                          entities)
-                elif (len(codes) > 0 or len(valueset_oid) > 0) and 'cql' in nlp_task_type:
-                    map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features)
+                elif len(codes) > 0 or len(valueset_oid) > 0:
+                    map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features,
+                            valueset_oid)
                 if evidence_bundle not in evidence:
                     evidence[evidence_bundle] = list()
                 evidence[evidence_bundle].append(feature_name)
@@ -694,5 +738,5 @@ if __name__ == "__main__":
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
     parse_questions_from_feature_csv(folder_prefix='4100r4',
                                      form_name="Form 4100 R4.0",
-                                     file_name='/Users/charityhilton/Downloads/feature_to_question_cibmtr.csv',
+                                     file_name='/Users/charityhilton/Downloads/cibmtr_mapping.csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql')
