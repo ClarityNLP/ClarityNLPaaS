@@ -11,6 +11,7 @@ import util
 from csv_to_form import parse_questions_from_feature_csv as parse_questions
 from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, get_file, async_results, \
     upload_reports, delete_report
+from subprocess import call
 
 application = Flask(__name__)
 CORS(application)
@@ -278,6 +279,14 @@ def get_results(job_id):
     else:
         return Response(json.dumps({'message': 'API supports only GET requests'}, indent=4, sort_keys=True), status=400,
                         mimetype='application/json')
+
+
+@application.route("/update/nlpql", methods=['GET'])
+def update_nlpql():
+    os.environ['CUSTOM_DIR'] = util.custom_nlpql_folder
+    os.environ['CUSTOM_S3_URL'] = util.custom_nlpql_s3_bucket
+    call(['load_nlpql.sh'])
+    return "NLPQL update triggered"
 
 
 @application.route("/job/list/all", methods=['GET'])

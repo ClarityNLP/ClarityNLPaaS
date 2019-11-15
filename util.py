@@ -134,6 +134,9 @@ fhir_terminology_user_name = read_property('FHIR_TERMINOLOGY_USER_NAME',
 fhir_terminology_user_password = read_property('FHIR_TERMINOLOGY_USER_PASSWORD',
                                                ('fhir', 'fhir_terminology_user_password'))
 
+custom_nlpql_s3_bucket = read_property('CUSTOM_S3_URL', ('custom', 's3_url'))
+custom_nlpql_folder = read_property('CUSTOM_DIR', ('custom', 's3_folder'))
+
 
 def app_token():
     if not claritynlp_clientsecret or len(claritynlp_clientsecret.strip()) == 0:
