@@ -628,6 +628,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             old_grouping = grouping
             if not old_grouping:
                 old_grouping = r_evidence_bundle
+            if new_grouping:
+                grouping = r_evidence_bundle
 
             last_question = question_num
             if last_question and str(last_question) != str(r_num):
@@ -716,11 +718,13 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                     evidence_count += 1
             n += 1
 
+        old_grouping = grouping
+        group_formatted = '_'.join(grouping.lower().split(' ')).replace(',', '').replace('_/_', '_')
+        write_nlpql_file(output_dir, folder_prefix,
+                         group_formatted, termsets, entities, operations, form_name, old_grouping, comment)
         save_question_to_form_data(q_type, answers, name, question_num, group, evidence, grouping,
                                    map_qs, form_data)
         write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count)
-        write_nlpql_file(output_dir, folder_prefix,
-                         group_formatted, termsets, entities, operations, form_name, old_grouping, comment)
         print(evidence_count)
         return form_data
 
@@ -738,5 +742,5 @@ if __name__ == "__main__":
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
     parse_questions_from_feature_csv(folder_prefix='4100r4',
                                      form_name="Form 4100 R4.0",
-                                     file_name='/Users/charityhilton/Downloads/cibmtr_mapping.csv',
+                                     file_name='/Users/charityhilton/Downloads/cimbtr_latest1.csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql')
