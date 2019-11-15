@@ -285,7 +285,7 @@ def get_results(job_id):
 def update_nlpql():
     os.environ['CUSTOM_DIR'] = util.custom_nlpql_folder
     os.environ['CUSTOM_S3_URL'] = util.custom_nlpql_s3_bucket
-    call(['load_nlpql.sh'])
+    call(['sh /api/load_nlpql.sh'])
     return "NLPQL update triggered"
 
 
