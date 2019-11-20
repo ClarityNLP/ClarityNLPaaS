@@ -341,7 +341,7 @@ def write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_
 
 
 def save_question_to_form_data(q_type, answers, name, question_num, group, evidence, grouping, map_qs, form_data):
-    print('saving question ', question_num)
+    print('saving question ', question_num, ' ', name)
     answer_sets = list()
     if q_type != 'DATE' and q_type != 'TEXT':
         for a in answers:
@@ -477,7 +477,11 @@ def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entitie
 
     if not resource or len(resource) == 0:
         resource = 'Observation'
-    if codes and len(codes) > 0:
+    if not codes:
+        codes = list()
+    if len(codes) == 1 and codes[0] == '':
+        codes = list()
+    if len(codes) > 0:
         for c in codes:
             if len(c_string) > 0:
                 c_string += ', \n            '
@@ -543,6 +547,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
     if not os.path.exists(output_folder_path):
         os.mkdir(output_folder_path)
 
+    feature_names = set()
+
     with open(file_name, 'r', encoding='utf-8', errors='ignore') as csv_file:
         reader = csv.DictReader(csv_file, delimiter=',', quotechar='"')
 
@@ -600,6 +606,39 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             r_value_enum_set = row.get('value_enum_set', '')
             r_logic = row.get('logic', '')
 
+            l_nlp_task_type = r_nlp_task_type.lower()
+            if len(r_nlp_task_type) == 0:
+                if len(r_codes) > 0 or len(r_valueset_oid) > 0:
+                    r_nlp_task_type = 'CQLExecutionTask'
+                elif len(r_terms) == 0:
+                    if len(r_value_min) > 0 or len(r_value_max) > 0 or len(value_enum_set) > 0:
+                        r_nlp_task_type = 'ValueExtraction'
+                    else:
+                        r_nlp_task_type = 'ProviderAssertion'
+                elif len(logic) > 0:
+                    r_nlp_task_type = 'Logic'
+            else:
+                if 'cql' in l_nlp_task_type:
+                    if len(r_codes) == 0 or len(r_valueset_oid) == 0:
+                        r_nlp_task_type = ''
+                elif 'value' in l_nlp_task_type or 'term' in l_nlp_task_type or 'assertion' in l_nlp_task_type:
+                    if len(r_terms) == 0:
+                        r_nlp_task_type = ''
+                    else:
+                        if 'value' in l_nlp_task_type and len(r_value_min) == 0 and len(r_value_max) == 0 and \
+                                len(value_enum_set) == 0:
+                            r_nlp_task_type = 'ProviderAssertion'
+                elif 'logic' in l_nlp_task_type:
+                    if len(r_logic) == 0:
+                        r_nlp_task_type = ''
+
+            if 'value' in l_nlp_task_type and len(r_value_min) == 0 and len(r_value_max) == 0 and \
+                    len(value_enum_set) == 0:
+                r_nlp_task_type = 'ProviderAssertion'
+
+            if str(question_num) == '14':
+                print('debugging')
+
             if len(r_evidence_bundle) > 0 and len(r_num) == 0:
                 if last_row:
                     last_r_num = last_row.get('#', '')
@@ -656,6 +695,10 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             logic = r_logic.strip()
             group_formatted = '_'.join(old_grouping.lower().split(' ')).replace(',', '').replace('_/_', '_')
 
+            if (len(codes) > 0 or len(valueset_oid) > 0) and feature_name in feature_names:
+                feature_name = feature_name + '_1'
+            feature_names.add(feature_name)
+
             if len(group) > 0:
                 groups[group] = ''
 
@@ -688,7 +731,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                     q_type = 'MULTIPLE_CHOICE'
                 elif q_type == 'TEXT+MC' or q_type == 'TEXT_WITH_MULTIPLE_CHOICE' or q_type == \
                         'TEXT WITH MULTIPLE CHOICE':
-                    q_type = 'TEXT_WITH_MULTIPLE_CHOICE'
+                    # q_type = 'TEXT_WITH_MULTIPLE_CHOICE'
+                    q_type = 'TEXT'
                 else:
                     q_type = 'TEXT'
 
@@ -742,5 +786,5 @@ if __name__ == "__main__":
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
     parse_questions_from_feature_csv(folder_prefix='4100r4',
                                      form_name="Form 4100 R4.0",
-                                     file_name='/Users/charityhilton/Downloads/cimbtr_latest1.csv',
+                                     file_name='/Users/charityhilton/Downloads/cibmtr_simple.csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql')
