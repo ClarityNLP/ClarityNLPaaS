@@ -340,7 +340,10 @@ def write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_
         f.write(json.dumps(form_data, indent=4))
 
 
-def save_question_to_form_data(q_type, answers, name, question_num, group, evidence, grouping, map_qs, form_data):
+def save_question_to_form_data(q_type, answers, name, question_num, group, evidence, grouping, map_qs, form_data,
+                               grouping_alt):
+    # if not grouping or grouping == '':
+    #     grouping = grouping_alt
     print('saving question ', question_num, ' ', name)
     answer_sets = list()
     if q_type != 'DATE' and q_type != 'TEXT':
@@ -354,10 +357,10 @@ def save_question_to_form_data(q_type, answers, name, question_num, group, evide
     if evidence:
         for k in evidence.keys():
             if k == grouping:
-                this_evidence[k] = evidence[k]
+                this_evidence[k] = list(set(evidence[k]))
             for v in evidence[k]:
                 if v == grouping:
-                    this_evidence[k] = evidence[k]
+                    this_evidence[k] = list(set(evidence[k]))
     new_q = {
         "question_name": name,
         "question_type": q_type,
@@ -619,7 +622,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                     r_nlp_task_type = 'Logic'
             else:
                 if 'cql' in l_nlp_task_type:
-                    if len(r_codes) == 0 or len(r_valueset_oid) == 0:
+                    if len(r_codes) == 0 and len(r_valueset_oid) == 0:
                         r_nlp_task_type = ''
                 elif 'value' in l_nlp_task_type or 'term' in l_nlp_task_type or 'assertion' in l_nlp_task_type:
                     if len(r_terms) == 0:
@@ -673,7 +676,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             last_question = question_num
             if last_question and str(last_question) != str(r_num):
                 save_question_to_form_data(q_type, answers, name, last_question, group, evidence,
-                                           grouping, map_qs, form_data)
+                                           group_formatted, map_qs, form_data, grouping)
 
             question_num = r_num
             answers = [x.strip() for x in r_answers.split(',')]
@@ -766,8 +769,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
         group_formatted = '_'.join(grouping.lower().split(' ')).replace(',', '').replace('_/_', '_')
         write_nlpql_file(output_dir, folder_prefix,
                          group_formatted, termsets, entities, operations, form_name, old_grouping, comment)
-        save_question_to_form_data(q_type, answers, name, question_num, group, evidence, grouping,
-                                   map_qs, form_data)
+        save_question_to_form_data(q_type, answers, name, question_num, group, evidence, group_formatted,
+                                   map_qs, form_data, grouping)
         write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count)
         print(evidence_count)
         return form_data
@@ -786,5 +789,5 @@ if __name__ == "__main__":
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
     parse_questions_from_feature_csv(folder_prefix='4100r4',
                                      form_name="Form 4100 R4.0",
-                                     file_name='/Users/charityhilton/Downloads/cibmtr_simple.csv',
+                                     file_name='/Users/charityhilton/Downloads/CIBMTR-Form.csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql')
