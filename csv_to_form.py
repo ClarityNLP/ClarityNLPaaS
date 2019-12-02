@@ -348,11 +348,26 @@ def save_question_to_form_data(q_type, answers, name, question_num, group, evide
     answer_sets = list()
     if q_type != 'DATE' and q_type != 'TEXT':
         for a in answers:
-            answer_sets.append({
-                'text': a.replace('\n', ' ').strip(),
-                'value': '_'.join(a.split(' ')).lower().replace('(', '').replace(')', '').replace('.', '').replace('\n',
-                                                                                                                   ' ').strip()
-            })
+            txt = a.replace('\n', ' ').replace('"', '').strip()
+            val = '_'.join(a.split(' ')).lower().replace('"', '').replace('(', '').replace(')', '').replace('.', '') \
+                .replace('\n', ' ').strip()
+            if " = " in txt:
+                kv = txt.replace('"', '').split('=')
+                if len(kv) == 2:
+                    answer_sets.append({
+                        'text': kv[1].strip(),
+                        'value': kv[0].strip()
+                    })
+                else:
+                    answer_sets.append({
+                        'text': txt,
+                        'value': val
+                    })
+            else:
+                answer_sets.append({
+                    'text': txt,
+                    'value': val
+                })
     this_evidence = dict()
     if evidence:
         for k in evidence.keys():
@@ -614,7 +629,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 if len(r_codes) > 0 or len(r_valueset_oid) > 0:
                     r_nlp_task_type = 'CQLExecutionTask'
                 elif len(r_terms) == 0:
-                    if len(r_value_min) > 0 or len(r_value_max) > 0 or len(value_enum_set) > 0:
+                    if len(r_value_min) > 0 or len(r_value_max) > 0 or len(r_value_enum_set) > 0:
                         r_nlp_task_type = 'ValueExtraction'
                     else:
                         r_nlp_task_type = 'ProviderAssertion'
@@ -787,7 +802,7 @@ if __name__ == "__main__":
     #                                  form_name="Sickle Cell",
     #                                  file_name='/Users/charityhilton/Downloads/sicklecell.csv',
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
-    parse_questions_from_feature_csv(folder_prefix='4100r4',
-                                     form_name="Form 4100 R4.0",
-                                     file_name='/Users/charityhilton/Downloads/CIBMTR-Form.csv',
+    parse_questions_from_feature_csv(folder_prefix='setnet',
+                                     form_name="SET-NET",
+                                     file_name='/Users/charityhilton/Box/CDC_MotherBaby_TRANCHE2/set_net_form.csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql')
