@@ -794,15 +794,15 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 if __name__ == "__main__":
     nltk.download('stopwords')
 
-    # parse_questions_from_feature_csv(folder_prefix='afib',
-    #                                  form_name="Atrial Fibrilation",
-    #                                  file_name='./nlpql/afib/afib.csv',
-    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
+    parse_questions_from_feature_csv(folder_prefix='afib',
+                                     form_name="Atrial Fibrilation",
+                                     file_name='./nlpql/afib/afib.csv',
+                                     output_dir='./nlpql')
     # parse_questions_from_feature_csv(folder_prefix='sickle_cell',
     #                                  form_name="Sickle Cell",
     #                                  file_name='/Users/charityhilton/Downloads/sicklecell.csv',
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
-    parse_questions_from_feature_csv(folder_prefix='setnet',
-                                     form_name="SET-NET",
-                                     file_name='/Users/charityhilton/Box/CDC_MotherBaby_TRANCHE2/set_net_form.csv',
-                                     output_dir='/Users/charityhilton/repos/custom_nlpql')
+    # parse_questions_from_feature_csv(folder_prefix='setnet',
+    #                                  form_name="SET-NET",
+    #                                  file_name='/Users/charityhilton/Box/CDC_MotherBaby_TRANCHE2/set_net_form.csv',
+    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
