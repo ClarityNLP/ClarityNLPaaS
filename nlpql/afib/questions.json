@@ -1,0 +1,267 @@
+{
+  "name": "Atrial Fibrilation",
+  "owner": "gatech",
+  "allocated_users": [
+    "admin"
+  ],
+  "groups": [
+    "Case"
+  ],
+  "questions": [
+    {
+      "question_name": "Atrial Fibrilation (from text)?",
+      "question_type": "MULTIPLE_CHOICE",
+      "question_number": "1",
+      "group": "Case",
+      "answers": [
+        {
+          "text": "Yes",
+          "value": "yes"
+        },
+        {
+          "text": "No",
+          "value": "no"
+        }
+      ],
+      "evidence_bundle": {
+        "case": [
+          "case_keywords"
+        ]
+      },
+      "nlpql_grouping": "case"
+    },
+    {
+      "question_name": "Atrial Fibrilation (by code)?",
+      "question_type": "MULTIPLE_CHOICE",
+      "question_number": "2",
+      "group": "Case",
+      "answers": [
+        {
+          "text": "Yes",
+          "value": "yes"
+        },
+        {
+          "text": "No",
+          "value": "no"
+        }
+      ],
+      "evidence_bundle": {
+        "case": [
+          "case_codes_icd9",
+          "case_codes_icd10",
+          "case_keywords",
+          "case_codes"
+        ]
+      },
+      "nlpql_grouping": "case"
+    },
+    {
+      "question_name": "Heart transplant?",
+      "question_type": "MULTIPLE_CHOICE",
+      "question_number": "3",
+      "group": "Case",
+      "answers": [
+        {
+          "text": "Yes",
+          "value": "yes"
+        },
+        {
+          "text": "No",
+          "value": "no"
+        }
+      ],
+      "evidence_bundle": {
+        "case": [
+          "case_codes_icd10",
+          "case_keywords",
+          "case_codes_icd9",
+          "case_codes",
+          "heart_transplant_codes"
+        ]
+      },
+      "nlpql_grouping": "case"
+    },
+    {
+      "question_name": "Matches Case (Afib and no heart transplant)?",
+      "question_type": "MULTIPLE_CHOICE",
+      "question_number": "4",
+      "group": "Case",
+      "answers": [
+        {
+          "text": "Yes",
+          "value": "yes"
+        },
+        {
+          "text": "No",
+          "value": "no"
+        }
+      ],
+      "evidence_bundle": {
+        "case": [
+          "case_codes_icd10",
+          "case_keywords",
+          "matches_afib_case",
+          "case_codes_icd9",
+          "case_codes",
+          "heart_transplant_codes"
+        ]
+      },
+      "nlpql_grouping": "case"
+    },
+    {
+      "question_name": "MI with 14 days pre or post?",
+      "question_type": "MULTIPLE_CHOICE",
+      "question_number": "5",
+      "group": "Case",
+      "answers": [
+        {
+          "text": "Yes",
+          "value": "yes"
+        },
+        {
+          "text": "No",
+          "value": "no"
+        }
+      ],
+      "evidence_bundle": {
+        "case": [
+          "case_codes_icd10",
+          "case_keywords",
+          "matches_afib_case",
+          "myocardial_infarction_terms",
+          "case_codes_icd9",
+          "case_codes",
+          "heart_transplant_codes"
+        ]
+      },
+      "nlpql_grouping": "case"
+    },
+    {
+      "question_name": "Cardiac Surgery",
+      "question_type": "MULTIPLE_CHOICE",
+      "question_number": "6",
+      "group": "Case",
+      "answers": [
+        {
+          "text": "Yes",
+          "value": "yes"
+        },
+        {
+          "text": "No",
+          "value": "no"
+        }
+      ],
+      "evidence_bundle": {
+        "case": [
+          "case_codes_icd10",
+          "case_keywords",
+          "matches_afib_case",
+          "myocardial_infarction_terms",
+          "case_codes_icd9",
+          "case_codes",
+          "heart_transplant_codes",
+          "cardiac_surgery_codes"
+        ]
+      },
+      "nlpql_grouping": "case"
+    },
+    {
+      "question_name": "Matches Subcase 1 (Afib and no MI and no cardiac surgery)?",
+      "question_type": "MULTIPLE_CHOICE",
+      "question_number": "7",
+      "group": "Case",
+      "answers": [
+        {
+          "text": "Yes",
+          "value": "yes"
+        },
+        {
+          "text": "No",
+          "value": "no"
+        }
+      ],
+      "evidence_bundle": {
+        "case": [
+          "case_codes_icd10",
+          "case_keywords",
+          "matches_afib_case",
+          "myocardial_infarction_terms",
+          "case_codes_icd9",
+          "matches_subcase1",
+          "case_codes",
+          "heart_transplant_codes",
+          "cardiac_surgery_codes"
+        ]
+      },
+      "nlpql_grouping": "case"
+    },
+    {
+      "question_name": "Matches Subcase 2 (Afib and MI or cardiac surgery)?",
+      "question_type": "MULTIPLE_CHOICE",
+      "question_number": "8",
+      "group": "Case",
+      "answers": [
+        {
+          "text": "Yes",
+          "value": "yes"
+        },
+        {
+          "text": "No",
+          "value": "no"
+        }
+      ],
+      "evidence_bundle": {
+        "case": [
+          "case_codes_icd10",
+          "case_keywords",
+          "matches_afib_case",
+          "myocardial_infarction_terms",
+          "case_codes_icd9",
+          "matches_subcase2",
+          "matches_subcase1",
+          "case_codes",
+          "heart_transplant_codes",
+          "cardiac_surgery_codes"
+        ]
+      },
+      "nlpql_grouping": "case"
+    },
+    {
+      "question_name": "Case Possible (Afib codes or keywords)?",
+      "question_type": "MULTIPLE_CHOICE",
+      "question_number": "9",
+      "group": "Case",
+      "answers": [
+        {
+          "text": "Yes",
+          "value": "yes"
+        },
+        {
+          "text": "No",
+          "value": "no"
+        }
+      ],
+      "evidence_bundle": {
+        "case": [
+          "case_codes_icd10",
+          "case_keywords",
+          "matches_afib_case",
+          "myocardial_infarction_terms",
+          "case_codes_icd9",
+          "matches_subcase2",
+          "matches_subcase1",
+          "case_codes",
+          "case_possible",
+          "heart_transplant_codes",
+          "cardiac_surgery_codes"
+        ]
+      },
+      "nlpql_grouping": "case"
+    }
+  ],
+  "evidence_bundles": [
+    "case"
+  ],
+  "version": "0.0.1",
+  "questions_with_evidence_count": 0
+}

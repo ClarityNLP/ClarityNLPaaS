@@ -1,0 +1,681 @@
+
+// Phenotype library name
+phenotype "Form Atrial Fibrilation, Bundle case" version "1";
+
+// # Referenced libraries #
+include ClarityCore version "1.0" called Clarity;
+
+// Termsets
+
+termset case_keywords_terms: [
+    "afib", "a fib", "Atrial Fibrillation", "a Fibrillation", "Atrial fib", "aflutter", "atrial flutter", "a flutter", "af", "atrial fibrulation", "atrial fabrillation", "atrial fibrilation", "atr fib", "atrfib", "auricular fib"
+];
+
+
+
+
+termset myocardial_infarction_terms_terms: [
+    "myocardial infarction", "MI", "heart attack", "cardiac arrest", "cardiac infarction", "cardiopulmonary arrest", "heart arrest", "myocardial infarct"
+];
+
+
+
+// Data Entities
+
+define final case_keywords:
+    Clarity.ProviderAssertion({
+      termset: [case_keywords_terms]
+    });
+                    
+
+
+
+define final case_codes:
+    Clarity.CQLExecutionTask({
+        "task_index": 0,
+        cql: """
+                
+        library Retrieve2 version '1.0'
+
+        using FHIR version '3.0.0'
+
+        include FHIRHelpers version '3.0.0' called FHIRHelpers
+
+        codesystem "LOINC": 'http://loinc.org'
+        codesystem "SNOMED": 'urn:oid:2.16.840.1.113883.6.96'
+        codesystem "RxNorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
+        codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
+        codesystem "ICD9": '2.16.840.1.113883.6.42'
+        codesystem "ICD10": '2.16.840.1.113883.6.3'
+        
+        
+
+        context Patient
+
+
+        define "case_codes_concepts": Concept {
+            Code '195080001' from "SNOMED", 
+            Code '49436004' from "SNOMED"
+        }
+
+
+
+
+       define "case_codes": 
+            	 [Observation: Code in "case_codes_concepts"]
+
+
+
+             """
+    });
+
+
+
+define final case_codes_icd9:
+    Clarity.CQLExecutionTask({
+        "task_index": 0,
+        cql: """
+                
+        library Retrieve2 version '1.0'
+
+        using FHIR version '3.0.0'
+
+        include FHIRHelpers version '3.0.0' called FHIRHelpers
+
+        codesystem "LOINC": 'http://loinc.org'
+        codesystem "SNOMED": 'urn:oid:2.16.840.1.113883.6.96'
+        codesystem "RxNorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
+        codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
+        codesystem "ICD9": '2.16.840.1.113883.6.42'
+        codesystem "ICD10": '2.16.840.1.113883.6.3'
+        
+        
+
+        context Patient
+
+
+        define "case_codes_icd9_concepts": Concept {
+            Code '427.31' from "ICD9", 
+            Code '427.3' from "ICD9", 
+            Code '427.32' from "ICD9"
+        }
+
+
+
+
+       define "case_codes_icd9": 
+            	 [Observation: Code in "case_codes_icd9_concepts"]
+
+
+
+             """
+    });
+
+
+
+define final case_codes_icd10:
+    Clarity.CQLExecutionTask({
+        "task_index": 0,
+        cql: """
+                
+        library Retrieve2 version '1.0'
+
+        using FHIR version '3.0.0'
+
+        include FHIRHelpers version '3.0.0' called FHIRHelpers
+
+        codesystem "LOINC": 'http://loinc.org'
+        codesystem "SNOMED": 'urn:oid:2.16.840.1.113883.6.96'
+        codesystem "RxNorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
+        codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
+        codesystem "ICD9": '2.16.840.1.113883.6.42'
+        codesystem "ICD10": '2.16.840.1.113883.6.3'
+        
+        
+
+        context Patient
+
+
+        define "case_codes_icd10_concepts": Concept {
+            Code 'I4891' from "ICD10", 
+            Code 'I4892' from "ICD10"
+        }
+
+
+
+
+       define "case_codes_icd10": 
+            	 [Observation: Code in "case_codes_icd10_concepts"]
+
+
+
+             """
+    });
+
+
+
+define final heart_transplant_codes:
+    Clarity.CQLExecutionTask({
+        "task_index": 0,
+        cql: """
+                
+        library Retrieve2 version '1.0'
+
+        using FHIR version '3.0.0'
+
+        include FHIRHelpers version '3.0.0' called FHIRHelpers
+
+        codesystem "LOINC": 'http://loinc.org'
+        codesystem "SNOMED": 'urn:oid:2.16.840.1.113883.6.96'
+        codesystem "RxNorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
+        codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
+        codesystem "ICD9": '2.16.840.1.113883.6.42'
+        codesystem "ICD10": '2.16.840.1.113883.6.3'
+        
+        
+
+        context Patient
+
+
+        define "heart_transplant_codes_concepts": Concept {
+            Code '580' from "CPT", 
+            Code '33935' from "CPT", 
+            Code '33945' from "CPT"
+        }
+
+
+
+
+       define "heart_transplant_codes": 
+            	 [Procedure: Code in "heart_transplant_codes_concepts"]
+
+
+
+             """
+    });
+
+
+
+define final matches_afib_case:
+    where (case_keywords) NOT heart_transplant_codes;
+
+
+
+
+define final myocardial_infarction_terms:
+    Clarity.ProviderAssertion({
+      termset: [myocardial_infarction_terms_terms]
+    });
+                    
+
+
+
+define final cardiac_surgery_codes:
+    Clarity.CQLExecutionTask({
+        "task_index": 0,
+        cql: """
+                
+        library Retrieve2 version '1.0'
+
+        using FHIR version '3.0.0'
+
+        include FHIRHelpers version '3.0.0' called FHIRHelpers
+
+        codesystem "LOINC": 'http://loinc.org'
+        codesystem "SNOMED": 'urn:oid:2.16.840.1.113883.6.96'
+        codesystem "RxNorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
+        codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
+        codesystem "ICD9": '2.16.840.1.113883.6.42'
+        codesystem "ICD10": '2.16.840.1.113883.6.3'
+        
+        
+
+        context Patient
+
+
+        define "cardiac_surgery_codes_concepts": Concept {
+            Code '566' from "CPT", 
+            Code '32160' from "CPT", 
+            Code '33120' from "CPT", 
+            Code '33130' from "CPT", 
+            Code '33141' from "CPT", 
+            Code '33257' from "CPT", 
+            Code '33258' from "CPT", 
+            Code '33259' from "CPT", 
+            Code '33300' from "CPT", 
+            Code '33305' from "CPT", 
+            Code '33310' from "CPT", 
+            Code '33315' from "CPT", 
+            Code '33400' from "CPT", 
+            Code '33401' from "CPT", 
+            Code '33403' from "CPT", 
+            Code '33404' from "CPT", 
+            Code '33405' from "CPT", 
+            Code '33406' from "CPT", 
+            Code '33410' from "CPT", 
+            Code '33411' from "CPT", 
+            Code '33412' from "CPT", 
+            Code '33413' from "CPT", 
+            Code '33415' from "CPT", 
+            Code '33416' from "CPT", 
+            Code '33420' from "CPT", 
+            Code '33422' from "CPT", 
+            Code '33425' from "CPT", 
+            Code '33426' from "CPT", 
+            Code '33427' from "CPT", 
+            Code '33430' from "CPT", 
+            Code '33460' from "CPT", 
+            Code '33463' from "CPT", 
+            Code '33464' from "CPT", 
+            Code '33465' from "CPT", 
+            Code '33468' from "CPT", 
+            Code '33470' from "CPT", 
+            Code '33471' from "CPT", 
+            Code '33472' from "CPT", 
+            Code '33474' from "CPT", 
+            Code '33475' from "CPT", 
+            Code '33500' from "CPT", 
+            Code '33501' from "CPT", 
+            Code '33507' from "CPT", 
+            Code '33572' from "CPT", 
+            Code '33600' from "CPT", 
+            Code '33602' from "CPT", 
+            Code '33608' from "CPT", 
+            Code '33610' from "CPT", 
+            Code '33615' from "CPT", 
+            Code '33617' from "CPT", 
+            Code '33619' from "CPT", 
+            Code '33641' from "CPT", 
+            Code '33647' from "CPT", 
+            Code '33660' from "CPT", 
+            Code '33722' from "CPT", 
+            Code '33730' from "CPT", 
+            Code '33732' from "CPT", 
+            Code '33735' from "CPT", 
+            Code '33736' from "CPT", 
+            Code '33737' from "CPT", 
+            Code '33774' from "CPT", 
+            Code '33775' from "CPT", 
+            Code '33776' from "CPT", 
+            Code '33777' from "CPT", 
+            Code '33778' from "CPT", 
+            Code '33779' from "CPT", 
+            Code '33780' from "CPT", 
+            Code '33781' from "CPT", 
+            Code '33800' from "CPT", 
+            Code '33852' from "CPT", 
+            Code '33853' from "CPT", 
+            Code '33863' from "CPT", 
+            Code '33864' from "CPT", 
+            Code '33877' from "CPT", 
+            Code '33891' from "CPT", 
+            Code '33967' from "CPT", 
+            Code '33968' from "CPT", 
+            Code '33970' from "CPT", 
+            Code '33971' from "CPT", 
+            Code '33973' from "CPT", 
+            Code '33974' from "CPT", 
+            Code '33999' from "CPT", 
+            Code '34830' from "CPT", 
+            Code '34831' from "CPT", 
+            Code '34832' from "CPT", 
+            Code '34833' from "CPT", 
+            Code '34834' from "CPT", 
+            Code '35452' from "CPT", 
+            Code '35481' from "CPT", 
+            Code '35491' from "CPT", 
+            Code '35501' from "CPT", 
+            Code '35506' from "CPT", 
+            Code '35507' from "CPT", 
+            Code '35508' from "CPT", 
+            Code '35509' from "CPT", 
+            Code '35510' from "CPT", 
+            Code '35511' from "CPT", 
+            Code '35512' from "CPT", 
+            Code '35515' from "CPT", 
+            Code '35516' from "CPT", 
+            Code '35518' from "CPT", 
+            Code '35521' from "CPT", 
+            Code '35522' from "CPT", 
+            Code '35523' from "CPT", 
+            Code '35525' from "CPT", 
+            Code '35526' from "CPT", 
+            Code '35531' from "CPT", 
+            Code '35533' from "CPT", 
+            Code '35536' from "CPT", 
+            Code '35537' from "CPT", 
+            Code '35538' from "CPT", 
+            Code '35539' from "CPT", 
+            Code '35540' from "CPT", 
+            Code '35548' from "CPT", 
+            Code '35549' from "CPT", 
+            Code '35551' from "CPT", 
+            Code '35556' from "CPT", 
+            Code '35558' from "CPT", 
+            Code '35560' from "CPT", 
+            Code '35563' from "CPT", 
+            Code '35565' from "CPT", 
+            Code '35566' from "CPT", 
+            Code '35571' from "CPT", 
+            Code '35572' from "CPT", 
+            Code '35601' from "CPT", 
+            Code '35606' from "CPT", 
+            Code '35612' from "CPT", 
+            Code '35616' from "CPT", 
+            Code '35621' from "CPT", 
+            Code '35623' from "CPT", 
+            Code '35626' from "CPT", 
+            Code '35631' from "CPT", 
+            Code '35636' from "CPT", 
+            Code '35637' from "CPT", 
+            Code '35638' from "CPT", 
+            Code '35642' from "CPT", 
+            Code '35645' from "CPT", 
+            Code '35646' from "CPT", 
+            Code '35647' from "CPT", 
+            Code '35650' from "CPT", 
+            Code '35651' from "CPT", 
+            Code '35654' from "CPT", 
+            Code '35656' from "CPT", 
+            Code '35661' from "CPT", 
+            Code '35663' from "CPT", 
+            Code '35665' from "CPT", 
+            Code '35666' from "CPT", 
+            Code '35671' from "CPT", 
+            Code '35681' from "CPT", 
+            Code '35682' from "CPT", 
+            Code '35683' from "CPT", 
+            Code '35685' from "CPT", 
+            Code '35697' from "CPT", 
+            Code '38562' from "CPT", 
+            Code '38564' from "CPT", 
+            Code '61020' from "CPT", 
+            Code '61026' from "CPT", 
+            Code '62190' from "CPT", 
+            Code '62220' from "CPT", 
+            Code '88305' from "CPT", 
+            Code '0081T' from "CPT", 
+            Code '4110F' from "CPT"
+        }
+
+
+
+
+       define "cardiac_surgery_codes": 
+            	 [Procedure: Code in "cardiac_surgery_codes_concepts"]
+
+
+
+             """
+    });
+
+
+
+define final matches_subcase1:
+    where (case_keywords) NOT (myocardial_infarction_terms OR cardiac_surgery_codes);
+
+
+
+
+define final matches_subcase2:
+    where (case_keywords) AND (myocardial_infarction_terms OR cardiac_surgery_codes);
+
+
+
+
+define final case_possible:
+    where case_keywords OR case_codes OR case_codes_icd9 OR case_codes_icd10;
+
+
+
+// Operations
+
+
+// Comments
+/*
+
+
+{
+    "#": "1",
+    "answers": "Yes,No",
+    "code_system": "",
+    "codes": "",
+    "evidence_bundle": "case",
+    "feature_name": "case_keywords",
+    "fhir_resource_type": "",
+    "group": "Case",
+    "logic": "",
+    "nlp_task_type": "ProviderAssertion",
+    "notes": "",
+    "question_name": "Atrial Fibrilation (from text)?",
+    "text_terms": "afib,a fib,Atrial Fibrillation,a Fibrillation,Atrial fib,aflutter,atrial flutter, a flutter,af,atrial fibrulation, atrial fabrillation,atrial fibrilation,atr fib,atrfib,auricular fib",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "2",
+    "answers": "Yes,No",
+    "code_system": "SNOMED",
+    "codes": "\"195080001\",\"49436004\"",
+    "evidence_bundle": "case",
+    "feature_name": "case_codes",
+    "fhir_resource_type": "Observation",
+    "group": "Case",
+    "logic": "",
+    "nlp_task_type": "CQLExecutionTask",
+    "notes": "",
+    "question_name": "Atrial Fibrilation (by code)?",
+    "text_terms": "",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "2",
+    "answers": "Yes,No",
+    "code_system": "ICD9",
+    "codes": "427.31,427.3,427.32",
+    "evidence_bundle": "case",
+    "feature_name": "case_codes_icd9",
+    "fhir_resource_type": "Observation",
+    "group": "Case",
+    "logic": "",
+    "nlp_task_type": "CQLExecutionTask",
+    "notes": "",
+    "question_name": "Atrial Fibrilation (by code)?",
+    "text_terms": "",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "2",
+    "answers": "Yes,No",
+    "code_system": "ICD10",
+    "codes": "I4891,I4892",
+    "evidence_bundle": "case",
+    "feature_name": "case_codes_icd10",
+    "fhir_resource_type": "Observation",
+    "group": "Case",
+    "logic": "",
+    "nlp_task_type": "CQLExecutionTask",
+    "notes": "",
+    "question_name": "Atrial Fibrilation (by code)?",
+    "text_terms": "",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "3",
+    "answers": "Yes,No",
+    "code_system": "CPT",
+    "codes": "\"580\",\"33935\",\"33945\"",
+    "evidence_bundle": "case",
+    "feature_name": "heart_transplant_codes",
+    "fhir_resource_type": "Procedure",
+    "group": "Case",
+    "logic": "",
+    "nlp_task_type": "CQLExecutionTask",
+    "notes": "",
+    "question_name": "Heart transplant?",
+    "text_terms": "",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "4",
+    "answers": "Yes,No",
+    "code_system": "",
+    "codes": "",
+    "evidence_bundle": "case",
+    "feature_name": "matches_afib_case",
+    "fhir_resource_type": "",
+    "group": "Case",
+    "logic": "(case_keywords) NOT heart_transplant_codes",
+    "nlp_task_type": "Logic",
+    "notes": "",
+    "question_name": "Matches Case (Afib and no heart transplant)?",
+    "text_terms": "",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "5",
+    "answers": "Yes,No",
+    "code_system": "",
+    "codes": "",
+    "evidence_bundle": "case",
+    "feature_name": "myocardial_infarction_terms",
+    "fhir_resource_type": "",
+    "group": "Case",
+    "logic": "",
+    "nlp_task_type": "ProviderAssertion",
+    "notes": "",
+    "question_name": "MI with 14 days pre or post?",
+    "text_terms": "myocardial infarction,MI,heart attack,cardiac arrest,cardiac infarction,cardiopulmonary arrest,heart arrest,myocardial infarct",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "6",
+    "answers": "Yes,No",
+    "code_system": "CPT",
+    "codes": "566,32160,33120,33130,33141,33257,33258,33259,33300,33305,33310,33315,33400,33401,33403,33404,33405,33406,33410,33411,33412,33413,33415,33416,33420,33422,33425,33426,33427,33430,33460,33463,33464,33465,33468,33470,33471,33472,33474,33475,33500,33501,33507,33572,33600,33602,33608,33610,33615,33617,33619,33641,33647,33660,33722,33730,33732,33735,33736,33737,33774,33775,33776,33777,33778,33779,33780,33781,33800,33852,33853,33863,33864,33877,33891,33967,33968,33970,33971,33973,33974,33999,34830,34831,34832,34833,34834,35452,35481,35491,35501,35506,35507,35508,35509,35510,35511,35512,35515,35516,35518,35521,35522,35523,35525,35526,35531,35533,35536,35537,35538,35539,35540,35548,35549,35551,35556,35558,35560,35563,35565,35566,35571,35572,35601,35606,35612,35616,35621,35623,35626,35631,35636,35637,35638,35642,35645,35646,35647,35650,35651,35654,35656,35661,35663,35665,35666,35671,35681,35682,35683,35685,35697,38562,38564,61020,61026,62190,62220,88305,0081T,4110F",
+    "evidence_bundle": "case",
+    "feature_name": "cardiac_surgery_codes",
+    "fhir_resource_type": "Procedure",
+    "group": "Case",
+    "logic": "",
+    "nlp_task_type": "CQLExecutionTask",
+    "notes": "",
+    "question_name": "Cardiac Surgery",
+    "text_terms": "",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "7",
+    "answers": "Yes,No",
+    "code_system": "",
+    "codes": "",
+    "evidence_bundle": "case",
+    "feature_name": "matches_subcase1",
+    "fhir_resource_type": "",
+    "group": "Case",
+    "logic": "(case_keywords) NOT (myocardial_infarction_terms OR cardiac_surgery_codes)",
+    "nlp_task_type": "Logic",
+    "notes": "",
+    "question_name": "Matches Subcase 1 (Afib and no MI and no cardiac surgery)?",
+    "text_terms": "",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "8",
+    "answers": "Yes,No",
+    "code_system": "",
+    "codes": "",
+    "evidence_bundle": "case",
+    "feature_name": "matches_subcase2",
+    "fhir_resource_type": "",
+    "group": "Case",
+    "logic": "(case_keywords) AND (myocardial_infarction_terms OR cardiac_surgery_codes)",
+    "nlp_task_type": "Logic",
+    "notes": "",
+    "question_name": "Matches Subcase 2 (Afib and MI or cardiac surgery)?",
+    "text_terms": "",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "9",
+    "answers": "Yes,No",
+    "code_system": "",
+    "codes": "",
+    "evidence_bundle": "case",
+    "feature_name": "case_possible",
+    "fhir_resource_type": "",
+    "group": "Case",
+    "logic": "case_keywords OR case_codes OR case_codes_icd9 OR case_codes_icd10",
+    "nlp_task_type": "Logic",
+    "notes": "",
+    "question_name": "Case Possible (Afib codes or keywords)?",
+    "text_terms": "",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+*/
+
