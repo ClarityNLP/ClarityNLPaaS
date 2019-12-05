@@ -64,6 +64,12 @@ termset {}_terms: [
 
 '''
 
+racefinder_template = '''
+define final %s:
+    Clarity.RaceFinderTask({
+        });
+'''
+
 basic_data_entity_template = '''
 define final {}:
     {}
@@ -411,16 +417,44 @@ def save_question_to_form_data(q_type, answers, name, question_num, group, evide
     evidence = dict()
 
 
-def map_provider_assertion(terms, termsets, feature_name, features, entities):
-    term_string = '", "'.join(terms)
+def get_term_string(_terms):
+    if len(_terms) < 1:
+        return ''
+    term_string = '", "'.join(_terms)
     if term_string.strip() != '':
         term_string = '"' + term_string + '"'
         term_string = term_string.replace(', " unspecified",', ',')
+    return term_string
+
+
+def map_provider_assertion(terms, termsets, feature_name, features, entities):
+    term_string = get_term_string(terms)
+    if term_string != '':
         termsets.append(termset_template.format(feature_name, term_string))
         pq = '''Clarity.ProviderAssertion({
       termset: [%s_terms]
     });
                     ''' % feature_name
+        pa = basic_data_entity_template.format(feature_name, pq)
+        features.append(feature_name)
+        entities.append(pa)
+
+
+def map_term_proximity(terms, terms2, termsets, feature_name, features, entities, word_distance=3):
+    term_string = get_term_string(terms)
+    term_string2 = get_term_string(terms2)
+    if term_string != '' and term_string2 != '':
+        termsets.append(termset_template.format(feature_name, term_string))
+        f2 = feature_name + '2'
+        termsets.append(termset_template.format(f2, term_string2))
+        pq = '''    Clarity.TermProximityTask({
+        documentset: [Docs],
+        "termset1": [%s_terms],
+        "termset2": [%s_terms],
+        "word_distance": %d,
+        "any_order": "True"
+    });
+                        ''' % (feature_name, f2, word_distance)
         pa = basic_data_entity_template.format(feature_name, pq)
         features.append(feature_name)
         entities.append(pa)
@@ -432,6 +466,12 @@ def map_logic(logic, feature_name, features, entities):
     if not logic.endswith(';'):
         logic = logic + ';\n'
     pa = basic_data_entity_template.format(feature_name, logic)
+    features.append(feature_name)
+    entities.append(pa)
+
+
+def map_race_finder(feature_name, features, entities):
+    pa = racefinder_template % feature_name
     features.append(feature_name)
     entities.append(pa)
 
@@ -619,6 +659,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             r_valueset_oid = row.get('valueset_oid', '')
             r_nlp_task_type = row.get('nlp_task_type', '').lower()
             r_terms = row.get('text_terms', row.get('terms', ''))
+            r_terms2 = row.get('text_terms2', row.get('terms2', ''))
+            r_word_distance = row.get('word_distance', row.get('word_proximity', row.get('term_proximity', '3')))
             r_value_min = row.get('value_min', '')
             r_value_max = row.get('value_max', '')
             r_value_enum_set = row.get('value_enum_set', '')
@@ -707,6 +749,11 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             valueset_oid = r_valueset_oid
             nlp_task_type = r_nlp_task_type
             terms = [x.strip() for x in r_terms.split(',')]
+            terms2 = [x.strip() for x in r_terms2.split(',')]
+            if is_numeric(r_word_distance):
+                word_distance = int(r_word_distance)
+            else:
+                word_distance = 3
             value_min = r_value_min
             value_max = r_value_max
             value_enum_set = r_value_enum_set.split(',')
@@ -763,7 +810,12 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 comment += '\n\n'
                 comment += json.dumps(row, indent=4, sort_keys=True)
 
-                if len(terms) > 0 and 'assertion' in nlp_task_type:
+                if len(terms) > 0 and len(terms2) > 0 and 'proximity' in nlp_task_type:
+                    map_term_proximity(terms, terms2, termsets, feature_name, features, entities,
+                                       word_distance=word_distance)
+                elif 'race' in nlp_task_type:
+                    map_race_finder(feature_name, features, entities)
+                elif len(terms) > 0 and 'assertion' in nlp_task_type:
                     map_provider_assertion(terms, termsets, feature_name, features, entities)
                 elif len(logic) > 0 and 'logic' in nlp_task_type:
                     map_logic(logic, feature_name, features, entities)
@@ -794,15 +846,15 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 if __name__ == "__main__":
     nltk.download('stopwords')
 
-    parse_questions_from_feature_csv(folder_prefix='afib',
-                                     form_name="Atrial Fibrilation",
-                                     file_name='./nlpql/afib/afib.csv',
-                                     output_dir='./nlpql')
+    # parse_questions_from_feature_csv(folder_prefix='afib',
+    #                                  form_name="Atrial Fibrilation",
+    #                                  file_name='./nlpql/afib/afib.csv',
+    #                                  output_dir='./nlpql')
     # parse_questions_from_feature_csv(folder_prefix='sickle_cell',
     #                                  form_name="Sickle Cell",
     #                                  file_name='/Users/charityhilton/Downloads/sicklecell.csv',
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
-    # parse_questions_from_feature_csv(folder_prefix='setnet',
-    #                                  form_name="SET-NET",
-    #                                  file_name='/Users/charityhilton/Box/CDC_MotherBaby_TRANCHE2/set_net_form.csv',
-    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
+    parse_questions_from_feature_csv(folder_prefix='setnet',
+                                     form_name="SET-NET",
+                                     file_name='/Users/charityhilton/Downloads/set_net_form.csv',
+                                     output_dir='/Users/charityhilton/repos/custom_nlpql')
