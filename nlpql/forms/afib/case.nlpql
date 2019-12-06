@@ -1,0 +1,203 @@
+
+// Phenotype library name
+phenotype "Form Atrial Fibrilation, Bundle case" version "1";
+
+// # Referenced libraries #
+include ClarityCore version "1.0" called Clarity;
+
+// Termsets
+
+termset case_keywords_terms: [
+    "afib", "a fib", "Atrial Fibrillation", "a Fibrillation", "Atrial fib", "aflutter", "atrial flutter", "a flutter", "af", "atrial fibrulation", "atrial fabrillation", "atrial fibrilation", "atr fib", "atrfib", "auricular fib"
+];
+
+
+
+// Data Entities
+
+define final case_keywords:
+    Clarity.ProviderAssertion({
+          termset: [case_keywords_terms]
+        });
+                        
+
+
+
+define final case_codes:
+    Clarity.CQLExecutionTask({
+        "task_index": 0,
+        cql: """
+                
+        library Retrieve2 version '1.0'
+
+        using FHIR version '3.0.0'
+
+        include FHIRHelpers version '3.0.0' called FHIRHelpers
+
+        codesystem "LOINC": 'http://loinc.org'
+        codesystem "SNOMED": 'urn:oid:2.16.840.1.113883.6.96'
+        codesystem "RxNorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
+        codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
+
+        context Patient
+
+
+        define "case_codes_concept": Concept {
+            Code '5370000' from "SNOMED", 
+            Code '49436004' from "SNOMED", 
+            Code '195080001' from "SNOMED"
+        }
+
+
+
+
+        define "case_codes":
+            [Observation: Code in "case_codes_concept"]
+
+
+
+             """
+    });
+
+
+
+define final heart_transplant_codes:
+    Clarity.CQLExecutionTask({
+        "task_index": 0,
+        cql: """
+                
+        library Retrieve2 version '1.0'
+
+        using FHIR version '3.0.0'
+
+        include FHIRHelpers version '3.0.0' called FHIRHelpers
+
+        codesystem "LOINC": 'http://loinc.org'
+        codesystem "SNOMED": 'urn:oid:2.16.840.1.113883.6.96'
+        codesystem "RxNorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
+        codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
+
+        context Patient
+
+
+        define "heart_transplant_codes_concept": Concept {
+            Code '580' from "CPT", 
+            Code '33935' from "CPT", 
+            Code '33945' from "CPT"
+        }
+
+
+
+
+        define "heart_transplant_codes":
+            [Procedure: Code in "heart_transplant_codes_concept"]
+
+
+
+             """
+    });
+
+
+
+define final matches_afib_case:
+    where (case_keywords OR case_codes) NOT heart_transplant_codes;
+
+
+
+// Operations
+
+
+// Comments
+/*
+
+
+{
+    "#": "1",
+    "answers": "Yes,No",
+    "code_system": "",
+    "codes": "",
+    "evidence_bundle": "case",
+    "feature_name": "case_keywords",
+    "fhir_resource_type": "",
+    "group": "Case",
+    "logic": "",
+    "nlp_task_type": "ProviderAssertion",
+    "notes": "",
+    "question_name": "Atrial Fibrilation?",
+    "text_terms": "afib,a fib,Atrial Fibrillation,a Fibrillation,Atrial fib,aflutter,atrial flutter, a flutter,af,atrial fibrulation, atrial fabrillation,atrial fibrilation,atr fib,atrfib,auricular fib",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "1",
+    "answers": "Yes,No",
+    "code_system": "SNOMED",
+    "codes": "5370000,49436004,195080001",
+    "evidence_bundle": "case",
+    "feature_name": "case_codes",
+    "fhir_resource_type": "Observation",
+    "group": "Case",
+    "logic": "",
+    "nlp_task_type": "CQLExecutionTask",
+    "notes": "",
+    "question_name": "Atrial Fibrilation?",
+    "text_terms": "",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "2",
+    "answers": "Yes,No",
+    "code_system": "CPT",
+    "codes": "580,33935,33945",
+    "evidence_bundle": "case",
+    "feature_name": "heart_transplant_codes",
+    "fhir_resource_type": "Procedure",
+    "group": "Case",
+    "logic": "",
+    "nlp_task_type": "CQLExecutionTask",
+    "notes": "",
+    "question_name": "Heart transplant?",
+    "text_terms": "",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+{
+    "#": "3",
+    "answers": "Yes,No",
+    "code_system": "",
+    "codes": "",
+    "evidence_bundle": "case",
+    "feature_name": "matches_afib_case",
+    "fhir_resource_type": "",
+    "group": "Case",
+    "logic": "(case_keywords OR case_codes) NOT heart_transplant_codes",
+    "nlp_task_type": "Logic",
+    "notes": "",
+    "question_name": "Matches Case?",
+    "text_terms": "",
+    "type": "MC",
+    "value_enum_set": "",
+    "value_extractor_ast": "",
+    "value_max": "",
+    "value_min": "",
+    "valueset_oid": ""
+}
+
+*/
+

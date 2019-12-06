@@ -346,8 +346,7 @@ def write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_
         f.write(json.dumps(form_data, indent=4))
 
 
-def save_question_to_form_data(q_type, answers, name, question_num, group, evidence, grouping, map_qs, form_data,
-                               grouping_alt):
+def save_question_to_form_data(q_type, answers, name, question_num, group, evidence, grouping, map_qs, form_data):
     # if not grouping or grouping == '':
     #     grouping = grouping_alt
     print('saving question ', question_num, ' ', name)
@@ -375,7 +374,7 @@ def save_question_to_form_data(q_type, answers, name, question_num, group, evide
                     'value': val
                 })
     this_evidence = dict()
-    if evidence:
+    if evidence and len(grouping) > 0:
         for k in evidence.keys():
             if k == grouping:
                 this_evidence[k] = list(set(evidence[k]))
@@ -673,8 +672,6 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 elif len(r_terms) == 0:
                     if len(r_value_min) > 0 or len(r_value_max) > 0 or len(r_value_enum_set) > 0:
                         r_nlp_task_type = 'ValueExtraction'
-                    else:
-                        r_nlp_task_type = 'ProviderAssertion'
                 elif len(logic) > 0:
                     r_nlp_task_type = 'Logic'
             else:
@@ -725,15 +722,18 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 new_grouping = True
 
             old_grouping = grouping
-            if not old_grouping:
+            if len(r_feature_name) > 0 and not old_grouping:
                 old_grouping = r_evidence_bundle
-            if new_grouping:
-                grouping = r_evidence_bundle
+            else:
+                old_grouping = ''
+            if not grouping:
+                grouping = ''
+            group_formatted = '_'.join(grouping.lower().split(' ')).replace(',', '').replace('_/_', '_')
 
             last_question = question_num
             if last_question and str(last_question) != str(r_num):
                 save_question_to_form_data(q_type, answers, name, last_question, group, evidence,
-                                           group_formatted, map_qs, form_data, grouping)
+                                           group_formatted, map_qs, form_data)
 
             question_num = r_num
             answers = [x.strip() for x in r_answers.split(',')]
@@ -758,7 +758,6 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             value_max = r_value_max
             value_enum_set = r_value_enum_set.split(',')
             logic = r_logic.strip()
-            group_formatted = '_'.join(old_grouping.lower().split(' ')).replace(',', '').replace('_/_', '_')
 
             if (len(codes) > 0 or len(valueset_oid) > 0) and feature_name in feature_names:
                 feature_name = feature_name + '_1'
@@ -837,7 +836,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
         write_nlpql_file(output_dir, folder_prefix,
                          group_formatted, termsets, entities, operations, form_name, old_grouping, comment)
         save_question_to_form_data(q_type, answers, name, question_num, group, evidence, group_formatted,
-                                   map_qs, form_data, grouping)
+                                   map_qs, form_data)
         write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count)
         print(evidence_count)
         return form_data
@@ -846,15 +845,23 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 if __name__ == "__main__":
     nltk.download('stopwords')
 
-    # parse_questions_from_feature_csv(folder_prefix='afib',
-    #                                  form_name="Atrial Fibrilation",
-    #                                  file_name='./nlpql/afib/afib.csv',
-    #                                  output_dir='./nlpql')
-    # parse_questions_from_feature_csv(folder_prefix='sickle_cell',
-    #                                  form_name="Sickle Cell",
-    #                                  file_name='/Users/charityhilton/Downloads/sicklecell.csv',
-    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
+    parse_questions_from_feature_csv(folder_prefix='afib',
+                                     form_name="Atrial Fibrilation",
+                                     file_name='./nlpql/afib/afib.csv',
+                                     output_dir='./nlpql')
+    parse_questions_from_feature_csv(folder_prefix='afib',
+                                     form_name="Atrial Fibrilation",
+                                     file_name='./nlpql/afib/afib.csv',
+                                     output_dir='/Users/charityhilton/repos/custom_nlpql')
+    parse_questions_from_feature_csv(folder_prefix='sickle_cell',
+                                     form_name="Sickle Cell",
+                                     file_name='/Users/charityhilton/Downloads/sicklecell.csv',
+                                     output_dir='/Users/charityhilton/repos/custom_nlpql')
+    parse_questions_from_feature_csv(folder_prefix='4100r4',
+                                     form_name="Form 4100 R4.0",
+                                     file_name='/Users/charityhilton/Downloads/CIBMTR-Form2.csv',
+                                     output_dir='/Users/charityhilton/repos/custom_nlpql')
     parse_questions_from_feature_csv(folder_prefix='setnet',
                                      form_name="SET-NET",
-                                     file_name='/Users/charityhilton/Downloads/set_net_form.csv',
+                                     file_name='/Users/charityhilton/Downloads/set_net_form2.csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql')
