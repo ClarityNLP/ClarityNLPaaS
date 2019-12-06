@@ -47,9 +47,9 @@
       ],
       "evidence_bundle": {
         "case": [
-          "case_codes_icd9",
-          "case_keywords",
           "case_codes",
+          "case_keywords",
+          "case_codes_icd9",
           "case_codes_icd10"
         ]
       },
@@ -72,11 +72,11 @@
       ],
       "evidence_bundle": {
         "case": [
-          "case_keywords",
-          "heart_transplant_codes",
           "case_codes_icd9",
-          "case_codes",
-          "case_codes_icd10"
+          "case_codes_icd10",
+          "heart_transplant_codes",
+          "case_keywords",
+          "case_codes"
         ]
       },
       "nlpql_grouping": "case"
@@ -98,12 +98,12 @@
       ],
       "evidence_bundle": {
         "case": [
-          "case_keywords",
-          "heart_transplant_codes",
           "case_codes_icd9",
-          "case_codes",
           "matches_afib_case",
-          "case_codes_icd10"
+          "case_codes_icd10",
+          "heart_transplant_codes",
+          "case_keywords",
+          "case_codes"
         ]
       },
       "nlpql_grouping": "case"
@@ -125,13 +125,13 @@
       ],
       "evidence_bundle": {
         "case": [
-          "case_keywords",
-          "heart_transplant_codes",
-          "myocardial_infarction_terms",
           "case_codes_icd9",
-          "case_codes",
           "matches_afib_case",
-          "case_codes_icd10"
+          "myocardial_infarction_terms",
+          "case_codes_icd10",
+          "heart_transplant_codes",
+          "case_keywords",
+          "case_codes"
         ]
       },
       "nlpql_grouping": "case"
@@ -153,14 +153,14 @@
       ],
       "evidence_bundle": {
         "case": [
-          "cardiac_surgery_codes",
-          "case_keywords",
-          "heart_transplant_codes",
-          "myocardial_infarction_terms",
           "case_codes_icd9",
-          "case_codes",
           "matches_afib_case",
-          "case_codes_icd10"
+          "myocardial_infarction_terms",
+          "cardiac_surgery_codes",
+          "case_codes_icd10",
+          "heart_transplant_codes",
+          "case_keywords",
+          "case_codes"
         ]
       },
       "nlpql_grouping": "case"
@@ -182,15 +182,15 @@
       ],
       "evidence_bundle": {
         "case": [
-          "cardiac_surgery_codes",
-          "case_keywords",
-          "heart_transplant_codes",
+          "case_codes_icd9",
+          "matches_afib_case",
           "myocardial_infarction_terms",
           "matches_subcase1",
-          "case_codes_icd9",
-          "case_codes",
-          "matches_afib_case",
-          "case_codes_icd10"
+          "cardiac_surgery_codes",
+          "case_codes_icd10",
+          "heart_transplant_codes",
+          "case_keywords",
+          "case_codes"
         ]
       },
       "nlpql_grouping": "case"
@@ -212,16 +212,16 @@
       ],
       "evidence_bundle": {
         "case": [
-          "cardiac_surgery_codes",
-          "case_keywords",
-          "heart_transplant_codes",
+          "case_codes_icd9",
+          "matches_afib_case",
           "myocardial_infarction_terms",
           "matches_subcase1",
-          "case_codes_icd9",
-          "case_codes",
           "matches_subcase2",
-          "matches_afib_case",
-          "case_codes_icd10"
+          "cardiac_surgery_codes",
+          "case_codes_icd10",
+          "heart_transplant_codes",
+          "case_keywords",
+          "case_codes"
         ]
       },
       "nlpql_grouping": "case"
@@ -243,17 +243,17 @@
       ],
       "evidence_bundle": {
         "case": [
-          "cardiac_surgery_codes",
-          "case_keywords",
-          "heart_transplant_codes",
-          "myocardial_infarction_terms",
           "case_possible",
-          "matches_subcase1",
           "case_codes_icd9",
-          "case_codes",
-          "matches_subcase2",
           "matches_afib_case",
-          "case_codes_icd10"
+          "myocardial_infarction_terms",
+          "matches_subcase1",
+          "matches_subcase2",
+          "cardiac_surgery_codes",
+          "case_codes_icd10",
+          "heart_transplant_codes",
+          "case_keywords",
+          "case_codes"
         ]
       },
       "nlpql_grouping": "case"
@@ -262,6 +262,6 @@
   "evidence_bundles": [
     "case"
   ],
-  "version": "0.0.3",
+  "version": "0.0.4",
   "questions_with_evidence_count": 0
 }
