@@ -3,7 +3,8 @@ import csv
 import json
 import os
 import string
-from os import path
+from os import path, remove
+import requests
 
 import nltk
 from nltk.corpus import stopwords
@@ -607,6 +608,15 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 
     feature_names = set()
 
+    temp = False
+    if file_name.startswith('http'):
+        r = requests.get(file_name)
+        temp = True
+
+        file_name = '/tmp/{}.csv'.format(folder_prefix)
+        with open(file_name, 'wb') as f:
+            f.write(r.content)
+
     with open(file_name, 'r', encoding='utf-8', errors='ignore') as csv_file:
         reader = csv.DictReader(csv_file, delimiter=',', quotechar='"')
 
@@ -840,25 +850,27 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                                    map_qs, form_data)
         write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count)
         print(evidence_count)
+        if temp:
+            remove(file_name)
         return form_data
 
 
 if __name__ == "__main__":
     nltk.download('stopwords')
 
-    parse_questions_from_feature_csv(folder_prefix='afib',
-                                     form_name="Atrial Fibrilation",
-                                     file_name='./nlpql/afib/afib.csv',
-                                     output_dir='./nlpql')
-    parse_questions_from_feature_csv(folder_prefix='sickle_cell',
-                                     form_name="Sickle Cell",
-                                     file_name='/Users/charityhilton/Downloads/sicklecell.csv',
-                                     output_dir='/Users/charityhilton/repos/custom_nlpql')
-    parse_questions_from_feature_csv(folder_prefix='4100r4',
-                                     form_name="Form 4100 R4.0",
-                                     file_name='/Users/charityhilton/Downloads/CIBMTR-Form2.csv',
-                                     output_dir='/Users/charityhilton/repos/custom_nlpql')
+    # parse_questions_from_feature_csv(folder_prefix='afib',
+    #                                  form_name="Atrial Fibrilation",
+    #                                  file_name='./nlpql/afib/afib.csv',
+    #                                  output_dir='./nlpql')
+    # parse_questions_from_feature_csv(folder_prefix='sickle_cell',
+    #                                  form_name="Sickle Cell",
+    #                                  file_name='/Users/charityhilton/Downloads/sicklecell.csv',
+    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
+    # parse_questions_from_feature_csv(folder_prefix='4100r4',
+    #                                  form_name="Form 4100 R4.0",
+    #                                  file_name='/Users/charityhilton/Downloads/CIBMTR-Form2.csv',
+    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
     parse_questions_from_feature_csv(folder_prefix='setnet',
                                      form_name="SET-NET",
-                                     file_name='/Users/charityhilton/Downloads/set_net_form2.csv',
+                                     file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql')
