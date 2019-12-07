@@ -419,6 +419,7 @@ def save_question_to_form_data(q_type, answers, name, question_num, group, evide
 def get_term_string(_terms):
     if len(_terms) < 1:
         return ''
+    _terms = [i.replace('"', '') for i in _terms]
     term_string = '", "'.join(_terms)
     if term_string.strip() != '':
         term_string = '"' + term_string + '"'
