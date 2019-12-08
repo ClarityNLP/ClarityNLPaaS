@@ -503,12 +503,15 @@ def map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, va
         terms_attr_string = 'termset: [%s_terms],' % feature_name
     else:
         terms_attr_string = ''
+    query_params = ('''
+         %s
+                 %s
+                 %s
+                 %s
+    ''' % (terms_attr_string, v_min, v_max, v_enum_string)).strip()
     pq = '''Clarity.%s({
-                 %s
-                 %s
-                 %s
                  %s});
-                               ''' % (nlp_task_type, terms_attr_string, v_min, v_max, v_enum_string)
+                               ''' % (nlp_task_type, query_params)
     pq = pq.replace(',});', '});').replace(""",
                  });""", '});')
     pa = basic_data_entity_template.format(feature_name, pq)
