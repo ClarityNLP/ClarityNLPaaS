@@ -65,12 +65,6 @@ termset {}_terms: [
 
 '''
 
-racefinder_template = '''
-define final %s:
-    Clarity.RaceFinderTask({
-        });
-'''
-
 basic_data_entity_template = '''
 define final {}:
     {}
@@ -327,6 +321,10 @@ def write_nlpql_file(output_dir, folder_prefix,
     filename = '{}/{}/{}.nlpql'.format(output_dir, folder_prefix, group_formatted)
     if len(termsets) == 0 and len(entities) == 0 and len(operations) == 0:
         print('no NLPQL attributes found for {}'.format(filename))
+    termsets = list(set(termsets))
+    entities = list(set(entities))
+    operations = list(set(operations))
+
     with open(filename, 'w') as f:
         ts_string = '\n\n'.join(termsets)
         de_string = '\n\n'.join(entities)
@@ -471,12 +469,6 @@ def map_logic(logic, feature_name, features, entities):
     entities.append(pa)
 
 
-def map_race_finder(feature_name, features, entities):
-    pa = racefinder_template % feature_name
-    features.append(feature_name)
-    entities.append(pa)
-
-
 def map_value_extraction(terms, termsets, feature_name, value_min, value_max, value_enum_set, features, entities):
     map_generic_task('ValueExtraction', terms, termsets, feature_name, value_min, value_max, value_enum_set,
                      features, entities)
@@ -488,39 +480,40 @@ def map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, va
     if term_string.strip() != '':
         termsets.append(termset_template.format(feature_name, term_string))
 
-        v_min = ''
-        v_max = ''
-        v_enum_string = ''
+    v_min = ''
+    v_max = ''
+    v_enum_string = ''
 
-        if len(value_min) > 0:
-            v_min = ',minimum_value: "{}"'.format(value_min)
-        if len(value_max) > 0:
-            v_max = ',maximum_value: "{}"'.format(value_max)
-        if len(value_enum_set) > 0:
-            v_enum = ''
-            for v in value_enum_set:
-                if len(v) == 0:
-                    continue
-                if len(v_enum) > 0:
-                    v_enum += ', '
-                v = v.replace('?', '').replace('"', '').replace("'", '')
-                v_enum += ('"{}"'.format(v))
+    if len(value_min) > 0:
+        v_min = 'minimum_value: "{}",'.format(value_min)
+    if len(value_max) > 0:
+        v_max = 'maximum_value: "{}",'.format(value_max)
+    if len(value_enum_set) > 0:
+        v_enum = ''
+        for v in value_enum_set:
+            if len(v) == 0:
+                continue
             if len(v_enum) > 0:
-                v_enum_string = ', enum_list: [{}]'.format(v_enum)
-        if len(terms) > 0:
-            terms_attr_string = 'termset: [%s_terms]' % feature_name
-        else:
-            terms_attr_string = ''
-        pq = '''Clarity.%s({
-                     %s
-                     %s
-                     %s
-                     %s
-                   });
-                                   ''' % (nlp_task_type, terms_attr_string, v_min, v_max, v_enum_string)
-        pa = basic_data_entity_template.format(feature_name, pq)
-        features.append(feature_name)
-        entities.append(pa)
+                v_enum += ', '
+            v = v.replace('?', '').replace('"', '').replace("'", '')
+            v_enum += ('"{}"'.format(v))
+        if len(v_enum) > 0:
+            v_enum_string = ', enum_list: [{}],'.format(v_enum)
+    if len(terms) > 0:
+        terms_attr_string = 'termset: [%s_terms],' % feature_name
+    else:
+        terms_attr_string = ''
+    pq = '''Clarity.%s({
+                 %s
+                 %s
+                 %s
+                 %s});
+                               ''' % (nlp_task_type, terms_attr_string, v_min, v_max, v_enum_string)
+    pq = pq.replace(',});', '});').replace(""",
+                 });""", '});')
+    pa = basic_data_entity_template.format(feature_name, pq)
+    features.append(feature_name)
+    entities.append(pa)
 
 
 def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features, value_set_oid):
@@ -675,7 +668,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             r_code_system = row.get('code_system', '')
             r_codes = row.get('codes', '')
             r_valueset_oid = row.get('valueset_oid', '')
-            r_nlp_task_type = row.get('nlp_task_type', '').lower()
+            r_nlp_task_type = row.get('nlp_task_type', '')
             r_terms = row.get('text_terms', row.get('terms', ''))
             r_terms2 = row.get('text_terms2', row.get('terms2', ''))
             r_word_distance = row.get('word_distance', row.get('word_proximity', row.get('term_proximity', '3')))
@@ -683,6 +676,9 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             r_value_max = row.get('value_max', '')
             r_value_enum_set = row.get('value_enum_set', '')
             r_logic = row.get('logic', '')
+
+            if r_num == '34' or r_num == '9':
+                print('debug')
 
             l_nlp_task_type = r_nlp_task_type.lower()
             if len(r_nlp_task_type) == 0:
@@ -711,9 +707,6 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             if 'value' in l_nlp_task_type and len(r_value_min) == 0 and len(r_value_max) == 0 and \
                     len(value_enum_set) == 0:
                 r_nlp_task_type = 'ProviderAssertion'
-
-            if str(question_num) == '14':
-                print('debugging')
 
             if len(r_evidence_bundle) > 0 and len(r_num) == 0:
                 if last_row:
@@ -755,7 +748,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                                            group_formatted, map_qs, form_data)
 
             question_num = r_num
-            answers = [x.strip() for x in r_answers.split(',')]
+            answers = [x.strip() for x in r_answers.split(',') if len(r_answers) > 0]
             grouping = r_evidence_bundle
             feature_name = r_feature_name
             name = r_question_name
@@ -764,18 +757,21 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             evidence_bundle = r_evidence_bundle
             fhir_resource_type = r_fhir_resource_type
             code_sys = r_code_system
-            codes = [x.strip() for x in r_codes.split(',')]
+            codes = [x.strip() for x in r_codes.split(',') if len(r_codes) > 0]
             valueset_oid = r_valueset_oid
             nlp_task_type = r_nlp_task_type
-            terms = [x.strip() for x in r_terms.split(',')]
-            terms2 = [x.strip() for x in r_terms2.split(',')]
+            terms = [x.strip() for x in r_terms.split(',') if len(r_terms) > 0]
+            terms2 = [x.strip() for x in r_terms2.split(',') if len(r_terms2) > 0]
             if is_numeric(r_word_distance):
                 word_distance = int(r_word_distance)
             else:
                 word_distance = 3
             value_min = r_value_min
             value_max = r_value_max
-            value_enum_set = r_value_enum_set.split(',')
+            if len(r_value_enum_set) > 0:
+                value_enum_set = r_value_enum_set.split(',')
+            else:
+                value_enum_set = []
             logic = r_logic.strip()
 
             if (len(codes) > 0 or len(valueset_oid) > 0) and feature_name in feature_names:
@@ -828,14 +824,14 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 comment += '\n\n'
                 comment += json.dumps(row, indent=4, sort_keys=True)
 
-                if len(terms) > 0 and len(terms2) > 0 and 'proximity' in nlp_task_type:
+                if len(terms) > 0 and len(terms2) > 0 and 'proximity' in l_nlp_task_type:
                     map_term_proximity(terms, terms2, termsets, feature_name, features, entities,
                                        word_distance=word_distance)
-                elif len(terms) > 0 and 'assertion' in nlp_task_type:
+                elif len(terms) > 0 and 'assertion' in l_nlp_task_type:
                     map_provider_assertion(terms, termsets, feature_name, features, entities)
-                elif len(logic) > 0 and 'logic' in nlp_task_type:
+                elif len(logic) > 0 and 'logic' in l_nlp_task_type:
                     map_logic(logic, feature_name, features, entities)
-                elif len(terms) > 0 and 'value' in nlp_task_type:
+                elif len(terms) > 0 and 'value' in l_nlp_task_type:
                     map_value_extraction(terms, termsets, feature_name, value_min, value_max, value_enum_set, features,
                                          entities)
                 elif len(codes) > 0 or len(valueset_oid) > 0:
