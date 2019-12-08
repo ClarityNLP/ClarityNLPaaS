@@ -478,10 +478,14 @@ def map_race_finder(feature_name, features, entities):
 
 
 def map_value_extraction(terms, termsets, feature_name, value_min, value_max, value_enum_set, features, entities):
-    term_string = '", "'.join(terms)
+    map_generic_task('ValueExtraction', terms, termsets, feature_name, value_min, value_max, value_enum_set,
+                     features, entities)
+
+
+def map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, value_max, value_enum_set,
+                     features, entities):
+    term_string = get_term_string(terms)
     if term_string.strip() != '':
-        term_string = '"' + term_string + '"'
-        term_string = term_string.replace(', " unspecified",', ',')
         termsets.append(termset_template.format(feature_name, term_string))
 
         v_min = ''
@@ -503,13 +507,17 @@ def map_value_extraction(terms, termsets, feature_name, value_min, value_max, va
                 v_enum += ('"{}"'.format(v))
             if len(v_enum) > 0:
                 v_enum_string = ', enum_list: [{}]'.format(v_enum)
-        pq = '''Clarity.ValueExtraction({
-                     termset: [%s_terms]
+        if len(terms) > 0:
+            terms_attr_string = 'termset: [%s_terms]' % feature_name
+        else:
+            terms_attr_string = ''
+        pq = '''Clarity.%s({
+                     %s
                      %s
                      %s
                      %s
                    });
-                                   ''' % (feature_name, v_min, v_max, v_enum_string)
+                                   ''' % (nlp_task_type, terms_attr_string, v_min, v_max, v_enum_string)
         pa = basic_data_entity_template.format(feature_name, pq)
         features.append(feature_name)
         entities.append(pa)
@@ -823,8 +831,6 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 if len(terms) > 0 and len(terms2) > 0 and 'proximity' in nlp_task_type:
                     map_term_proximity(terms, terms2, termsets, feature_name, features, entities,
                                        word_distance=word_distance)
-                elif 'race' in nlp_task_type:
-                    map_race_finder(feature_name, features, entities)
                 elif len(terms) > 0 and 'assertion' in nlp_task_type:
                     map_provider_assertion(terms, termsets, feature_name, features, entities)
                 elif len(logic) > 0 and 'logic' in nlp_task_type:
@@ -835,6 +841,9 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 elif len(codes) > 0 or len(valueset_oid) > 0:
                     map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features,
                             valueset_oid)
+                else:
+                    map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, value_max, value_enum_set,
+                                     features, entities)
                 if evidence_bundle not in evidence:
                     evidence[evidence_bundle] = list()
                 evidence[evidence_bundle].append(feature_name)
