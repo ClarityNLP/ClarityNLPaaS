@@ -568,7 +568,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
 
             sorted_results = sorted(
                 final_list,
-                key=lambda x: datetime.datetime.strptime(x['report_date'], dt_format), reverse=True
+                key=lambda x: datetime.datetime.strptime(x.get('report_date'), dt_format), reverse=True
             )
             result_string = dumps(sorted_results)
             return result_string, True
