@@ -7,6 +7,7 @@ import tempfile
 import time
 import uuid
 from string import printable
+from da
 
 import dateparser
 import requests
@@ -563,7 +564,14 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
                     r['report_text'] = r['sentence']
                 final_list.append(r)
 
-            result_string = dumps(final_list)
+            # DT = '2200-10-10T18:29:00Z'
+            dt_format = "%Y-%m-%dT%H:%M:%SZ"
+
+            sorted_results = sorted(
+                final_list,
+                key=lambda x: datetime.datetime.strptime(x['report_date'], dt_format), reverse=True
+            )
+            result_string = dumps(sorted_results)
             return result_string, True
         except Exception as ex:
             log(ex, util.ERROR)
