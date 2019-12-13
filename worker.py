@@ -7,7 +7,6 @@ import tempfile
 import time
 import uuid
 from string import printable
-from da
 
 import dateparser
 import requests
