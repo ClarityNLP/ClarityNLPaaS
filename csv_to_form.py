@@ -36,7 +36,7 @@ include ClarityCore version "1.0" called Clarity;
 
 nlpql_template2 = '''
 // Phenotype library name
-phenotype "Form {}, Bundle {}" version "1";
+phenotype "{}" version "1";
 
 // # Referenced libraries #
 include ClarityCore version "1.0" called Clarity;
@@ -50,11 +50,6 @@ include ClarityCore version "1.0" called Clarity;
 // Operations
 {}
 
-// Comments
-/*
-{}
-
-*/
 
 '''
 
@@ -325,13 +320,13 @@ def write_nlpql_file(output_dir, folder_prefix,
     entities = list(set(entities))
     operations = list(set(operations))
 
-    with open(filename, 'w') as f:
-        ts_string = '\n\n'.join(termsets)
-        de_string = '\n\n'.join(entities)
-        op_string = '\n\n'.join(operations)
-        query = nlpql_template2.format(form_name, old_grouping, ts_string, de_string, op_string,
-                                       comment)
-        f.write(query)
+    if len(entities) > 0:
+        with open(filename, 'w') as f:
+            ts_string = '\n\n'.join(termsets)
+            de_string = '\n\n'.join(entities)
+            op_string = '\n\n'.join(operations)
+            query = nlpql_template2.format(form_name, ts_string, de_string, op_string)
+            f.write(query)
 
 
 def write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count):
@@ -666,7 +661,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             r_question_name = row.get('question_name', r.get('name', 'Unknown'))
             r_answers = row.get('answers', '')
             r_type = row.get('type', row.get('question_type', ''))
-            r_feature_name = row.get('feature_name', '')
+            r_feature_name = row.get('feature_name', '').replace(' ', '')
             r_fhir_resource_type = row.get('fhir_resource_type', '')
             r_code_system = row.get('code_system', '')
             r_codes = row.get('codes', '')
@@ -791,7 +786,9 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 no_evidence = True
 
             if new_grouping:
-                write_nlpql_file(output_dir, folder_prefix, group_formatted, termsets, entities, operations, form_name,
+                nlpql_form_name = (folder_prefix + ' - ' + group_formatted).replace('_', ' ')
+                write_nlpql_file(output_dir, folder_prefix, group_formatted, termsets, entities, operations,
+                                 nlpql_form_name,
                                  old_grouping, comment)
                 group_number += 1
                 termsets = list()
@@ -852,8 +849,9 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 
         old_grouping = grouping
         group_formatted = '_'.join(grouping.lower().split(' ')).replace(',', '').replace('_/_', '_')
+        nlpql_form_name = (folder_prefix + ' - ' + group_formatted).replace('_', ' ')
         write_nlpql_file(output_dir, folder_prefix,
-                         group_formatted, termsets, entities, operations, form_name, old_grouping, comment)
+                         group_formatted, termsets, entities, operations, nlpql_form_name, old_grouping, comment)
         save_question_to_form_data(q_type, answers, name, question_num, group, evidence, group_formatted,
                                    map_qs, form_data)
         write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count)
@@ -874,11 +872,11 @@ if __name__ == "__main__":
     #                                  form_name="Sickle Cell",
     #                                  file_name='/Users/charityhilton/Downloads/sicklecell.csv',
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
-    # parse_questions_from_feature_csv(folder_prefix='4100r4',
-    #                                  form_name="Form 4100 R4.0",
-    #                                  file_name='/Users/charityhilton/Downloads/CIBMTR-Form2.csv',
-    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
-    parse_questions_from_feature_csv(folder_prefix='setnet',
-                                     form_name="SET-NET",
-                                     file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
+    parse_questions_from_feature_csv(folder_prefix='4100r4',
+                                     form_name="Form 4100 R4.0",
+                                     file_name='https://docs.google.com/spreadsheet/ccc?key=1SRlTl-CkXcVIHwfaeh3-fDSoBMH-POtZRGxXfctub6M&output=csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql')
+    # parse_questions_from_feature_csv(folder_prefix='setnet',
+    #                                  form_name="SET-NET",
+    #                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
+    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
