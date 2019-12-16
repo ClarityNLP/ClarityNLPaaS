@@ -669,7 +669,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             r_fhir_resource_type = row.get('fhir_resource_type', '')
             r_code_system = row.get('code_system', '')
             r_codes = row.get('codes', '')
-            r_valueset_oid = row.get('valueset_oid', '')
+            # r_valueset_oid = row.get('valueset_oid', '')
+            r_valueset_oid = ''
             r_nlp_task_type = row.get('nlp_task_type', '')
             r_terms = row.get('text_terms', row.get('terms', ''))
             r_terms2 = row.get('text_terms2', row.get('terms2', ''))
@@ -871,18 +872,28 @@ if __name__ == "__main__":
     # parse_questions_from_feature_csv(folder_prefix='afib',
     #                                  form_name="Atrial Fibrilation",
     #                                  file_name='./nlpql/afib/afib.csv',
-    #                                  output_dir='./nlpql')
+    #                                  output_dir='./nlpql/forms/afib')
+    # parse_questions_from_feature_csv(folder_prefix='afib',
+    #                                  form_name="Form 3500",
+    #                                  file_name='./nlpql/afib/afib.csv',
+    #                                  output_dir='./nlpql/forms/afib',
+    #                                  description='Subsequent Neoplasms')
     # parse_questions_from_feature_csv(folder_prefix='sickle_cell',
     #                                  form_name="Sickle Cell",
     #                                  file_name='/Users/charityhilton/Downloads/sicklecell.csv',
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
     parse_questions_from_feature_csv(folder_prefix='4100r4',
-                                     form_name="Form 4100 R4.0",
+                                     form_name="Form 4100",
                                      file_name='https://docs.google.com/spreadsheet/ccc?key=1SRlTl-CkXcVIHwfaeh3-fDSoBMH-POtZRGxXfctub6M&output=csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql',
                                      description='CIBMTR Cellular Therapy Essential Data Follow-Up')
+    # parse_questions_from_feature_csv(folder_prefix='setnet',
+    #                                  form_name="SET-NET",
+    #                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
+    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
+    #                                  description='CDC Surveillance for Emerging Threats to Pregnant Women and Infants')
     parse_questions_from_feature_csv(folder_prefix='setnet',
-                                     form_name="SET-NET",
+                                     form_name="Form 4006",
                                      file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql',
-                                     description='CDC Surveillance for Emerging Threats to Pregnant Women and Infants')
+                                     description='CIBMTR Cellular Infusions')

@@ -1,6 +1,6 @@
 {
-  "name": "Atrial Fibrilation",
-  "description": "Case definition for Afib from Phekb.",
+  "name": "Form 3500",
+  "description": "Subsequent Neoplams",
   "owner": "gatech",
   "allocated_users": [
     "admin"
