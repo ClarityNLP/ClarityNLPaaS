@@ -344,6 +344,9 @@ def get_question_list():
             the_form_version = the_form.get("version", "-1")
             form_obj['version'] = the_form_version
 
+            the_form_description = the_form.get('description', '')
+            form_obj['description'] = the_form_description
+
             form_display.append(form_obj)
 
         return Response(json.dumps(form_display, indent=4), status=200, mimetype='application/json')
