@@ -599,7 +599,10 @@ def get_nlpql_version(question_file_name):
 def parse_questions_from_feature_csv(folder_prefix='4100r4',
                                      form_name="Form 4100 R4.0",
                                      file_name='/Users/charityhilton/Downloads/feature2question.csv',
-                                     output_dir='/Users/charityhilton/repos/CIBMTR_knowledge_base'):
+                                     output_dir='/Users/charityhilton/repos/CIBMTR_knowledge_base',
+                                     description=None):
+    if not description:
+        description = form_name
     output_folder_path = os.path.join(output_dir, folder_prefix)
     print(output_folder_path)
     if not os.path.exists(output_folder_path):
@@ -622,6 +625,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
         form_data = {
             "name": form_name,
             "owner": "gatech",
+            "description": description,
             "allocated_users": ["admin"],
             "groups": list(),
             "questions": list(),
@@ -875,8 +879,10 @@ if __name__ == "__main__":
     parse_questions_from_feature_csv(folder_prefix='4100r4',
                                      form_name="Form 4100 R4.0",
                                      file_name='https://docs.google.com/spreadsheet/ccc?key=1SRlTl-CkXcVIHwfaeh3-fDSoBMH-POtZRGxXfctub6M&output=csv',
-                                     output_dir='/Users/charityhilton/repos/custom_nlpql')
-    # parse_questions_from_feature_csv(folder_prefix='setnet',
-    #                                  form_name="SET-NET",
-    #                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
-    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
+                                     output_dir='/Users/charityhilton/repos/custom_nlpql',
+                                     description='CIBMTR Cellular Therapy Essential Data Follow-Up')
+    parse_questions_from_feature_csv(folder_prefix='setnet',
+                                     form_name="SET-NET",
+                                     file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
+                                     output_dir='/Users/charityhilton/repos/custom_nlpql',
+                                     description='CDC Surveillance for Emerging Threats to Pregnant Women and Infants')

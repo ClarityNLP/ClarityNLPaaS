@@ -1,5 +1,6 @@
 {
   "name": "Atrial Fibrilation",
+  "description": "Case definition for Afib from Phekb.",
   "owner": "gatech",
   "allocated_users": [
     "admin"
