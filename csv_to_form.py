@@ -883,7 +883,7 @@ if __name__ == "__main__":
     #                                  file_name='/Users/charityhilton/Downloads/sicklecell.csv',
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
     parse_questions_from_feature_csv(folder_prefix='4100r4',
-                                     form_name="Form 4100",
+                                     form_name="Form 4100 R4.0",
                                      file_name='https://docs.google.com/spreadsheet/ccc?key=1SRlTl-CkXcVIHwfaeh3-fDSoBMH-POtZRGxXfctub6M&output=csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql',
                                      description='CIBMTR Cellular Therapy Essential Data Follow-Up')
@@ -893,7 +893,7 @@ if __name__ == "__main__":
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
     #                                  description='CDC Surveillance for Emerging Threats to Pregnant Women and Infants')
     parse_questions_from_feature_csv(folder_prefix='setnet',
-                                     form_name="Form 4006",
+                                     form_name="Form 4006 R3.0",
                                      file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql',
                                      description='CIBMTR Cellular Infusions')
