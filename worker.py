@@ -346,7 +346,7 @@ def submit_job(nlpql_json):
 
     phenotype_string = json.dumps(nlpql_json)
     log("POSTing phenotype:")
-    log(phenotype_string)
+    log(nlpql_json.get('name'))
     log("")
 
     token, oauth = util.app_token()
@@ -447,7 +447,8 @@ def has_active_job(data):
     return False
 
 
-def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_complete=False, patient_id=-1):
+def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_complete=False, patient_id=-1,
+                name="NLPAAS Job"):
     log('** JOB ID**')
     log(job_id)
     """
@@ -505,73 +506,76 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
 
     response = oauth.get(url)
     response2 = oauth.get(url2)
-    log('**RESPONSE 2**')
-    log(response2)
+    # log('**RESPONSE 2**')
+    # log(response2)
     final_list = list()
     r_formatted = ''
-    if response.status_code == 200 and response2.status_code == 200:
-        try:
+    if response.status_code == 200:
+        results.extend(response.json()['results'])
+    if response2.status_code == 200:
+        results.extend(response2.json()['results'])
+    try:
+        log('')
+        log('total results for {}:{}'.format(name, len(results)))
+        log('')
+        log('')
+        for r in results:
+            # log('** REPORT (R)**', util.INFO)
+            # log(r, util.INFO)
+            r_formatted = json.dumps(r, indent=4)
+            report_id = r['report_id']
+            source = r['source']
 
-            results.extend(response.json()['results'])
-            results.extend(response2.json()['results'])
+            # Three types of result objects 'r' to handle:
+            # 1) Result objects from ClarityNLP, computed via NLPQL
+            #       These have been ingested into Solr, static
+            #       All the expected fields present
+            # 2) Result objects temporarily loaded into Solr via JSON blob
+            #        The JSON blob is POSTed to NLPaaS
+            #        The doc_index and source fields constructed differently
+            #            from normal Solr ingest process
+            # 3) Result objects obtained from FHIR server via CQL call
+            #        CQLExecutionTask returns this data
+            #        No underlying source document at all, so no report_text
 
-            for r in results:
-                # log('** REPORT (R)**', util.INFO)
-                # log(r, util.INFO)
-                r_formatted = json.dumps(r, indent=4)
-                report_id = r['report_id']
-                source = r['source']
-
-                # Three types of result objects 'r' to handle:
-                # 1) Result objects from ClarityNLP, computed via NLPQL
-                #       These have been ingested into Solr, static
-                #       All the expected fields present
-                # 2) Result objects temporarily loaded into Solr via JSON blob
-                #        The JSON blob is POSTed to NLPaaS
-                #        The doc_index and source fields constructed differently
-                #            from normal Solr ingest process
-                # 3) Result objects obtained from FHIR server via CQL call
-                #        CQLExecutionTask returns this data
-                #        No underlying source document at all, so no report_text
-
-                pipeline_type = r['pipeline_type'].lower()
-                if 'cqlexecutiontask' == pipeline_type:
-                    # no source docs, data obtained via CQL query
-                    r['report_text'] = ''
-                    r['report_type'] = r.get('resourceType', 'Unknown')
-                    final_list.append(r)
-                    continue
-
-                if len(report_ids) > 0 and report_id not in report_ids:
-                    continue
-
-                # compute the doc_index encoded in the source field
-                try:
-                    doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
-                except ValueError as ve:
-                    doc_index = -1
-                    log("non-integer source index", util.ERROR)
-                    log(ve, util.ERROR)
-                    log(r_formatted)
-
-                if doc_index == -1 and patient_id != -1:
-                    r['report_text'] = ''
-                elif len(source_data) > 0 and doc_index < len(source_data):
-                    source_doc = source_data[doc_index]
-                    r['report_text'] = source_doc['report_text']
-                else:
-                    r['report_text'] = r['sentence']
+            pipeline_type = r['pipeline_type'].lower()
+            if 'cqlexecutiontask' == pipeline_type:
+                # no source docs, data obtained via CQL query
+                r['report_text'] = ''
+                r['report_type'] = r.get('resourceType', 'Unknown')
                 final_list.append(r)
+                continue
 
-            result_string = dumps(final_list)
-            return result_string, True
-        except Exception as ex:
-            log(ex, util.ERROR)
-            log(r_formatted)
-            return '''
-                "success":"false",
-                "message":{}
-            '''.format(str(ex)), False
+            if len(report_ids) > 0 and report_id not in report_ids:
+                continue
+
+            # compute the doc_index encoded in the source field
+            try:
+                doc_index = int(report_id.replace(source, '').replace('_', '')) - 1
+            except ValueError as ve:
+                doc_index = -1
+                log("non-integer source index", util.ERROR)
+                log(ve, util.ERROR)
+                log(r_formatted)
+
+            if doc_index == -1 and patient_id != -1:
+                r['report_text'] = ''
+            elif len(source_data) > 0 and doc_index < len(source_data):
+                source_doc = source_data[doc_index]
+                r['report_text'] = source_doc['report_text']
+            else:
+                r['report_text'] = r['sentence']
+            final_list.append(r)
+
+        result_string = dumps(final_list)
+        return result_string, True
+    except Exception as ex:
+        log(ex, util.ERROR)
+        log(r_formatted)
+        return '''
+            "success":"false",
+            "message":{}
+        '''.format(str(ex)), False
 
     else:
 
@@ -814,7 +818,8 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False):
     # Getting the results of the Job
     job_id = int(job_info['job_id'])
     log("\n\njob_id = " + str(job_id))
-    results, got_results = get_results(job_id, source_data=report_payload, report_ids=report_ids, patient_id=patient_id)
+    results, got_results = get_results(job_id, source_data=report_payload, report_ids=report_ids, patient_id=patient_id,
+                                       name=nlpql_json.get('name'))
 
     # Deleting uploaded documents
     delete_obj = delete_report(source_id)
@@ -846,7 +851,8 @@ def async_results(job_id, source_id, return_null_results=False):
 
     job_id = int(job_id)
     log("\n\njob_id = " + str(job_id))
-    results, got_results = get_results(job_id, source_data=reports, report_ids=report_ids)
+    results, got_results = get_results(job_id, source_data=reports, report_ids=report_ids,
+                                       name=str(job_id))
 
     if got_results:
         # Deleting uploaded documents
