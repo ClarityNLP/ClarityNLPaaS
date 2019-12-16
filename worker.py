@@ -357,8 +357,8 @@ def submit_job(nlpql_json):
             if not data['success']:
                 log(data['error'], util.ERROR)
                 return False, data['error']
-        log("\n\nJob Response:\n")
-        log(data)
+        # log("\n\nJob Response:\n")
+        # log(data)
         return True, data
     else:
         log(response.status_code)
