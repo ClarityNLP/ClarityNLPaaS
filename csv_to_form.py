@@ -777,9 +777,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 value_enum_set = []
             logic = r_logic.strip()
 
-            if (len(codes) > 0 or len(valueset_oid) > 0) and feature_name in feature_names:
-                feature_name = feature_name + '_1'
-            feature_names.add(feature_name)
+            if feature_name not in feature_names:
+                feature_names.add(feature_name)
 
             if len(group) > 0:
                 groups[group] = ''
@@ -892,8 +891,8 @@ if __name__ == "__main__":
     #                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
     #                                  description='CDC Surveillance for Emerging Threats to Pregnant Women and Infants')
-    parse_questions_from_feature_csv(folder_prefix='setnet',
-                                     form_name="Form 4006 R3.0",
-                                     file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
-                                     output_dir='/Users/charityhilton/repos/custom_nlpql',
-                                     description='CIBMTR Cellular Infusions')
+    # parse_questions_from_feature_csv(folder_prefix='setnet',
+    #                                  form_name="Form 4006 R3.0",
+    #                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
+    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
+    #                                  description='CIBMTR Cellular Infusions')
