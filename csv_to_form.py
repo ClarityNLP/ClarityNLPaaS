@@ -763,8 +763,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             codes = [x.strip() for x in r_codes.split(',') if len(r_codes) > 0]
             valueset_oid = r_valueset_oid
             nlp_task_type = r_nlp_task_type
-            terms = [x.strip() for x in r_terms.split(',') if len(r_terms) > 0]
-            terms2 = [x.strip() for x in r_terms2.split(',') if len(r_terms2) > 0]
+            terms = list(set([x.strip().lower() for x in r_terms.split(',') if len(r_terms) > 0]))
+            terms2 = list(set([x.strip().lower() for x in r_terms2.split(',') if len(r_terms2) > 0]))
             if is_numeric(r_word_distance):
                 word_distance = int(r_word_distance)
             else:
