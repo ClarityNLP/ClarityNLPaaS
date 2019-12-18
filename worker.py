@@ -485,7 +485,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
         if return_only_if_complete:
             break
 
-        time.sleep(5.0)
+        time.sleep(4.0)
 
     if return_only_if_complete and status != "COMPLETED":
         return '''
@@ -501,19 +501,26 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
     Submitting ClarityNLP job
     """
     results = list()
-    url = "{}phenotype_paged_results/{}/{}".format(util.claritynlp_url, job_id, 'true')
-    url2 = "{}phenotype_paged_results/{}/{}".format(util.claritynlp_url, job_id, 'false')
+    n = 0
+    while n < 3:
+        url = "{}phenotype_paged_results/{}/{}".format(util.claritynlp_url, job_id, 'true')
+        url2 = "{}phenotype_paged_results/{}/{}".format(util.claritynlp_url, job_id, 'false')
 
-    response = oauth.get(url)
-    response2 = oauth.get(url2)
-    # log('**RESPONSE 2**')
-    # log(response2)
-    final_list = list()
-    r_formatted = ''
-    if response.status_code == 200:
-        results.extend(response.json()['results'])
-    if response2.status_code == 200:
-        results.extend(response2.json()['results'])
+        response = oauth.get(url)
+        response2 = oauth.get(url2)
+        # log('**RESPONSE 2**')
+        # log(response2)
+        final_list = list()
+        r_formatted = ''
+        if response.status_code == 200:
+            results.extend(response.json()['results'])
+        if response2.status_code == 200:
+            results.extend(response2.json()['results'])
+        if len(results) > 0:
+            break
+        else:
+            time.sleep(1.0)
+            n += 1
     try:
         log('')
         log('total results for {}:{}'.format(name, len(results)))
