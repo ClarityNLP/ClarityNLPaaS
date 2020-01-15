@@ -6,9 +6,6 @@ import string
 from os import path, remove
 import requests
 
-import nltk
-from nltk.corpus import stopwords
-
 valid = list(string.digits)
 valid.extend(list(string.ascii_letters))
 valid.append('_')
@@ -265,30 +262,6 @@ def is_numeric(test):
         return True
     except ValueError:
         return False
-
-
-def cleanup_name(name):
-    name = name.strip().lower()
-    exclude = set(string.punctuation)
-    no_punct_name = ''.join(ch for ch in name if ch not in exclude)
-    stop_words = stopwords.words('english')
-    stop_words.append('eg')
-    stop_words.append('days')
-    stop_words.append('date')
-    stop_words.append('current')
-    stop_words.append('recent')
-    stop_words.append('since')
-    keys = no_punct_name.lower().split(' ')
-    keys = [word for word in keys if word not in stop_words]
-    keys = [word for word in keys if len(word) > 1]
-    keys = [word for word in keys if not is_numeric(word)]
-    if len(keys) > 5:
-        keys = keys[0:4]
-    clean_name = "_".join(keys).replace('__', '_')
-    key_length = len(keys)
-    if clean_name.endswith('_'):
-        clean_name = clean_name[0:-1]
-    return clean_name, key_length
 
 
 def merger(dict1, dict2):
@@ -866,7 +839,6 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 
 
 if __name__ == "__main__":
-    nltk.download('stopwords')
 
     # parse_questions_from_feature_csv(folder_prefix='afib',
     #                                  form_name="Atrial Fibrilation",
