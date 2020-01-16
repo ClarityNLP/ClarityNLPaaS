@@ -490,7 +490,7 @@ def map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, va
 
 
 def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features, value_set_oid,
-            cql_expression):
+            cql_expression, cql_folder):
     cql_res = ''
     cql_concept = ''
     cql_header = ''
@@ -542,11 +542,17 @@ def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entitie
         else:
             cql_res = '''\n\t\t\t\tunion '''.join(cql_result_members)
 
-    cql_res = cql_result_template.format(feature_name, cql_res)
-    cql = cql_template.format(cql_header, cql_concept, cql_res)
+    if len(cql_res) > 0:
+        cql_res = cql_result_template.format(feature_name, cql_res)
+        cql = cql_template.format(cql_header, cql_concept, cql_res)
 
-    entities.append(cql_task_template % (feature_name, cql))
-    features.append(feature_name)
+        entities.append(cql_task_template % (feature_name, cql))
+        features.append(feature_name)
+
+        if len(cql_folder) > 0:
+            filename = '{}/{}.cql'.format(cql_folder, feature_name)
+            with open(filename, 'w') as f:
+                f.write(cql)
 
 
 def get_nlpql_version(question_file_name):
@@ -587,6 +593,9 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
     print(output_folder_path)
     if not os.path.exists(output_folder_path):
         os.mkdir(output_folder_path)
+    cql_folder = os.path.join(output_folder_path, 'cql')
+    if not os.path.exists(cql_folder):
+        os.mkdir(cql_folder)
 
     feature_names = set()
 
@@ -819,7 +828,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                                          entities)
                 elif len(cql_expression) > 0 or len(codes) > 0 or len(valueset_oid) > 0:
                     map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features,
-                            valueset_oid, cql_expression)
+                            valueset_oid, cql_expression, cql_folder)
                 else:
                     map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, value_max, value_enum_set,
                                      features, entities)
