@@ -83,6 +83,8 @@ cql_template = '''
 
         context Patient
 
+        define "Pt": [Patient]
+
 {}
 
 {}
@@ -487,57 +489,62 @@ def map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, va
     entities.append(pa)
 
 
-def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features, value_set_oid):
-    c_string = ''
-    resource = fhir_resource_type
-
+def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features, value_set_oid,
+            cql_expression):
     cql_res = ''
     cql_concept = ''
     cql_header = ''
-    cql_result_members = list()
-    #
-    # define "Conditions Indicating Sexual Activity":
-    # 	["Condition": "Other Female Reproductive Conditions"]
-    # 	union ["Condition": "Genital Herpes"]
-    #     union ["Condition": "Genococcal Infections and Venereal Diseases"]
-    #     union ["Condition": "Inflammatory Diseases of Female Reproductive Organs"]
-    #     union ["Condition": "Chlamydia"]
-    #     union ["Condition": "HIV"]
-    #     union ["Condition": "Syphilis"]
-    #     union ["Condition": "Complications of Pregnancy, Childbirth and the Puerperium"]
-
-    if not resource or len(resource) == 0:
-        resource = 'Observation'
-    if not codes:
-        codes = list()
-    if len(codes) == 1 and codes[0] == '':
-        codes = list()
-    if len(codes) > 0:
-        for c in codes:
-            if len(c_string) > 0:
-                c_string += ', \n            '
-            code = c.replace('?', '').replace('"', '').replace("'", '')
-            c_string += 'Code \'{}\' from "{}"'.format(code, code_sys)
-        cql_concept = cql_concept_template % (feature_name, c_string)
-        concepts.append(cql_concept)
-        cql_result_members.append(cql_result_template_cs.format(resource, feature_name))
-    if value_set_oid and len(value_set_oid) > 0:
-        value_set_oid = value_set_oid.replace('?', '').replace('"', '').replace("'", '')
-        cql_define_name = feature_name
-        cql_header = cql_vsac_header.format(cql_define_name, value_set_oid)
-        cql_result_members.append(cql_result_template_vs.format(resource, cql_define_name))
-
-    if len(cql_header) == 0 and len(cql_concept) == 0 and len(cql_result_members) == 0:
-        print('no valid cql params')
-        return
-
-    if len(cql_result_members) == 1:
-        cql_res = '\t' + cql_result_members[0]
+    if len(cql_expression) > 0:
+        cql_res = cql_expression
     else:
-        cql_res = '''\n\t\t\t\tunion '''.join(cql_result_members)
+        c_string = ''
+        resource = fhir_resource_type
+
+        cql_result_members = list()
+        #
+        # define "Conditions Indicating Sexual Activity":
+        # 	["Condition": "Other Female Reproductive Conditions"]
+        # 	union ["Condition": "Genital Herpes"]
+        #     union ["Condition": "Genococcal Infections and Venereal Diseases"]
+        #     union ["Condition": "Inflammatory Diseases of Female Reproductive Organs"]
+        #     union ["Condition": "Chlamydia"]
+        #     union ["Condition": "HIV"]
+        #     union ["Condition": "Syphilis"]
+        #     union ["Condition": "Complications of Pregnancy, Childbirth and the Puerperium"]
+
+        if not resource or len(resource) == 0:
+            resource = 'Observation'
+        if not codes:
+            codes = list()
+        if len(codes) == 1 and codes[0] == '':
+            codes = list()
+        if len(codes) > 0:
+            for c in codes:
+                if len(c_string) > 0:
+                    c_string += ', \n            '
+                code = c.replace('?', '').replace('"', '').replace("'", '')
+                c_string += 'Code \'{}\' from "{}"'.format(code, code_sys)
+            cql_concept = cql_concept_template % (feature_name, c_string)
+            concepts.append(cql_concept)
+            cql_result_members.append(cql_result_template_cs.format(resource, feature_name))
+        if value_set_oid and len(value_set_oid) > 0:
+            value_set_oid = value_set_oid.replace('?', '').replace('"', '').replace("'", '')
+            cql_define_name = feature_name
+            cql_header = cql_vsac_header.format(cql_define_name, value_set_oid)
+            cql_result_members.append(cql_result_template_vs.format(resource, cql_define_name))
+
+        if len(cql_header) == 0 and len(cql_concept) == 0 and len(cql_result_members) == 0:
+            print('no valid cql params')
+            return
+
+        if len(cql_result_members) == 1:
+            cql_res = '\t' + cql_result_members[0]
+        else:
+            cql_res = '''\n\t\t\t\tunion '''.join(cql_result_members)
 
     cql_res = cql_result_template.format(feature_name, cql_res)
     cql = cql_template.format(cql_header, cql_concept, cql_res)
+
     entities.append(cql_task_template % (feature_name, cql))
     features.append(feature_name)
 
@@ -644,6 +651,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             r_codes = row.get('codes', '')
             # r_valueset_oid = row.get('valueset_oid', '')
             r_valueset_oid = ''
+            r_cql_expression = row.get('cql_expression', '')
             r_nlp_task_type = row.get('nlp_task_type', '')
             r_terms = row.get('text_terms', row.get('terms', ''))
             r_terms2 = row.get('text_terms2', row.get('terms2', ''))
@@ -652,9 +660,6 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             r_value_max = row.get('value_max', '')
             r_value_enum_set = row.get('value_enum_set', '')
             r_logic = row.get('logic', '')
-
-            if r_num == '34' or r_num == '9':
-                print('debug')
 
             l_nlp_task_type = r_nlp_task_type.lower()
             if len(r_nlp_task_type) == 0:
@@ -667,7 +672,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                     r_nlp_task_type = 'Logic'
             else:
                 if 'cql' in l_nlp_task_type:
-                    if len(r_codes) == 0 and len(r_valueset_oid) == 0:
+                    if len(r_codes) == 0 and len(r_valueset_oid) == 0 and len(r_cql_expression) == 0:
                         r_nlp_task_type = ''
                 elif 'value' in l_nlp_task_type or 'term' in l_nlp_task_type or 'assertion' in l_nlp_task_type:
                     if len(r_terms) == 0:
@@ -735,6 +740,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
             code_sys = r_code_system
             codes = [x.strip() for x in r_codes.split(',') if len(r_codes) > 0]
             valueset_oid = r_valueset_oid
+            cql_expression = r_cql_expression
             nlp_task_type = r_nlp_task_type
             terms = list(set([x.strip().lower() for x in r_terms.split(',') if len(r_terms) > 0]))
             terms2 = list(set([x.strip().lower() for x in r_terms2.split(',') if len(r_terms2) > 0]))
@@ -811,9 +817,9 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 elif len(terms) > 0 and 'value' in l_nlp_task_type:
                     map_value_extraction(terms, termsets, feature_name, value_min, value_max, value_enum_set, features,
                                          entities)
-                elif len(codes) > 0 or len(valueset_oid) > 0:
+                elif len(cql_expression) > 0 or len(codes) > 0 or len(valueset_oid) > 0:
                     map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features,
-                            valueset_oid)
+                            valueset_oid, cql_expression)
                 else:
                     map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, value_max, value_enum_set,
                                      features, entities)
@@ -853,11 +859,11 @@ if __name__ == "__main__":
     #                                  form_name="Sickle Cell",
     #                                  file_name='/Users/charityhilton/Downloads/sicklecell.csv',
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
-    parse_questions_from_feature_csv(folder_prefix='4100r4',
-                                     form_name="Form 4100 R4.0",
-                                     file_name='https://docs.google.com/spreadsheet/ccc?key=1SRlTl-CkXcVIHwfaeh3-fDSoBMH-POtZRGxXfctub6M&output=csv',
+    parse_questions_from_feature_csv(folder_prefix='scd',
+                                     form_name="Sickle Cell Disease Case Findings",
+                                     file_name='https://docs.google.com/spreadsheet/ccc?key=1t5XLB2cbGKJLZkWzKoMJkVbm8zKZbJJj459wUpkHKgQ&output=csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql',
-                                     description='CIBMTR Cellular Therapy Essential Data Follow-Up')
+                                     description='Sickle Cell Disease Case Definition')
     # parse_questions_from_feature_csv(folder_prefix='setnet',
     #                                  form_name="SET-NET",
     #                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
