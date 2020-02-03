@@ -640,7 +640,7 @@ def clean_output(data, report_list=None, return_null_results=False):
     return json.dumps(data, indent=4, sort_keys=True)
 
 
-def worker(job_file_path, data, synchronous=True, return_null_results=False):
+def worker(job_file_path, data, synchronous=True, return_null_results=False, nlpql=''):
     """
     Main worker function
     """
@@ -739,7 +739,12 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False):
         report_ids = list()
 
     # Getting the nlpql from disk
-    nlpql = get_nlpql(job_file_path)
+    if not job_file_path or len(job_file_path) == 0:
+        if not nlpql or len(nlpql) == 0:
+            return Response(json.dumps('{"message":"Please pass in NLPQL text or a valid path"}',
+                                       indent=4, sort_keys=True), status=400, mimetype='application/json')
+    else:
+        nlpql = get_nlpql(job_file_path)
 
     # Validating the input object
     success, nlpql_json = submit_test(nlpql)

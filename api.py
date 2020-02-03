@@ -153,6 +153,30 @@ def delete_reports(source_id: str):
                         mimetype='text/plain')
 
 
+@application.route("/jobs", methods=['POST'])
+def submit_job_with_nlpql(j):
+	the_json = request.get_json()
+	nlpql = the_json.get('nlpql', '')
+
+	try:
+		async_job = request.args.get('async') == 'true'
+	except:
+		async_job = False
+
+	try:
+		return_null_results = request.args.get('return_null_results') == 'true'
+	except:
+		return_null_results = False
+	synchronous = not async_job
+
+	if nlpql == '':
+		return Response(json.dumps({'message': 'Invalid body for this endpoint. Please make sure NLPQL is passed in.'},
+		                           indent=4, sort_keys=True), status=400,
+		                mimetype='application/json')
+
+	return worker('', the_json, synchronous=synchronous, return_null_results=return_null_results, nlpql=nlpql)
+
+
 @application.route("/job/<job_category>/<job_subcategory>/<job_name>", methods=['POST', 'GET'])
 def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_name: str):
     """
