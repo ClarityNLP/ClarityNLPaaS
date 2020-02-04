@@ -4,6 +4,7 @@ import json
 import os
 import string
 from os import path, remove
+
 import requests
 
 valid = list(string.digits)
@@ -536,7 +537,7 @@ def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entitie
             cql_result_members.append(cql_result_template_vs.format(resource, cql_define_name))
 
         if len(cql_concept) == 0 and len(cql_result_members) == 0:
-	        cql_result_members.append(cql_result_template_res.format(resource))
+            cql_result_members.append(cql_result_template_res.format(resource))
 
         if len(cql_result_members) == 1:
             cql_res = '\t' + cql_result_members[0]
@@ -682,7 +683,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                     r_nlp_task_type = 'Logic'
             else:
                 if 'cql' in l_nlp_task_type:
-	                if len(r_fhir_resource_type) == 0 and len(r_cql_expression) == 0:
+                    if len(r_fhir_resource_type) == 0 and len(r_cql_expression) == 0:
                         r_nlp_task_type = ''
                 elif 'value' in l_nlp_task_type or 'term' in l_nlp_task_type or 'assertion' in l_nlp_task_type:
                     if len(r_terms) == 0:
