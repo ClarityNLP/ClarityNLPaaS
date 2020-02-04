@@ -113,6 +113,8 @@ cql_result_template = '''
             {}
 '''
 
+cql_result_template_res = ''' [{}]'''
+
 cql_result_template_cs = ''' [{}: Code in "{}_concepts"]'''
 
 cql_result_template_vs = '''[{}:"{}_valueset"]'''
@@ -533,16 +535,15 @@ def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entitie
             cql_header = cql_vsac_header.format(cql_define_name, value_set_oid)
             cql_result_members.append(cql_result_template_vs.format(resource, cql_define_name))
 
-        if len(cql_header) == 0 and len(cql_concept) == 0 and len(cql_result_members) == 0:
-            print('no valid cql params')
-            return
+        if len(cql_concept) == 0 and len(cql_result_members) == 0:
+	        cql_result_members.append(cql_result_template_res.format(resource))
 
         if len(cql_result_members) == 1:
             cql_res = '\t' + cql_result_members[0]
         else:
             cql_res = '''\n\t\t\t\tunion '''.join(cql_result_members)
 
-    if len(cql_res) > 0:
+    if len(cql_result_members) > 0:
         cql_res = cql_result_template.format(feature_name, cql_res)
         cql = cql_template.format(cql_header, cql_concept, cql_res)
 
@@ -681,7 +682,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                     r_nlp_task_type = 'Logic'
             else:
                 if 'cql' in l_nlp_task_type:
-                    if len(r_codes) == 0 and len(r_valueset_oid) == 0 and len(r_cql_expression) == 0:
+	                if len(r_fhir_resource_type) == 0 and len(r_cql_expression) == 0:
                         r_nlp_task_type = ''
                 elif 'value' in l_nlp_task_type or 'term' in l_nlp_task_type or 'assertion' in l_nlp_task_type:
                     if len(r_terms) == 0:
@@ -826,7 +827,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
                 elif len(terms) > 0 and 'value' in l_nlp_task_type:
                     map_value_extraction(terms, termsets, feature_name, value_min, value_max, value_enum_set, features,
                                          entities)
-                elif len(cql_expression) > 0 or len(codes) > 0 or len(valueset_oid) > 0:
+                elif len(cql_expression) > 0 or len(r_fhir_resource_type) > 0:
                     map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features,
                             valueset_oid, cql_expression, cql_folder)
                 else:
@@ -868,11 +869,16 @@ if __name__ == "__main__":
     #                                  form_name="Sickle Cell",
     #                                  file_name='/Users/charityhilton/Downloads/sicklecell.csv',
     #                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
-    parse_questions_from_feature_csv(folder_prefix='scd',
-                                     form_name="Sickle Cell Disease Case Findings",
-                                     file_name='https://docs.google.com/spreadsheet/ccc?key=1t5XLB2cbGKJLZkWzKoMJkVbm8zKZbJJj459wUpkHKgQ&output=csv',
+    # parse_questions_from_feature_csv(folder_prefix='scd',
+    #                                  form_name="Sickle Cell Disease Case Findings",
+    #                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1t5XLB2cbGKJLZkWzKoMJkVbm8zKZbJJj459wUpkHKgQ&output=csv',
+    #                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
+    #                                  description='Sickle Cell Disease Case Definition')
+    parse_questions_from_feature_csv(folder_prefix='death',
+                                     form_name="US Death Certificate",
+                                     file_name='https://docs.google.com/spreadsheet/ccc?key=1J_JqRjjryjaJE-fB9nNcBb9mQNL3cl7dx_vhbG95XHE&output=csv',
                                      output_dir='/Users/charityhilton/repos/custom_nlpql',
-                                     description='Sickle Cell Disease Case Definition')
+                                     description='US Death Certificate')
     # parse_questions_from_feature_csv(folder_prefix='setnet',
     #                                  form_name="SET-NET",
     #                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
