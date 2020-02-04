@@ -543,7 +543,7 @@ def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entitie
         else:
             cql_res = '''\n\t\t\t\tunion '''.join(cql_result_members)
 
-    if len(cql_result_members) > 0:
+    if len(cql_res) > 0:
         cql_res = cql_result_template.format(feature_name, cql_res)
         cql = cql_template.format(cql_header, cql_concept, cql_res)
 
