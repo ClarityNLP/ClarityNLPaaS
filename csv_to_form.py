@@ -133,6 +133,10 @@ define final %s:
     });
 '''
 
+def format_answer(a):
+	return '_'.join(a.split(' ')).lower().replace('"', '').replace('(', '').replace(')', '').replace('.', '') \
+				.replace('\n', ' ').strip()
+
 
 def question_number(line):
 	question_string = ''
@@ -324,15 +328,235 @@ def write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_
 
 
 def write_questions_file_v2(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count,
+                            all_features,
                             suffix='_v2'):
 	question_file_name = '{}/{}/questions{}.json'.format(output_dir, folder_prefix, suffix)
-	form_data['groups'] = list(groups.keys())
-	form_data['evidence_bundles'] = list(evidence_bundles.keys())
-	form_data['version'] = get_nlpql_version(question_file_name)
-	form_data['questions_with_evidence_count'] = evidence_count
+	# form_data['groups'] = list(groups.keys())
+	# form_data['evidence_bundles'] = list(evidence_bundles.keys())
+	# form_data['version'] = get_nlpql_version(question_file_name)
+	# form_data['questions_with_evidence_count'] = evidence_count
+
+	# group_formatted = '_'.join(grouping.lower().split(' ')).replace(',', '').replace('_/_', '_')
+
+	new_groupings = dict()
+	new_evidences = dict()
+	for q in form_data.get('questions', list()):
+		group = q.get('group', '')
+		group_id = '_'.join(group.lower().split(' ')).replace(',', '').replace('_/_', '_')
+		if group_id not in new_groupings:
+			new_groupings[group_id] = list()
+		new_q = dict()
+		# question type
+		q_type = q.get('question_type')
+
+		# get answers
+		answers = q.get('answers', list())
+		options = list()
+		valid_answers = list()
+		for a in answers:
+			v = a.get('value', '').strip()
+			t = a.get('text', '').strip()
+			options.append({
+				'label': t,
+				'value': v
+			})
+			if len(t) > 0:
+				valid_answers.append(t)
+		new_q['options'] = options
+
+		# get autofill and defaults
+		evidence_bundle = q.get('evidence_bundle', dict())
+		autofill = dict()
+		default_answer = None
+
+		case_values = dict()
+		for evidence in evidence_bundle.keys():
+			features = evidence_bundle[evidence]
+			if features:
+				for f in features:
+
+					feature = all_features.get(f, '')
+					if feature and len(feature) > 0:
+						default = feature.get('default_answer', feature.get('default', '')).strip()
+						autofill_criteria = feature.get('autofill', '')
+						autofill_mc = feature.get('autofill_mc_answer', feature.get('autofill_mc', ''))
+
+						if len(default) > 0 and (default in valid_answers or (q_type != 'RADIO' or q_type != 'CHECKBOX')):
+							formatted_default = format_answer(default)
+							if default and formatted_default and formatted_default != default_answer and\
+									(q_type == 'RADIO' or q_type == 'CHECKBOX'):
+								print('WARNING: duplicate default on Question {}: {} != {}'.format(q.get('question_number', -1000),
+								                                                                   formatted_default,
+								                                                                   default_answer))
+							default_answer = formatted_default
+
+						if (autofill_criteria.strip().lower() == 'exists' or len(autofill_criteria) == 0) and len(autofill_mc) > 0:
+							autofill_exist_answer = format_answer(autofill_mc)
+							query = dict()
+							query['field'] = "{}.{}.pipeline_id".format(evidence, f)
+							query['operator'] = '$exists'
+							query['criteria'] = True
+
+							if autofill_exist_answer not in case_values:
+								case_values[autofill_exist_answer] = {
+									'queries': [query],
+									"value": autofill_exist_answer
+								}
+							else:
+								case_values[autofill_exist_answer]['queries'].append(query)
+
+		if default_answer:
+			autofill['default'] = default_answer
+		autofill['cases'] = list(case_values.values())
+
+		# map to new data structure
+		new_q['id'] = 'question{}'.format(q.get('question_number', -1000))
+		new_q['number'] = int(q.get('question_number', -1000))
+		new_q['name'] = q.get('question_name')
+		new_q['type'] = q_type
+		new_q['value'] = ''
+		q_evidence = q.get('nlpql_grouping', '')
+		if len(q_evidence) > 0:
+			new_q['evidence'] = q_evidence
+
+		new_q['autofill'] = autofill
+
+		new_groupings[group_id].append(new_q)
+
+		evidence_bundle = q.get('evidence_bundle', dict())
+		for k in evidence_bundle.keys():
+			new_evidences[k] = evidence_bundle[k]
+
+	new_form_data = dict()
+	new_form_data['name'] = form_data['name']
+	new_form_data['slug'] = folder_prefix
+	new_form_data['description'] = form_data['description']
+	new_form_data['allocated_users'] = form_data['allocated_users']
+	new_form_data['groups'] = dict()
+	new_form_data['evidences'] = dict()
+
+	new_form_data['groups']['byId'] = dict()
+	group_evidences = list()
+	question_all_ids = list()
+	group_ids = list()
+	for g in list(groups.keys()):
+		id_name = '_'.join(g.lower().split(' ')).replace(',', '').replace('_/_', '_').replace('.', '')
+		new_grouping_mapping = new_groupings.get(id_name, list())
+		mapped_group = dict()
+		qs = dict()
+
+		id_list = list()
+		evidences = set()
+		for ngm in new_grouping_mapping:
+			the_id = ngm.get('id')
+			evidence = ngm.get('evidence', '')
+			qs[the_id] = ngm
+			id_list.append(the_id)
+
+			if len(evidence) > 0:
+				evidences.add(evidence)
+
+		mapped_group['name'] = g
+		mapped_group['questions'] = dict()
+		mapped_group['questions']['byId'] = qs
+		mapped_group['questions']['allIds'] = list(qs.keys())
+		mapped_group['evidences'] = list(evidences)
+
+		new_form_data['groups']['byId'][id_name] = mapped_group
+		group_ids.append(id_name)
+		question_all_ids.extend(id_list)
+		group_evidences.extend(list(evidences))
+
+	# new_form_data['groups']['evidences'] = group_evidences
+	# new_form_data['groups']['allIds'] = question_all_ids
+	new_form_data['groups']['allIds'] = group_ids
+
+	for k in new_evidences.keys():
+		new_evidence = dict()
+		new_evidence['allIds'] = new_evidences.get(k, list())
+		byid = dict()
+		for l in new_evidence.get('allIds'):
+			byid_item = dict()
+			# TODO display stuff
+
+			feature_info = all_features.get(l, dict())
+			feature_name_display_name = feature_info.get('feature_name', feature_info.get('feature', '')).\
+				replace('_', ' ').strip().title()
+			display_type = feature_info.get('display_type', '')
+			fhir_resource_type = feature_info.get('fhir_resource_type', '')
+			if len(display_type) > 0:
+				byid_item['displayType'] = display_type
+			else:
+				nlp_task_type = feature_info.get('nlp_task_type', '')
+				if 'CQL' in nlp_task_type:
+					if fhir_resource_type == 'Observation':
+						byid_item['displayType'] = 'table'
+						byid_item['cols'] = [
+							{
+								"label": "Date",
+								"value": "r.result_display.date"
+							},
+							{
+								"label": "Name",
+								"value": "r.code_coding_0_display"
+							},
+							{
+								"label": "Val",
+								"value": "`${r.valueQuantity_value} ${r.valueQuantity_code}`"
+							}
+						]
+					elif fhir_resource_type == 'Condition':
+						byid_item['displayType'] = 'table'
+						byid_item['cols'] = [
+							{
+								"label": "Date",
+								"value": "r.result_display.date"
+							},
+							{
+								"label": "Name",
+								"value": "r.code_coding_0_display"
+							},
+							{
+								"label": "Code",
+								"value": "r.code_coding_0_code"
+							}
+						]
+
+					else:
+						byid_item['displayType'] = 'cards'
+				elif 'ValueExtraction' in nlp_task_type:
+					byid_item['displayType'] = 'table'
+					byid_item['cols'] = [
+						{
+							"label": "Date",
+							"value": "r.result_display.date"
+						},
+						{
+							"label": "Name",
+							"value": "r.text"
+						},
+						{
+							"label": "Val",
+							"value": "`${r.value}`"
+						}
+					]
+				else:
+					byid_item['displayType'] = 'cards'
+			display_name = feature_info.get('feature_display_name', '')
+			if len(display_name) > 0:
+				byid_item['title'] = display_name
+			else:
+				if len(fhir_resource_type) > 0:
+					byid_item['title'] = '{} {}'.format(feature_name_display_name, fhir_resource_type).strip()
+				else:
+					byid_item['title'] = '{} Text Mentions'.format(feature_name_display_name).strip()
+
+			byid[l] = byid_item
+		new_evidence['byId'] = byid
+		new_form_data['evidences'][k] = new_evidence
 
 	with open(question_file_name, 'w') as f:
-		f.write(json.dumps(form_data, indent=4))
+		f.write(json.dumps(new_form_data, indent=4))
 
 
 def save_question_to_form_data(q_type, answers, name, question_num, group, evidence, grouping, map_qs, form_data):
@@ -343,8 +567,7 @@ def save_question_to_form_data(q_type, answers, name, question_num, group, evide
 	if q_type != 'DATE' and q_type != 'TEXT':
 		for a in answers:
 			txt = a.replace('\n', ' ').replace('"', '').strip()
-			val = '_'.join(a.split(' ')).lower().replace('"', '').replace('(', '').replace(')', '').replace('.', '') \
-				.replace('\n', ' ').strip()
+			val = format_answer(a)
 			if " = " in txt:
 				kv = txt.replace('"', '').split('=')
 				if len(kv) == 2:
@@ -666,6 +889,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 		evidence = dict()
 		evidence_bundles = dict()
 
+		all_features = dict()
+
 		name = None
 		group = None
 		q_type = None
@@ -795,6 +1020,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 			if feature_name not in feature_names:
 				feature_names.add(feature_name)
 
+			all_features[feature_name] = row
+
 			if len(group) > 0:
 				groups[group] = ''
 
@@ -823,14 +1050,16 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 					continue
 
 				q_type = q_type.upper()
-				if q_type == 'MS' or q_type == 'MULTIPLE_SELECT' or q_type == 'MULTIPLE SELECT':
-					q_type = 'MULTIPLE_SELECT'
-				elif q_type == 'MC' or q_type == 'MULTIPLE_CHOICE' or q_type == 'MULTIPLE CHOICE':
-					q_type = 'MULTIPLE_CHOICE'
+				if q_type == 'MS' or q_type == 'MULTIPLE_SELECT' or q_type == 'MULTIPLE SELECT' or q_type == 'CHECKBOX':
+					q_type = 'CHECKBOX'
+				elif q_type == 'MC' or q_type == 'MULTIPLE_CHOICE' or q_type == 'MULTIPLE CHOICE' or q_type == 'RADIO':
+					q_type = 'RADIO'
 				elif q_type == 'TEXT+MC' or q_type == 'TEXT_WITH_MULTIPLE_CHOICE' or q_type == \
 						'TEXT WITH MULTIPLE CHOICE':
 					# q_type = 'TEXT_WITH_MULTIPLE_CHOICE'
 					q_type = 'TEXT'
+				elif q_type == "DT" or q_type == "DATETIME" or q_type == 'TIMESTAMP' or q_type == 'DATE':
+					q_type = "DATE"
 				else:
 					q_type = 'TEXT'
 
@@ -873,10 +1102,12 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 		                 group_formatted, termsets, entities, operations, nlpql_form_name, old_grouping, comment)
 		save_question_to_form_data(q_type, answers, name, question_num, group, evidence, group_formatted,
 		                           map_qs, form_data)
-		write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count)
+		write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count,
+		                     suffix='')
 		write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count,
 		                     suffix='_v1')
-		write_questions_file_v2(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count)
+		write_questions_file_v2(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count,
+		                        all_features, suffix='_v2')
 		print(evidence_count)
 		if temp:
 			remove(file_name)
@@ -884,36 +1115,22 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 
 
 if __name__ == "__main__":
-	# parse_questions_from_feature_csv(folder_prefix='afib',
-	#                                  form_name="Atrial Fibrilation",
-	#                                  file_name='./nlpql/afib/afib.csv',
-	#                                  output_dir='./nlpql/forms/afib')
-	# parse_questions_from_feature_csv(folder_prefix='afib',
-	#                                  form_name="Form 3500",
-	#                                  file_name='./nlpql/afib/afib.csv',
-	#                                  output_dir='./nlpql/forms/afib',
-	#                                  description='Subsequent Neoplasms')
-	# parse_questions_from_feature_csv(folder_prefix='sickle_cell',
-	#                                  form_name="Sickle Cell",
-	#                                  file_name='/Users/charityhilton/Downloads/sicklecell.csv',
-	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql')
-	# parse_questions_from_feature_csv(folder_prefix='scd',
-	#                                  form_name="Sickle Cell Disease Case Findings",
-	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1t5XLB2cbGKJLZkWzKoMJkVbm8zKZbJJj459wUpkHKgQ&output=csv',
-	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
-	#                                  description='Sickle Cell Disease Case Definition')
+	parse_questions_from_feature_csv(folder_prefix='scd',
+	                                 form_name="Sickle Cell Disease Case Findings",
+	                                 file_name='https://docs.google.com/spreadsheet/ccc?key=1t5XLB2cbGKJLZkWzKoMJkVbm8zKZbJJj459wUpkHKgQ&output=csv',
+	                                 output_dir='/Users/charityhilton/repos/custom_nlpql',
+	                                 description='Sickle Cell Disease Case Definition')
 	parse_questions_from_feature_csv(folder_prefix='death',
 	                                 form_name="US Death Certificate",
 	                                 file_name='https://docs.google.com/spreadsheet/ccc?key=1J_JqRjjryjaJE-fB9nNcBb9mQNL3cl7dx_vhbG95XHE&output=csv',
 	                                 output_dir='/Users/charityhilton/repos/custom_nlpql',
 	                                 description='US Death Certificate')
-	# parse_questions_from_feature_csv(folder_prefix='setnet',
-	#                                  form_name="SET-NET",
-	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
-	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
-	#                                  description='CDC Surveillance for Emerging Threats to Pregnant Women and Infants')
-	# parse_questions_from_feature_csv(folder_prefix='setnet',
-	#                                  form_name="Form 4006 R3.0",
-	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
-	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
-	#                                  description='CIBMTR Cellular Infusions')
+	parse_questions_from_feature_csv(folder_prefix='setnet',
+	                                 form_name="SET-NET",
+	                                 file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
+	                                 output_dir='/Users/charityhilton/repos/custom_nlpql',
+	                                 description='CDC Surveillance for Emerging Threats to Pregnant Women and Infants')
+	parse_questions_from_feature_csv(folder_prefix='4100r4',
+	                                 form_name="Form 4100 R4.0",
+	                                 output_dir='/Users/charityhilton/repos/custom_nlpql',
+	                                 description='CIBMTR Cellular Therapy Essential Data Follow-Up')
