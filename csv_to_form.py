@@ -407,7 +407,8 @@ def write_questions_file_v2(output_dir, folder_prefix, form_data, groups, eviden
 
 		if default_answer:
 			autofill['default'] = default_answer
-		autofill['cases'] = list(case_values.values())
+		cases = list(case_values.values())
+		autofill['cases'] = cases
 
 		# map to new data structure
 		new_q['id'] = 'question{}'.format(q.get('question_number', -1000))
@@ -419,7 +420,8 @@ def write_questions_file_v2(output_dir, folder_prefix, form_data, groups, eviden
 		if len(q_evidence) > 0:
 			new_q['evidence'] = q_evidence
 
-		new_q['autofill'] = autofill
+		if len(cases) > 0:
+			new_q['autofill'] = autofill
 
 		new_groupings[group_id].append(new_q)
 
@@ -921,6 +923,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 			r_value_max = row.get('value_max', '')
 			r_value_enum_set = row.get('value_enum_set', '')
 			r_logic = row.get('logic', '')
+			r_report_tags = row.get('report_tags', '')
+			r_report_types = row.get('report_types', '')
 
 			l_nlp_task_type = r_nlp_task_type.lower()
 			if len(r_nlp_task_type) == 0:
