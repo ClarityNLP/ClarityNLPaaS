@@ -2,6 +2,7 @@ import ast
 import csv
 import json
 import os
+import re
 import string
 from os import path, remove
 
@@ -66,6 +67,12 @@ cql_vsac_header = '''
         valueset "{}_valueset": '{}'
 
 '''
+
+pt_define = '''
+
+    define "Pt": [Patient]
+    
+    '''
 cql_template = '''
         library Retrieve2 version '1.0'
 
@@ -86,8 +93,8 @@ cql_template = '''
         {}
 
         context Patient
-
-        define "Pt": [Patient]
+{}
+  
 
 {}
 
@@ -133,9 +140,10 @@ define final %s:
     });
 '''
 
+
 def format_answer(a):
 	return '_'.join(a.split(' ')).lower().replace('"', '').replace('(', '').replace(')', '').replace('.', '') \
-				.replace('\n', ' ').strip()
+		.replace('\n', ' ').strip()
 
 
 def question_number(line):
@@ -328,7 +336,7 @@ def write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_
 
 
 def write_questions_file_v2(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count,
-                            all_features,
+                            all_features, all_rows,
                             suffix='_v2'):
 	question_file_name = '{}/{}/questions{}.json'.format(output_dir, folder_prefix, suffix)
 	# form_data['groups'] = list(groups.keys())
@@ -372,28 +380,43 @@ def write_questions_file_v2(output_dir, folder_prefix, form_data, groups, eviden
 		case_values = dict()
 		for evidence in evidence_bundle.keys():
 			features = evidence_bundle[evidence]
-			if features:
-				for f in features:
+			rows = all_rows.get(q.get('question_number'))
+			if rows:
+				for row in rows:
+					if row:
+						row_feature = row.get('feature', row.get('feature_name', ''))
+						default = row.get('default_answer', row.get('default', '')).strip()
+						autofill_criteria = row.get('autofill', '')
+						autofill_mc = row.get('autofill_mc_answer', row.get('autofill_mc', ''))
 
-					feature = all_features.get(f, '')
-					if feature and len(feature) > 0:
-						default = feature.get('default_answer', feature.get('default', '')).strip()
-						autofill_criteria = feature.get('autofill', '')
-						autofill_mc = feature.get('autofill_mc_answer', feature.get('autofill_mc', ''))
-
-						if len(default) > 0 and (default in valid_answers or (q_type != 'RADIO' or q_type != 'CHECKBOX')):
+						if len(default) > 0 and (
+								default in valid_answers or (q_type != 'RADIO' or q_type != 'CHECKBOX')):
 							formatted_default = format_answer(default)
-							if default and formatted_default and formatted_default != default_answer and\
+							if default and formatted_default and formatted_default != default_answer and \
 									(q_type == 'RADIO' or q_type == 'CHECKBOX'):
-								print('WARNING: duplicate default on Question {}: {} != {}'.format(q.get('question_number', -1000),
-								                                                                   formatted_default,
-								                                                                   default_answer))
+								print('WARNING: duplicate default on Question {}: {} != {}'.format(
+									q.get('question_number', -1000),
+									formatted_default,
+									default_answer))
 							default_answer = formatted_default
 
-						if (autofill_criteria.strip().lower() == 'exists' or len(autofill_criteria) == 0) and len(autofill_mc) > 0:
+						if len(autofill_criteria) and autofill_criteria.upper() != 'EXISTS':
+							print(autofill_criteria)
+							query = dict()
+							fld = "{}.{}.{}".format(evidence, row_feature, autofill_criteria)
+							query['field'] = fld
+							query['operator'] = '$exists'
+							query['criteria'] = True
+
+							case_values[fld] = {
+								'queries': [query],
+								"value": '$$' + fld
+							}
+						elif (autofill_criteria.strip().lower() == 'exists' or len(autofill_criteria) == 0) and len(
+								autofill_mc) > 0:
 							autofill_exist_answer = format_answer(autofill_mc)
 							query = dict()
-							query['field'] = "{}.{}.pipeline_id".format(evidence, f)
+							query['field'] = "{}.{}.pipeline_id".format(evidence, row_feature)
 							query['operator'] = '$exists'
 							query['criteria'] = True
 
@@ -482,7 +505,7 @@ def write_questions_file_v2(output_dir, folder_prefix, form_data, groups, eviden
 			# TODO display stuff
 
 			feature_info = all_features.get(l, dict())
-			feature_name_display_name = feature_info.get('feature_name', feature_info.get('feature', '')).\
+			feature_name_display_name = feature_info.get('feature_name', feature_info.get('feature', '')). \
 				replace('_', ' ').strip().title()
 			display_type = feature_info.get('display_type', '')
 			fhir_resource_type = feature_info.get('fhir_resource_type', '')
@@ -700,9 +723,9 @@ def map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, va
 	v_enum_string = ''
 
 	if len(value_min) > 0:
-		v_min = 'minimum_value: "{}",'.format(value_min)
+		v_min = ', minimum_value: "{}"'.format(value_min)
 	if len(value_max) > 0:
-		v_max = 'maximum_value: "{}",'.format(value_max)
+		v_max = ', maximum_value: "{}"'.format(value_max)
 	if len(value_enum_set) > 0:
 		v_enum = ''
 		for v in value_enum_set:
@@ -715,11 +738,11 @@ def map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, va
 		if len(v_enum) > 0:
 			v_enum_string = ', enum_list: [{}],'.format(v_enum)
 	if len(terms) > 0:
-		terms_attr_string = 'termset: [%s_terms],' % feature_name
+		terms_attr_string = 'termset: [%s_terms]' % feature_name
 	else:
 		terms_attr_string = ''
 	query_params = ('''
-         %s
+                %s
                  %s
                  %s
                  %s
@@ -796,7 +819,10 @@ def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entitie
 
 	if len(cql_res) > 0:
 		cql_res = cql_result_template.format(feature_name, cql_res)
-		cql = cql_template.format(cql_header, cql_concept, cql_res)
+		pt_context = ''
+		if '"Pt"' in cql_concept or '"Pt"' in cql_res:
+			pt_context = pt_define
+		cql = cql_template.format(cql_header, pt_context, cql_concept, cql_res)
 
 		entities.append(cql_task_template % (feature_name, cql))
 		features.append(feature_name)
@@ -832,6 +858,31 @@ def get_nlpql_version(question_file_name):
 	else:
 		version = "0.0.1"
 	return version
+
+
+def get_feature_name(name, all_features):
+	remove_it = string.punctuation
+	remove_it = remove_it.replace("_", "")
+	pattern = r"[{}]".format(remove_it)
+
+	name = re.sub(pattern, "", name)
+	# if name in all_features:
+	# 	sep = name.split('_')
+	# 	if len(sep) <= 1:
+	# 		name = name + '_1'
+	# 	else:
+	# 		last = sep[-1]
+	# 		if last.isdigit():
+	# 			next_int = int(last) + 1
+	# 			sep = sep[0:-1]
+	# 			name = '_'.join(sep) + '_' + str(next_int)
+	# 			if name in all_features:
+	# 				return get_feature_name(name, all_features)
+	# 		else:
+	# 			name = name + '_1'
+	# 			if name in all_features:
+	# 				return get_feature_name(name, all_features)
+	return name
 
 
 def parse_questions_from_feature_csv(folder_prefix='4100r4',
@@ -892,6 +943,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 		evidence_bundles = dict()
 
 		all_features = dict()
+		all_rows = dict()
 
 		name = None
 		group = None
@@ -996,7 +1048,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 			question_num = r_num
 			answers = [x.strip() for x in r_answers.split(',') if len(r_answers) > 0]
 			grouping = r_evidence_bundle
-			feature_name = r_feature_name
+			feature_name = get_feature_name(r_feature_name, feature_names)
+			row['feature_name'] = feature_name
 			name = r_question_name
 			q_type = r_type
 			group = r_group
@@ -1025,6 +1078,9 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 				feature_names.add(feature_name)
 
 			all_features[feature_name] = row
+			if r_num not in all_rows:
+				all_rows[r_num] = list()
+			all_rows[r_num].append(row)
 
 			if len(group) > 0:
 				groups[group] = ''
@@ -1111,7 +1167,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 		write_questions_file(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count,
 		                     suffix='_v1')
 		write_questions_file_v2(output_dir, folder_prefix, form_data, groups, evidence_bundles, evidence_count,
-		                        all_features, suffix='_v2')
+		                        all_features, all_rows, suffix='_v2')
 		print(evidence_count)
 		if temp:
 			remove(file_name)
@@ -1119,22 +1175,27 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 
 
 if __name__ == "__main__":
-	parse_questions_from_feature_csv(folder_prefix='scd',
-	                                 form_name="Sickle Cell Disease Case Findings",
-	                                 file_name='https://docs.google.com/spreadsheet/ccc?key=1t5XLB2cbGKJLZkWzKoMJkVbm8zKZbJJj459wUpkHKgQ&output=csv',
+	# parse_questions_from_feature_csv(folder_prefix='scd',
+	#                                  form_name="Sickle Cell Disease Case Findings",
+	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1t5XLB2cbGKJLZkWzKoMJkVbm8zKZbJJj459wUpkHKgQ&output=csv',
+	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
+	#                                  description='Sickle Cell Disease Case Definition')
+	# parse_questions_from_feature_csv(folder_prefix='death',
+	#                                  form_name="US Death Certificate",
+	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1J_JqRjjryjaJE-fB9nNcBb9mQNL3cl7dx_vhbG95XHE&output=csv',
+	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
+	#                                  description='US Death Certificate')
+	# parse_questions_from_feature_csv(folder_prefix='setnet',
+	#                                  form_name="SET-NET",
+	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
+	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
+	#                                  description='CDC Surveillance for Emerging Threats to Pregnant Women and Infants')
+	# parse_questions_from_feature_csv(folder_prefix='4100r4',
+	#                                  form_name="Form 4100 R4.0",
+	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
+	#                                  description='CIBMTR Cellular Therapy Essential Data Follow-Up')
+	parse_questions_from_feature_csv(folder_prefix='fluoroquinolone',
+	                                 form_name="Fluoroquinolone Valvular Events",
+	                                 file_name='https://docs.google.com/spreadsheet/ccc?key=11GGj6SPwLLjKoNVS3vp-YtVOs5facig6Py5491bHVQQ&output=csv',
 	                                 output_dir='/Users/charityhilton/repos/custom_nlpql',
-	                                 description='Sickle Cell Disease Case Definition')
-	parse_questions_from_feature_csv(folder_prefix='death',
-	                                 form_name="US Death Certificate",
-	                                 file_name='https://docs.google.com/spreadsheet/ccc?key=1J_JqRjjryjaJE-fB9nNcBb9mQNL3cl7dx_vhbG95XHE&output=csv',
-	                                 output_dir='/Users/charityhilton/repos/custom_nlpql',
-	                                 description='US Death Certificate')
-	parse_questions_from_feature_csv(folder_prefix='setnet',
-	                                 form_name="SET-NET",
-	                                 file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
-	                                 output_dir='/Users/charityhilton/repos/custom_nlpql',
-	                                 description='CDC Surveillance for Emerging Threats to Pregnant Women and Infants')
-	parse_questions_from_feature_csv(folder_prefix='4100r4',
-	                                 form_name="Form 4100 R4.0",
-	                                 output_dir='/Users/charityhilton/repos/custom_nlpql',
-	                                 description='CIBMTR Cellular Therapy Essential Data Follow-Up')
+	                                 description='Data on patients who have exposure to fluoroquinolones and show valvular abnormalities')
