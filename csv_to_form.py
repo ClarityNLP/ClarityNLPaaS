@@ -430,7 +430,22 @@ def write_questions_file_v2(output_dir, folder_prefix, form_data, groups, eviden
 
 		if default_answer:
 			autofill['default'] = default_answer
-		cases = list(case_values.values())
+		default_cases = list(case_values.values())
+		cases = list()
+		for default_case in default_cases:
+			case = dict()
+			default_queries = default_case.get('queries', list())
+			if len(default_queries) > 1:
+				# default operator is and - this forces or
+				or_op = dict()
+				or_op['operator'] = '$or'
+				or_op['clauses'] = default_queries
+				case['queries'] = [or_op]
+				case['value'] = default_case.get('value')
+			else:
+				case = default_case
+			cases.append(case)
+
 		autofill['cases'] = cases
 
 		# map to new data structure
