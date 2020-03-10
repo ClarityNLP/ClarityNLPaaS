@@ -1,17 +1,18 @@
 import json
 import os
 import re
+from subprocess import call
 
 from flask import Flask, flash, request, redirect
 from flask import Response
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
+import form_updater
 import util
 from csv_to_form import parse_questions_from_feature_csv as parse_questions
 from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, get_file, async_results, \
     upload_reports, delete_report
-from subprocess import call
 
 application = Flask(__name__)
 CORS(application)
@@ -67,7 +68,12 @@ def get_nlpql_forms(results=None, with_sorting=True):
     results = list()
     get_json(results, 'nlpql')
 
-    unique = list(set(results))
+    limited_results = list()
+    for r in results:
+        if r.get('url', '').endswith('questions'):
+            limited_results.append(r)
+
+    unique = list(set(limited_results))
     if with_sorting:
         return sorted(unique)
     else:
@@ -93,6 +99,42 @@ def get_host(r):
         return 'https://{0}/'.format(r.host)
     else:
         return 'http://{0}/'.format(r.host)
+
+
+@application.route('/form_update', methods=['GET', 'POST'])
+def upload_file():
+    status = ''
+    if request.method == 'POST':
+        status = form_updater.update_form(request.form.get('slug'), request.form)
+
+    radios = ''
+
+    forms = get_question_list()
+    slugs = set()
+    for f in forms:
+        slugs.add(f.get('url'))
+    for s in slugs:
+        radios = radios + form_updater.radio_template.format(s, s, s, s) + '\n'
+
+    form = '''
+    <form method=post>
+      <p>
+        {}
+      </p>
+      <p>  <label for="lname">Google Doc </label><br>
+            <input type="text" id="url" name="url">
+        
+      </p>
+      <p>
+         <input type=submit value="Update Form" class="btn btn-success">
+     </p>
+     <br>
+     <p>
+        {}
+     <p>
+    </form>
+    '''.format(radios, status)
+    return form_updater.template % ("NLPQL/CQL Feature CSV Parser", form)
 
 
 @application.route("/report/upload", methods=['POST'])
