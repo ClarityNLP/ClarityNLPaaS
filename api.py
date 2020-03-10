@@ -12,7 +12,7 @@ import form_updater
 import util
 from csv_to_form import parse_questions_from_feature_csv as parse_questions
 from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, get_file, async_results, \
-    upload_reports, delete_report
+	upload_reports, delete_report
 
 application = Flask(__name__)
 CORS(application)
@@ -70,7 +70,7 @@ def get_nlpql_forms(results=None, with_sorting=True):
 
     limited_results = list()
     for r in results:
-        if r.get('url', '').endswith('questions'):
+        if r.endswith('questions'):
             limited_results.append(r)
 
     unique = list(set(limited_results))
