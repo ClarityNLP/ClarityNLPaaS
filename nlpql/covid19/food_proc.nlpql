@@ -5,11 +5,26 @@ include ClarityCore version "1.0" called Clarity;
 
 
 termset case_mentions:
-	["coronavirus cases", "covid-19 cases", "covid19 cases", "SARS-CoV-2 cases", "2019-nCoV cases", "SARS-nCoV cases", "covid cases", "COVID 19 cases", "corona virus cases", "CV-19 cases", "coronavirus case", "covid-19 case", "covid19 case", "SARS-CoV-2 case", "2019-nCoV case", "SARS-nCoV case", "covid case", "COVID 19 case", "corona virus case", "CV-19 case", "cases of coronavirus", "cases of covid-19", "cases of covid19", "cases of SARS-CoV-2", "cases of 2019-nCoV", "cases of SARS-nCoV", "cases of covid", "cases of COVID 19", "cases of corona virus", "cases of CV-19", "case of coronavirus", "case of covid-19", "case of covid19", "case of SARS-CoV-2", "case of 2019-nCoV", "case of SARS-nCoV", "case of covid", "case of COVID 19", "case of corona virus", "case of CV-19"];
+	["coronavirus cases", "covid-19 cases", "covid19 cases", "SARS-CoV-2 cases", "2019-nCoV cases", "SARS-nCoV cases",
+	"covid cases", "COVID 19 cases", "corona virus cases", "CV-19 cases", "coronavirus case", "covid-19 case",
+	"covid19 case", "SARS-CoV-2 case", "2019-nCoV case", "SARS-nCoV case", "covid case", "COVID 19 case",
+	 "corona virus case", "CV-19 case", "cases of coronavirus", "cases of covid-19", "cases of covid19",
+	 "cases of SARS-CoV-2", "cases of 2019-nCoV", "cases of SARS-nCoV", "cases of covid", "cases of COVID 19",
+	 "cases of corona virus", "cases of CV-19", "case of coronavirus", "case of covid-19", "case of covid19",
+	 "case of SARS-CoV-2", "case of 2019-nCoV", "case of SARS-nCoV", "case of covid", "case of COVID 19",
+	 "case of corona virus", "case of CV-19", "new cases", "total cases"];
 
 
 termset death_mentions:
-	["coronavirus deaths", "covid-19 deaths", "covid19 deaths", "SARS-CoV-2 deaths", "2019-nCoV deaths", "SARS-nCoV deaths", "covid deaths", "COVID 19 deaths", "corona virus deaths", "CV-19 deaths", "coronavirus death", "covid-19 death", "covid19 death", "SARS-CoV-2 death", "2019-nCoV death", "SARS-nCoV death", "covid death", "COVID 19 death", "corona virus death", "CV-19 death", "deaths due to coronavirus", "deaths due to covid-19", "deaths due to covid19", "deaths due to SARS-CoV-2", "deaths due to 2019-nCoV", "deaths due to SARS-nCoV", "deaths due to covid", "deaths due to COVID 19", "deaths due to corona virus", "deaths due to CV-19", "death due to coronavirus", "death due to covid-19", "death due to covid19", "death due to SARS-CoV-2", "death due to 2019-nCoV", "death due to SARS-nCoV", "death due to covid", "death due to COVID 19", "death due to corona virus", "death due to CV-19"];
+	["coronavirus deaths", "covid-19 deaths", "covid19 deaths", "SARS-CoV-2 deaths", "2019-nCoV deaths",
+	"SARS-nCoV deaths", "covid deaths", "COVID 19 deaths", "corona virus deaths", "CV-19 deaths", "coronavirus death",
+	"covid-19 death", "covid19 death", "SARS-CoV-2 death", "2019-nCoV death", "SARS-nCoV death", "covid death",
+	"COVID 19 death", "corona virus death", "CV-19 death", "deaths due to coronavirus", "deaths due to covid-19",
+	"deaths due to covid19", "deaths due to SARS-CoV-2", "deaths due to 2019-nCoV", "deaths due to SARS-nCoV",
+	 "deaths due to covid", "deaths due to COVID 19", "deaths due to corona virus", "deaths due to CV-19",
+	  "death due to coronavirus", "death due to covid-19", "death due to covid19", "death due to SARS-CoV-2",
+	   "death due to 2019-nCoV", "death due to SARS-nCoV", "death due to covid", "death due to COVID 19",
+	   "death due to corona virus", "death due to CV-19", "new deaths", "total deaths"];
 
 define final case_cardinal:
 	Clarity.ValueExtraction({
@@ -18,10 +33,22 @@ define final case_cardinal:
 		maximum_value: 1000
 	});
 
+define final case_cardinal_words:
+	Clarity.ValueExtraction({
+		termset: [case_mentions],
+		enum_list:["two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+		 "eleven", "twelve", "thirteen", "fourteen",
+		"fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one",
+		 "twenty-two", "twenty-three", "twenty-four",
+		"twenty-five", "twenty-six", "twenty-seven", "twenty-eight", "twenty-nine", "thirty"]
+	});
+
 define final case_ordinal:
 	Clarity.ValueExtraction({
 		termset: [case_mentions],
-		enum_list: ["2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "11th", "12th", "13th", "14th", "15th", "16th", "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th"]
+		enum_list: ["2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "second", "third", "fourth",
+		 "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "11th", "12th", "13th", "14th", "15th", "16th",
+		  "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th"]
 	});
 
 
@@ -32,15 +59,51 @@ define final death_cardinal:
 		maximum_value: 1000
 	});
 
+
+
+define final death_cardinal_words:
+	Clarity.ValueExtraction({
+		termset: [death_mentions],
+		enum_list:["two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
+		"fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two", "twenty-three", "twenty-four",
+		"twenty-five", "twenty-six", "twenty-seven", "twenty-eight", "twenty-nine", "thirty"]
+	});
+
+
 define final death_ordinal:
 	Clarity.ValueExtraction({
 		termset: [death_mentions],
-		enum_list: ["2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "11th", "12th", "13th", "14th", "15th", "16th", "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th"]
+		enum_list: ["2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "second", "third", "fourth",
+		 "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "11th", "12th", "13th", "14th", "15th", "16th", "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th"]
 	});
 
 
 termset food_processing:
-	["afg", "afg/gibbon packing", "gibbon packing", "agri star", "agri star meat and poultry", "agri star meat & poultry", "agriculture worker", "agriculture workers", "amick farms", "aurora packing company", "beef factory", "beef plant", "beef plants", "beef processor", "beef processors", "beef producer", "beef producers", "bell & evans", "butterball plant", "butterball plants", "cannery worker", "cannery workers", "cargill", "cattle farm", "cattle farms", "chicken farm", "chicken farms", "chicken plant", "chicken plants", "chicken processor", "chicken processors", "comfrey farm prime pork", "dairy processing", "dakota provisions", "demkota", "empire kosher", "empire meats denver processing", "farm worker", "farm workers", "farmworker", "fieldale farms", "fish farm", "fish farms", "fisheries", "fishery", "food factory", "food manufacturing", "food packaging", "food plant", "food processing", "food production facility", "foods production facilities", "foster farms", "fruit farm", "fruit farms", "fruit operation", "fruit operations", "fruit packing company", "gibbon packing", "hatcheries", "hatchery", "hog farm", "hog farms", "indiana packers", "jbs", "jbs swift", "jbs usa", "jbs usa/moyer packing", "jennie-o turkey", "johnsonville plant", "johnsonville plants", "lincoln premium poultry", "meat factories", "meat factory", "meat industry", "meat packaging", "meat packer", "meat packers", "meat packing", "meat plant", "meat plants", "meat processing plant", "meat processing plants", "meat processor", "meat processors", "meat-packing plant", "meat-packing plants", "meatpacker", "meatpackers", "meatpacking", "migrant farm worker", "migrant farm workers", "mitsubishi", "mountain state rosen company", "mountaire", "moyer packing", "mushroom farm", "mushroom farms", "national beef", "orchard worker", "perdue farms", "perdue plant", "pilgrim's pride", "pilgrims pride", "plainville farms", "planta de carne", "planta de pollo", "pork plant", "pork plants", "pork processing plant", "pork processing plants", "pork processor", "pork processors", "pork producer", "pork producers", "poultry plant", "poultry plants", "poultry processing", "poultry processor", "poultry producer", "poultry worker", "poultry workers", "prestage foods", "redwood farms meat processors", "rocky mountain natural meats", "sanderson farms", "sausage making plant", "sausage making plants", "seaboard", "seaboard triumph", "seafood plant", "seafood processing", "seasonal farm worker", "seasonal farm workers", "slaughter house", "slaughter houses", "slaughterhouse", "slaughterhouses", "smithfield", "triumph foods", "tyson chicken", "tyson factory", "tyson foods", "tyson plant", "tyson pork", "vegetable farm", "vegetable farms", "vegetable operation", "vegetable operations", "vegetable processing plant", "wayne farms", "western reserve"];
+	["afg", "afg/gibbon packing", "gibbon packing", "agri star", "agri star meat and poultry", "agri star meat & poultry",
+	"agriculture worker", "agriculture workers", "amick farms", "aurora packing company", "beef factory", "beef plant",
+	 "beef plants", "beef processor", "beef processors", "beef producer", "beef producers", "bell & evans", "butterball plant",
+	 "butterball plants", "cannery worker", "cannery workers", "cargill", "cattle farm", "cattle farms", "chicken farm",
+	 "chicken farms", "chicken plant", "chicken plants", "chicken processor", "chicken processors", "comfrey farm prime pork",
+	  "dairy processing", "dakota provisions", "demkota", "empire kosher", "empire meats denver processing", "farm worker",
+	  "farm workers", "farmworker", "fieldale farms", "fish farm", "fish farms", "fisheries", "fishery", "food factory",
+	  "food manufacturing", "food packaging", "food plant", "food processing", "food production facility",
+	  "foods production facilities", "foster farms", "fruit farm", "fruit farms", "fruit operation", "fruit operations",
+	  "fruit packing company", "gibbon packing", "hatcheries", "hatchery", "hog farm", "hog farms", "indiana packers",
+	   "jbs", "jbs swift", "jbs usa", "jbs usa/moyer packing", "jennie-o turkey", "johnsonville plant", "johnsonville plants",
+	    "lincoln premium poultry", "meat factories", "meat factory", "meat industry", "meat packaging", "meat packer",
+	     "meat packers", "meat packing", "meat plant", "meat plants", "meat processing plant", "meat processing plants",
+	     "meat processor", "meat processors", "meat-packing plant", "meat-packing plants", "meatpacker", "meatpackers",
+	      "meatpacking", "migrant farm worker", "migrant farm workers", "mitsubishi", "mountain state rosen company",
+	      "mountaire", "moyer packing", "mushroom farm", "mushroom farms", "national beef", "orchard worker", "perdue farms",
+	      "perdue plant", "pilgrim's pride", "pilgrims pride", "plainville farms", "planta de carne", "planta de pollo",
+	       "pork plant", "pork plants", "pork processing plant", "pork processing plants", "pork processor", "pork processors",
+	       "pork producer", "pork producers", "poultry plant", "poultry plants", "poultry processing", "poultry processor",
+	        "poultry producer", "poultry worker", "poultry workers", "prestage foods", "redwood farms meat processors",
+	        "rocky mountain natural meats", "sanderson farms", "sausage making plant", "sausage making plants", "seaboard",
+	        "seaboard triumph", "seafood plant", "seafood processing", "seasonal farm worker", "seasonal farm workers",
+	        "slaughter house", "slaughter houses", "slaughterhouse", "slaughterhouses", "smithfield", "triumph foods",
+	        "tyson chicken", "tyson factory", "tyson foods", "tyson plant", "tyson pork", "vegetable farm", "vegetable farms",
+	        "vegetable operation", "vegetable operations", "vegetable processing plant", "wayne farms", "western reserve"];
 
 define final FoodProcessing:
 	Clarity.ProviderAssertion({
