@@ -29,54 +29,82 @@ termset death_mentions:
 define final case_cardinal:
 	Clarity.ValueExtraction({
 		termset: [case_mentions],
+		values_before_terms: true,
 		minimum_value: 2,
 		maximum_value: 1000
 	});
 
-define final case_cardinal_words:
+define final case_enum:
 	Clarity.ValueExtraction({
 		termset: [case_mentions],
+		values_before_terms: true,
 		enum_list:["two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
 		 "eleven", "twelve", "thirteen", "fourteen",
 		"fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one",
 		 "twenty-two", "twenty-three", "twenty-four",
-		"twenty-five", "twenty-six", "twenty-seven", "twenty-eight", "twenty-nine", "thirty"]
+		"twenty-five", "twenty-six", "twenty-seven", "twenty-eight", "twenty-nine", "thirty",
+		"2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "second", "third", "fourth",
+		 "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "11th", "12th", "13th", "14th", "15th", "16th",
+		  "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th"
+
+		]
 	});
 
-define final case_ordinal:
-	Clarity.ValueExtraction({
-		termset: [case_mentions],
-		enum_list: ["2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "second", "third", "fourth",
-		 "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "11th", "12th", "13th", "14th", "15th", "16th",
-		  "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th"]
-	});
 
 
 define final death_cardinal:
 	Clarity.ValueExtraction({
 		termset: [death_mentions],
+		values_before_terms: true,
 		minimum_value: 2,
 		maximum_value: 1000
 	});
 
 
-
-define final death_cardinal_words:
+define final death_enum:
 	Clarity.ValueExtraction({
 		termset: [death_mentions],
-		enum_list:["two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
-		"fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two", "twenty-three", "twenty-four",
-		"twenty-five", "twenty-six", "twenty-seven", "twenty-eight", "twenty-nine", "thirty"]
+		values_before_terms: true,
+		enum_list:["two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+		 "eleven", "twelve", "thirteen", "fourteen",
+		"fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one",
+		 "twenty-two", "twenty-three", "twenty-four",
+		"twenty-five", "twenty-six", "twenty-seven", "twenty-eight", "twenty-nine", "thirty",
+		"2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "second", "third", "fourth",
+		 "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "11th", "12th", "13th", "14th", "15th", "16th",
+		  "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th"
+
+		]
+	});
+
+define final custom_terms: [
+    "meat plant workers", "meatpackers", "workers", "employees"
+];
+
+define final custom_cardinal:
+	Clarity.ValueExtraction({
+		termset: [death_mentions],
+		values_before_terms: true,
+		minimum_value: 2,
+		maximum_value: 1000
 	});
 
 
-define final death_ordinal:
+define final custom_enum:
 	Clarity.ValueExtraction({
-		termset: [death_mentions],
-		enum_list: ["2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "second", "third", "fourth",
-		 "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "11th", "12th", "13th", "14th", "15th", "16th", "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th"]
-	});
+		termset: [custom_terms],
+		values_before_terms: true,
+		enum_list:["two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+		 "eleven", "twelve", "thirteen", "fourteen",
+		"fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one",
+		 "twenty-two", "twenty-three", "twenty-four",
+		"twenty-five", "twenty-six", "twenty-seven", "twenty-eight", "twenty-nine", "thirty",
+		"2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "second", "third", "fourth",
+		 "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "11th", "12th", "13th", "14th", "15th", "16th",
+		  "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th"
 
+		]
+	});
 
 termset food_processing:
 	["afg", "afg/gibbon packing", "gibbon packing", "agri star", "agri star meat and poultry", "agri star meat & poultry",
