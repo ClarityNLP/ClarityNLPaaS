@@ -969,6 +969,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 		last_row = None
 		for r in reader:
 			row = cleanup_row(r)
+			print(row)
 			r_evidence_bundle = row.get('evidence_bundle', '')
 			r_num = row.get('#', '')
 			r_group = row.get('group', '')
@@ -1011,14 +1012,14 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 						r_nlp_task_type = ''
 					else:
 						if 'value' in l_nlp_task_type and len(r_value_min) == 0 and len(r_value_max) == 0 and \
-								len(value_enum_set) == 0:
+								len(r_value_enum_set) == 0:
 							r_nlp_task_type = 'ProviderAssertion'
 				elif 'logic' in l_nlp_task_type:
 					if len(r_logic) == 0:
 						r_nlp_task_type = ''
 
 			if 'value' in l_nlp_task_type and len(r_value_min) == 0 and len(r_value_max) == 0 and \
-					len(value_enum_set) == 0:
+					len(r_value_enum_set) == 0:
 				r_nlp_task_type = 'ProviderAssertion'
 
 			if len(r_evidence_bundle) > 0 and len(r_num) == 0:
@@ -1190,11 +1191,11 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 
 
 if __name__ == "__main__":
-	# parse_questions_from_feature_csv(folder_prefix='scd',
-	#                                  form_name="Sickle Cell Disease Case Findings",
-	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1t5XLB2cbGKJLZkWzKoMJkVbm8zKZbJJj459wUpkHKgQ&output=csv',
-	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
-	#                                  description='Sickle Cell Disease Case Definition')
+	parse_questions_from_feature_csv(folder_prefix='covid19',
+	                                 form_name="COVID-19",
+	                                 file_name='https://docs.google.com/spreadsheet/ccc?key=1n7jeuyUniyEhTwY72T14is-n_44b8U5Q7fXHThdLs1U&output=csv',
+	                                 output_dir='/Users/charityhilton/repos/custom_nlpql',
+	                                 description='COVID-19 Case Definition')
 	# parse_questions_from_feature_csv(folder_prefix='death',
 	#                                  form_name="US Death Certificate",
 	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1J_JqRjjryjaJE-fB9nNcBb9mQNL3cl7dx_vhbG95XHE&output=csv',
@@ -1209,8 +1210,8 @@ if __name__ == "__main__":
 	#                                  form_name="Form 4100 R4.0",
 	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
 	#                                  description='CIBMTR Cellular Therapy Essential Data Follow-Up')
-	parse_questions_from_feature_csv(folder_prefix='fluoroquinolone',
-	                                 form_name="Fluoroquinolone Valvular Events",
-	                                 file_name='https://docs.google.com/spreadsheet/ccc?key=11GGj6SPwLLjKoNVS3vp-YtVOs5facig6Py5491bHVQQ&output=csv',
-	                                 output_dir='/Users/charityhilton/repos/custom_nlpql',
-	                                 description='Data on patients who have exposure to fluoroquinolones and show valvular abnormalities')
+	# parse_questions_from_feature_csv(folder_prefix='fluoroquinolone',
+	#                                  form_name="Fluoroquinolone Valvular Events",
+	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=11GGj6SPwLLjKoNVS3vp-YtVOs5facig6Py5491bHVQQ&output=csv',
+	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
+	#                                  description='Data on patients who have exposure to fluoroquinolones and show valvular abnormalities')
