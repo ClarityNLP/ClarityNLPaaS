@@ -675,7 +675,7 @@ def get_term_string(_terms):
 	term_string = '", "'.join(_terms)
 	if term_string.strip() != '':
 		term_string = '"' + term_string + '"'
-		term_string = term_string.replace(', " unspecified",', ',')
+		term_string = term_string.replace(', " unspecified",', ',').replace('"",', '')
 	return term_string
 
 
@@ -748,7 +748,7 @@ def map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, va
 				continue
 			if len(v_enum) > 0:
 				v_enum += ', '
-			v = v.replace('?', '').replace('"', '').replace("'", '')
+			v = v.replace('?', '').replace('"', '').replace("'", '').strip()
 			v_enum += ('"{}"'.format(v))
 		if len(v_enum) > 0:
 			v_enum_string = ', enum_list: [{}],'.format(v_enum)
