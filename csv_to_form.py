@@ -722,25 +722,29 @@ def map_logic(logic, feature_name, features, entities):
 	entities.append(pa)
 
 
-def map_value_extraction(terms, termsets, feature_name, value_min, value_max, value_enum_set, features, entities):
+def map_value_extraction(terms, termsets, feature_name, value_min, value_max, value_enum_set, features, entities, values_before_terms):
 	map_generic_task('ValueExtraction', terms, termsets, feature_name, value_min, value_max, value_enum_set,
-	                 features, entities)
+	                 features, entities, values_before_terms=values_before_terms)
 
 
 def map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, value_max, value_enum_set,
-                     features, entities):
+                     features, entities, values_before_terms=False):
 	term_string = get_term_string(terms)
 	if term_string.strip() != '':
 		termsets.append(termset_template.format(feature_name, term_string))
 
 	v_min = ''
 	v_max = ''
+	v_values_before_terms = ''
 	v_enum_string = ''
 
 	if len(value_min) > 0:
 		v_min = ', minimum_value: "{}"'.format(value_min)
 	if len(value_max) > 0:
 		v_max = ', maximum_value: "{}"'.format(value_max)
+	if nlp_task_type == 'ValueExtraction':
+		if values_before_terms:
+			v_values_before_terms = ', values_before_terms: true'
 	if len(value_enum_set) > 0:
 		v_enum = ''
 		for v in value_enum_set:
@@ -761,7 +765,8 @@ def map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, va
                  %s
                  %s
                  %s
-    ''' % (terms_attr_string, v_min, v_max, v_enum_string)).strip()
+                 %s
+    ''' % (terms_attr_string, v_min, v_max, v_values_before_terms, v_enum_string)).strip()
 	pq = '''Clarity.%s({
                  %s});
                                ''' % (nlp_task_type, query_params)
@@ -993,6 +998,15 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 			r_logic = row.get('logic', '')
 			r_report_tags = row.get('report_tags', '')
 			r_report_types = row.get('report_types', '')
+			r_values_before_terms = row.get('values_before_terms', 'f')
+			if not r_values_before_terms or len(r_values_before_terms.strip()) == 0:
+				r_values_before_terms = 'f'
+			r_values_before_terms = r_values_before_terms.lower()[0]
+			if r_values_before_terms == 't' or r_values_before_terms == '1':
+				values_before_terms = True
+			else:
+				values_before_terms = False
+
 
 			l_nlp_task_type = r_nlp_task_type.lower()
 			if len(r_nlp_task_type) == 0:
@@ -1157,7 +1171,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 					map_logic(logic, feature_name, features, entities)
 				elif len(terms) > 0 and 'value' in l_nlp_task_type:
 					map_value_extraction(terms, termsets, feature_name, value_min, value_max, value_enum_set, features,
-					                     entities)
+					                     entities, values_before_terms)
 				elif len(cql_expression) > 0 or len(r_fhir_resource_type) > 0:
 					map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features,
 					        valueset_oid, cql_expression, cql_folder)
