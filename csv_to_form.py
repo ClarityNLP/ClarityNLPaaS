@@ -744,7 +744,7 @@ def map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, va
 		v_max = ', maximum_value: "{}"'.format(value_max)
 	if nlp_task_type == 'ValueExtraction':
 		if values_before_terms:
-			v_values_before_terms = ', values_before_terms: true'
+			v_values_before_terms = ', "values_before_terms": "True"'
 	if len(value_enum_set) > 0:
 		v_enum = ''
 		for v in value_enum_set:
