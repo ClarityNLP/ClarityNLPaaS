@@ -237,9 +237,6 @@ def submit_job(nlpql_json):
 	print('URL from submit_job: "{0}"'.format(url))
 
 	phenotype_string = json.dumps(nlpql_json)
-	print("")
-	print(phenotype_string)
-	print("")
 
 	token, oauth = util.app_token()
 	response = requests.post(url, headers=get_headers(token), data=phenotype_string)
@@ -249,8 +246,6 @@ def submit_job(nlpql_json):
 			if not data['success']:
 				print(data['error'])
 				return False, data['error']
-		print("\n\nJob Response:\n")
-		print(data)
 		return True, data
 	else:
 		print(response.status_code)
