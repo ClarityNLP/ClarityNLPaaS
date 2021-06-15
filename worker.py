@@ -581,6 +581,8 @@ def worker(job_file_path, data, synchronous=True):
 		de['named_arguments']['fhir_terminology_user_name'] = util.fhir_terminology_user_name
 		de['named_arguments']['fhir_terminology_user_password'] = util.fhir_terminology_user_password
 	nlpql_json['data_entities'] = data_entities
+	
+	print(data_entities[0]['named_arguments'])
 
 	# Submitting the job
 	job_success, job_info = submit_job(nlpql_json)
