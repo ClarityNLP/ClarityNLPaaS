@@ -386,8 +386,8 @@ def submit_test(nlpql):
             if not data['valid']:
                 log(data['valid'])
                 return False, data['valid']
-        log("\n\nJob Response:\n")
-        log(data)
+#         log("\n\nJob Response:\n")
+#         log(data)
         return True, data
     else:
         log(response.status_code)
@@ -811,6 +811,8 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False, nlp
                  ' were queried OR this subject has no documents, and also no patient identifier was provided. Try '
                  'passing in "fhir" metadata.', util.ERROR)
         return Response(json.dumps(results, indent=4), status=200, mimetype='application/json')
+    
+    print(data_entities[0]['named_arguments'])
 
     nlpql_json['data_entities'] = filtered_data_entities
     # Submitting the job
