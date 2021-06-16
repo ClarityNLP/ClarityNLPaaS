@@ -28,7 +28,8 @@ def set_logger(l):
     global logger
     logger = l
 
-    use_gunicorn_logger = environ.get('USE_GUNICORN', "false")
+    use_gunicorn_logger = environ.get('USE_GUNICORN', "true")
+    print("use_gunicorn_logger", use_gunicorn_logger)
     if l and use_gunicorn_logger == "true":
         gunicorn_logger = logging.getLogger("gunicorn.error")
         logger.handlers = gunicorn_logger.handlers
@@ -125,6 +126,7 @@ development_mode = read_property('DEV_ENV', ('development', 'mode'))
 
 # FHIR
 cql_eval_url = read_property('CQL_EVAL_URL', ('fhir', 'cql_eval_url'))
+print('cql_eval_url', cql_eval_url)
 fhir_terminology_service_uri = read_property('FHIR_TERMINOLOGY_SERVICE_URI',
                                              ('fhir', 'fhir_terminology_service_uri'))
 fhir_terminology_service_endpoint = read_property('FHIR_TERMINOLOGY_SERVICE_ENDPOINT',
