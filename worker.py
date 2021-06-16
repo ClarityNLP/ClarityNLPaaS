@@ -687,6 +687,11 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False, nlp
             fhir_redirect_uri = fhir_state.get('redirectUri')
             if 'tokenResponse' in fhir_state:
                 token_response = fhir_state['tokenResponse']
+            elif 'auth' in fhir_state:
+                token_response = fhir_state['auth']
+            else:
+                token_response = dict()
+            if token_response:
                 fhir_auth_token = token_response.get('access_token')
                 fhir_auth_patient = token_response.get('patient')
                 fhir_auth_scope = token_response.get('scope')
@@ -715,6 +720,12 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False, nlp
             patient_id = patient['id']
     elif 'patient_id' in fhir:
         patient_id = fhir['patient_id']
+    elif 'patient_id' in data:
+        patient_id = data['patient_id']
+    elif 'patient' in data:
+        patient = data['patient']
+        if 'id' in patient:
+            patient_id = patient['id']
 
     if 'encounter' in fhir:
         encounter = fhir['encounter']
@@ -722,6 +733,8 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False, nlp
             encounter_id = encounter['id']
     elif 'encounter_id' in fhir:
         encounter_id = fhir['encounter_id']
+    elif 'encounter_id' in data:
+        encounter_id = data['encounter_id']
 
     log('patient_id {}'.format(patient_id))
     source_id = data.get('source_id', 'UNKNOWN')
@@ -811,7 +824,8 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False, nlp
                  ' were queried OR this subject has no documents, and also no patient identifier was provided. Try '
                  'passing in "fhir" metadata.', util.ERROR)
         return Response(json.dumps(results, indent=4), status=200, mimetype='application/json')
-    
+
+    print('NAMED ARGUMENTS:')
     print(data_entities[0]['named_arguments'])
 
     nlpql_json['data_entities'] = filtered_data_entities
