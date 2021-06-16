@@ -6,10 +6,76 @@ import requests
 from oauthlib.oauth2 import BackendApplicationClient
 from requests.auth import HTTPBasicAuth
 from requests_oauthlib import OAuth2Session
+from time import strftime, localtime
+from os import environ
+import logging, traceback
+
+import sys
 
 SCRIPT_DIR = path.dirname(__file__)
 config = configparser.RawConfigParser()
 config.read(path.join(SCRIPT_DIR, 'project.cfg'))
+
+DEBUG = "DEBUG"
+INFO = "INFO"
+WARNING = "WARNING"
+ERROR = "ERROR"
+CRITICAL = "CRITICAL"
+logger = None
+
+
+def set_logger(l):
+    global logger
+    logger = l
+
+    use_gunicorn_logger = environ.get('USE_GUNICORN', "false")
+    if l and use_gunicorn_logger == "true":
+        gunicorn_logger = logging.getLogger("gunicorn.error")
+        logger.handlers = gunicorn_logger.handlers
+        logger.setLevel(gunicorn_logger.level)
+
+
+def log(obj=None, level=INFO, file=sys.stdout):
+    if not obj:
+        obj = ''
+
+    if isinstance(obj, Exception):
+        log("EXCEPTION: {}".format(repr(obj), level=ERROR))
+        for t in traceback.format_tb(obj.__traceback__):
+            lines = t.split('\n')
+            for l in lines:
+                if l.strip() == '':
+                    continue
+                log("     {}".format(l), level=ERROR)
+        return
+
+    repr_obj = repr(obj)
+    if '\n' in repr_obj:
+        for l in repr_obj.split('\n'):
+            log(l, level=level)
+        return
+
+    if level == ERROR or level == CRITICAL:
+        if file == sys.stdout:
+            file = sys.stderr
+    global logger
+
+    if logger:
+        message = repr_obj
+        if level == DEBUG:
+            logger.debug(message)
+        elif level == WARNING:
+            logger.warning(message)
+        elif level == ERROR:
+            logger.error(message)
+        elif level == CRITICAL:
+            logger.critical(message)
+        else:
+            logger.info(message)
+    else:
+        message = repr_obj
+        the_time = strftime("%Y-%m-%d %H:%M:%S-%Z", localtime())
+        print("[{}] {} in worker: {}".format(the_time, level, message))
 
 
 def read_property(env_name, config_tuple):
@@ -20,8 +86,9 @@ def read_property(env_name, config_tuple):
         try:
             property_name = config.get(config_tuple[0], config_tuple[1])
         except Exception as ex:
-            print(ex)
+            log(repr(ex))
     return property_name
+
 
 def ensure_termination(url):
     """
@@ -67,6 +134,10 @@ fhir_terminology_user_name = read_property('FHIR_TERMINOLOGY_USER_NAME',
 fhir_terminology_user_password = read_property('FHIR_TERMINOLOGY_USER_PASSWORD',
                                                ('fhir', 'fhir_terminology_user_password'))
 
+custom_nlpql_s3_bucket = read_property('CUSTOM_S3_URL', ('custom', 's3_url'))
+custom_nlpql_folder = read_property('CUSTOM_DIR', ('custom', 's3_folder'))
+
+
 def app_token():
     if not claritynlp_clientsecret or len(claritynlp_clientsecret.strip()) == 0:
         return None, requests
@@ -75,11 +146,15 @@ def app_token():
     global _oauth
     expired = False
     try:
-        print('claritynlpurl: ', claritynlp_url, ', clientid: ', claritynlp_clientid, ', scope: ', claritynlp_scope,
-              ', tokenurl: ', claritynlp_tokenurl, ', clientsecret found?: ', len(claritynlp_clientsecret) > 0)
-        if _token_time:
+        # if len(claritynlp_clientsecret) > 5:
+        #     display_secret = claritynlp_clientsecret[-4:]
+        # else:
+        #     display_secret = ''
+        # log('claritynlpurl: ', claritynlp_url, ', clientid: ', claritynlp_clientid, ', scope: ', claritynlp_scope,
+        #       ', tokenurl: ', claritynlp_tokenurl, ', clientsecret last 4 chars: ', display_secret)
+        if _token and _token_time:
             total_time = time.time() - _token_time
-            expired = abs(total_time) > abs(_token['expires_in'])
+            expired = abs(total_time) > abs(_token.get('expires_in', total_time + 1))
         if not _token or expired:
             _token_time = time.time()
             # client = BackendApplicationClient(client_id=claritynlp_clientid, scope=claritynlp_scope)
@@ -92,7 +167,7 @@ def app_token():
             _token = _oauth.fetch_token(token_url=claritynlp_tokenurl, auth=auth, client_secret=claritynlp_clientsecret)
             # _oauth = OAuth2Session(claritynlp_clientid, token=_token, scope=claritynlp_scope)
     except Exception as ex1:
-        print(ex1)
+        log(ex1, ERROR)
         _oauth = None
         _token = None
     if not _oauth:

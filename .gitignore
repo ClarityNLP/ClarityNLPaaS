@@ -1,7 +1,10 @@
+*.pyc
 __pycache__
 .idea/
 project.cfg
-custom/
 CIBMTR_knowledge_base/
 .env
 .run.sh
+custom/*.csv
+custon/*.nlpql
+custom/*.json
