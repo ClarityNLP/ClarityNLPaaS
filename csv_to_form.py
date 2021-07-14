@@ -1207,8 +1207,8 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 if __name__ == "__main__":
 	parse_questions_from_feature_csv(folder_prefix='covid19',
 	                                 form_name="COVID-19",
-	                                 file_name='https://docs.google.com/spreadsheet/ccc?key=1n7jeuyUniyEhTwY72T14is-n_44b8U5Q7fXHThdLs1U&output=csv',
-	                                 output_dir='/Users/charityhilton/repos/custom_nlpql',
+	                                 file_name='https://docs.google.com/spreadsheet/ccc?key=1w9VcIxVJXYh8mX7RGtxo7rHyq-r64bbzFQs6dGz0Vuk&output=csv',
+	                                 output_dir='/Users/chilton9/repos/custom_nlpql',
 	                                 description='COVID-19 Case Definition')
 	# parse_questions_from_feature_csv(folder_prefix='death',
 	#                                  form_name="US Death Certificate",
