@@ -9,6 +9,7 @@ from requests_oauthlib import OAuth2Session
 from time import strftime, localtime
 from os import environ
 import logging, traceback
+from pymongo import MongoClient
 
 import sys
 
@@ -139,6 +140,16 @@ fhir_terminology_user_password = read_property('FHIR_TERMINOLOGY_USER_PASSWORD',
 custom_nlpql_s3_bucket = read_property('CUSTOM_S3_URL', ('custom', 's3_url'))
 custom_nlpql_folder = read_property('CUSTOM_DIR', ('custom', 's3_folder'))
 
+mongo_host = read_property('PAAS_MONGO_HOSTNAME', ('mongo', 'host'))
+mongo_port = int(read_property('PAAS_MONGO_CONTAINER_PORT', ('mongo', 'port')))
+mongo_db = read_property('PAAS_MONGO_DATABASE', ('mongo', 'db'))
+mongo_working_index = read_property(
+    'PAAS_MONGO_WORKING_INDEX', ('mongo', 'working_index'))
+mongo_working_collection = read_property(
+    'PAAS_MONGO_WORKING_COLLECTION', ('mongo', 'working_collection'))
+mongo_username = read_property('PAAS_MONGO_USERNAME', ('mongo', 'username'))
+mongo_password = read_property('PAAS_MONGO_PASSWORD', ('mongo', 'password'))
+
 
 def app_token():
     if not claritynlp_clientsecret or len(claritynlp_clientsecret.strip()) == 0:
@@ -175,3 +186,28 @@ def app_token():
     if not _oauth:
         return None, requests
     return _token, _oauth
+
+
+def mongo_client(host=None, port=None, username=None, password=None):
+    if not host:
+        host = mongo_host
+
+    if not port:
+        port = mongo_port
+
+    if not username:
+        username = mongo_username
+
+    if not password:
+        password = mongo_password
+
+    # log('Mongo port: {}; host: {}'.format(port, host))
+    if username and len(username) > 0 and password and len(password) > 0:
+        # print('authenticated mongo')
+        _mongo_client = MongoClient(host=host, port=port, username=username,
+                                    password=password, socketTimeoutMS=15000, maxPoolSize=500,
+                                    maxIdleTimeMS=30000)
+    else:
+        # print('unauthenticated mongo')
+        _mongo_client = MongoClient(host, port)
+    return _mongo_client

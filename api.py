@@ -11,8 +11,8 @@ from werkzeug.utils import secure_filename
 import form_updater
 import util
 from csv_to_form import parse_questions_from_feature_csv as parse_questions
-from worker import get_results, worker, submit_test, add_custom_nlpql, get_nlpql, get_file, async_results, \
-	upload_reports, delete_report
+from worker import *
+from forms import *
 
 application = Flask(__name__)
 CORS(application)
