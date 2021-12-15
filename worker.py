@@ -507,6 +507,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
     n = 0
     r_formatted = ''
     while n < 10:
+        results = list()
         url = "{}phenotype_paged_results/{}/{}".format(util.claritynlp_url, job_id, 'true')
         url2 = "{}phenotype_paged_results/{}/{}".format(util.claritynlp_url, job_id, 'false')
 
@@ -517,7 +518,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
             results.extend(response.json()['results'])
         if response2.status_code == 200:
             results.extend(response2.json()['results'])
-        if len(results) > 0:
+        if len(results) > 0 and status == 'COMPLETED':
             break
         else:
             time.sleep(2.0)
