@@ -231,12 +231,15 @@ def upload_reports(data, access_token=None):
             nlpaas_id += 1
 
     log('{} total documents'.format(len(payload)))
-    # log('** PAYLOAD **', util.INFO)
-    # log(payload, util.INFO)
+    log('** PAYLOAD **', util.INFO)
+    log(payload, util.INFO)
+    log(util.solr_url, util.INFO)
     if len(payload) > 0:
         token, oauth = util.app_token()
         log('uploading solr docs...')
         response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4), verify=False)
+        log(response.status_code, util.INFO)
+        log(response.content, util.INFO)
         if response.status_code == 200:
             the_time = 0
             while True:
@@ -273,7 +276,6 @@ def upload_reports(data, access_token=None):
 
             return True, source_id, report_list, fhir_resource, payload
         else:
-            log(response.content)
             return False, response.reason, report_list, fhir_resource, payload
     else:
         return True, "All documents were empty or invalid, or no documents were passed in.", report_list, \
