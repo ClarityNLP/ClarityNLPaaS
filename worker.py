@@ -271,6 +271,7 @@ def upload_reports(data, access_token=None):
 
             return True, source_id, report_list, fhir_resource, payload
         else:
+            print(response.content)
             return False, response.reason, report_list, fhir_resource, payload
     else:
         return True, "All documents were empty or invalid, or no documents were passed in.", report_list, \
@@ -376,7 +377,7 @@ def submit_test(nlpql):
     log('URL from submit_test: "{0}"'.format(url))
 
     token, oauth = util.app_token()
-    response = requests.post(url, headers=get_headers(token), data=nlpql, verify=False)
+    response = requests.post(url, headers=get_headers(token), data=nlpql)
     if response.status_code == 200:
         data = response.json()
         if 'success' in data:
