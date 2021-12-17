@@ -90,6 +90,7 @@ def get_api_routes():
 
 @application.route("/")
 def hello():
+    util.set_logger(application.logger)
     return "Welcome to ClarityNLPaaS."
 
 
@@ -103,6 +104,7 @@ def get_host(r):
 
 @application.route('/form_update', methods=['GET', 'POST'])
 def upload_file():
+    util.set_logger(application.logger)
     status = ''
     if request.method == 'POST':
         status = form_updater.update_form(request.form.get('slug'), request.form)
@@ -139,6 +141,7 @@ def upload_file():
 
 @application.route("/report/upload", methods=['POST'])
 def upload_report():
+    util.set_logger(application.logger)
     if request.method == 'POST':
         # Checking if the selected job is valid
         data = request.get_json()
@@ -169,6 +172,7 @@ def upload_report():
 
 @application.route("/report/delete/<source_id>", methods=['POST'])
 def delete_reports(source_id: str):
+    util.set_logger(application.logger)
     if request.method == 'POST':
         # Checking if the selected job is valid
         delete_obj = delete_report(source_id)
@@ -197,30 +201,32 @@ def delete_reports(source_id: str):
 
 @application.route("/jobs", methods=['POST'])
 def submit_job_with_nlpql(j):
-	the_json = request.get_json()
-	nlpql = the_json.get('nlpql', '')
+    util.set_logger(application.logger)
+    the_json = request.get_json()
+    nlpql = the_json.get('nlpql', '')
 
-	try:
-		async_job = request.args.get('async') == 'true'
-	except:
-		async_job = False
+    try:
+        async_job = request.args.get('async') == 'true'
+    except:
+        async_job = False
 
-	try:
-		return_null_results = request.args.get('return_null_results') == 'true'
-	except:
-		return_null_results = False
-	synchronous = not async_job
+    try:
+        return_null_results = request.args.get('return_null_results') == 'true'
+    except:
+        return_null_results = False
+    synchronous = not async_job
 
-	if nlpql == '':
-		return Response(json.dumps({'message': 'Invalid body for this endpoint. Please make sure NLPQL is passed in.'},
-		                           indent=4, sort_keys=True), status=400,
-		                mimetype='application/json')
+    if nlpql == '':
+        return Response(json.dumps({'message': 'Invalid body for this endpoint. Please make sure NLPQL is passed in.'},
+                                   indent=4, sort_keys=True), status=400,
+                        mimetype='application/json')
 
-	return worker('', the_json, synchronous=synchronous, return_null_results=return_null_results, nlpql=nlpql)
+    return worker('', the_json, synchronous=synchronous, return_null_results=return_null_results, nlpql=nlpql)
 
 
 @application.route("/job/<job_category>/<job_subcategory>/<job_name>", methods=['POST', 'GET'])
 def submit_job_with_subcategory(job_category: str, job_subcategory: str, job_name: str):
+    util.set_logger(application.logger)
     """
     API for triggering jobs
     """
@@ -259,6 +265,7 @@ def submit_job_with_category(job_category: str, job_name: str):
     """
     API for triggering jobs
     """
+    util.set_logger(application.logger)
     h = get_host(request)
     # print(h)
 
@@ -290,6 +297,7 @@ def submit_job(job_type: str):
     """
     API for triggering jobs
     """
+    util.set_logger(application.logger)
     h = get_host(request)
     # print(h)
 
@@ -340,6 +348,7 @@ def get_results(job_id):
     """
     API for getting Job results
     """
+    util.set_logger(application.logger)
     if request.method == 'GET':
         return get_results(job_id)
     else:
@@ -349,6 +358,7 @@ def get_results(job_id):
 
 @application.route("/update/nlpql", methods=['GET'])
 def update_nlpql():
+    util.set_logger(application.logger)
     os.environ['CUSTOM_DIR'] = util.custom_nlpql_folder
     os.environ['CUSTOM_S3_URL'] = util.custom_nlpql_s3_bucket
     call(['sh /api/load_nlpql.sh'])
@@ -360,6 +370,7 @@ def get_nlpql_list():
     """
     API for getting NLPQL Options
     """
+    util.set_logger(application.logger)
     if request.method == 'GET':
         return Response(json.dumps(get_nlpql_options()), status=200, mimetype='application/json')
     else:
@@ -372,6 +383,7 @@ def get_question_list():
     """
     API for getting NLPQL questions
     """
+    util.set_logger(application.logger)
     if request.method == 'GET':
         form_display = list()
         forms = get_nlpql_forms()
@@ -423,6 +435,7 @@ def get_question_list():
 
 @application.route("/form/<form_category>/<form_subcategory>/<form_name>", methods=['POST', 'GET'])
 def get_form_with_subcategory(form_category: str, form_subcategory: str, form_name: str):
+    util.set_logger(application.logger)
     file_type = "{}/{}/{}".format(form_category, form_subcategory, form_name)
     file_path = "./nlpql/" + file_type + ".json"
     return Response(get_file(file_path),
@@ -432,6 +445,7 @@ def get_form_with_subcategory(form_category: str, form_subcategory: str, form_na
 
 @application.route("/form/<form_category>/<form_name>", methods=['POST', 'GET'])
 def get_form_with_category(form_category: str, form_name: str):
+    util.set_logger(application.logger)
     file_type = "{}/{}".format(form_category, form_name)
     file_path = "./nlpql/" + file_type + ".json"
     return Response(get_file(file_path),
@@ -441,6 +455,7 @@ def get_form_with_category(form_category: str, form_name: str):
 
 @application.route("/form/<form_type>", methods=['POST', 'GET'])
 def get_form(form_type: str):
+    util.set_logger(application.logger)
     form_type = form_type.replace('~', '/')
     file_path = "./nlpql/" + form_type + ".json"
 
@@ -451,6 +466,7 @@ def get_form(form_type: str):
 
 @application.route("/upload/form", methods=['POST', 'GET'])
 def upload_form():
+    util.set_logger(application.logger)
     upload_folder = 'nlpql/NLPQL_form_content'
 
     if not os.path.exists(upload_folder):
