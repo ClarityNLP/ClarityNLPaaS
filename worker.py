@@ -106,6 +106,8 @@ def upload_reports(data, access_token=None):
     url = util.solr_url + 'update?commit=true&commitWithin=10000'
     log('URL from upload_reports: "{0}"'.format(url))
 
+    print('SOLR url: ' + url)
+
     # Generating a source_id
     rand_uuid = uuid.uuid1()
     source_id = str(rand_uuid)
@@ -271,7 +273,7 @@ def upload_reports(data, access_token=None):
 
             return True, source_id, report_list, fhir_resource, payload
         else:
-            print(response.content)
+            log(response.content)
             return False, response.reason, report_list, fhir_resource, payload
     else:
         return True, "All documents were empty or invalid, or no documents were passed in.", report_list, \
