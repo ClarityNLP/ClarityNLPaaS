@@ -52,7 +52,7 @@ def get_headers(token):
 
 def get_text(url, headers=None, key=None, base64_encoded=True):
     txt = ''
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, verify=False)
     if not headers:
         headers = {}
     headers['Authorization'] = 'hidden'
@@ -234,7 +234,7 @@ def upload_reports(data, access_token=None):
     if len(payload) > 0:
         token, oauth = util.app_token()
         log('uploading solr docs...')
-        response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4))
+        response = requests.post(url, headers=get_headers(token), data=json.dumps(payload, indent=4), verify=False)
         if response.status_code == 200:
             the_time = 0
             while True:
@@ -248,7 +248,8 @@ def upload_reports(data, access_token=None):
                 doc_results = 0
                 try:
                     post_data = json.dumps(data, indent=4)
-                    response = requests.post((util.solr_url + '/select'), headers=get_headers(token), data=post_data)
+                    response = requests.post((util.solr_url + '/select'), headers=get_headers(token), data=post_data,
+                                             verify=False)
                     # log(response.text)
                     res = response.json().get('response', None)
                     if res:
@@ -286,7 +287,7 @@ def delete_report(source_id):
     data = '<delete><query>source:%s</query></delete>' % source_id
 
     token, oauth = util.app_token()
-    response = requests.post(url, headers=get_headers(token), data=json.dumps(data, indent=4))
+    response = requests.post(url, headers=get_headers(token), data=json.dumps(data, indent=4), verify=False)
     if response.status_code == 200:
         return True, response.reason
     else:
@@ -300,7 +301,7 @@ def get_reports(source_id):
     url = '{}/select?indent=on&q=source:{}&wt=json&rows=1000'.format(util.solr_url, source_id)
 
     token, oauth = util.app_token()
-    response = requests.get(url, headers=get_headers(token))
+    response = requests.get(url, headers=get_headers(token), verify=False)
     if response.status_code == 200:
         res = response.json()['response']
         if not res:
@@ -350,7 +351,7 @@ def submit_job(nlpql_json):
     log("")
 
     token, oauth = util.app_token()
-    response = requests.post(url, headers=get_headers(token), data=phenotype_string)
+    response = requests.post(url, headers=get_headers(token), data=phenotype_string, verify=False)
     if response.status_code == 200:
         data = response.json()
         if 'success' in data:
@@ -375,7 +376,7 @@ def submit_test(nlpql):
     log('URL from submit_test: "{0}"'.format(url))
 
     token, oauth = util.app_token()
-    response = requests.post(url, headers=get_headers(token), data=nlpql)
+    response = requests.post(url, headers=get_headers(token), data=nlpql, verify=False)
     if response.status_code == 200:
         data = response.json()
         if 'success' in data:
