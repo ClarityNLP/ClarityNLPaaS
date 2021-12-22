@@ -231,8 +231,8 @@ def upload_reports(data, access_token=None):
             nlpaas_id += 1
 
     log('{} total documents'.format(len(payload)))
-    log('** PAYLOAD **', util.INFO)
-    log(payload, util.INFO)
+    # log('** PAYLOAD **', util.INFO)
+    # log(payload, util.INFO)
     log(util.solr_url, util.INFO)
     if len(payload) > 0:
         token, oauth = util.app_token()
@@ -535,10 +535,10 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
         log('')
         log('')
         if len(results) == 0:
-            return '''
+            return ''' {
                         "success":"true",
                         "message":"No results found for job id {}"
-                    '''.format(job_id), False
+                    }'''.format(job_id), False
         for r in results:
             # log('** REPORT (R)**', util.INFO)
             # log(r, util.INFO)
@@ -604,7 +604,7 @@ def clean_output(data, report_list=None, return_null_results=False):
     """
     if not report_list:
         report_list = list()
-    log(data, util.INFO)
+    # log(data, util.INFO)
     data = json.loads(data)
     report_dictionary = {x['report_id']: x for x in report_list}
     report_ids = list(report_dictionary.keys())
