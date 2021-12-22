@@ -612,19 +612,21 @@ def clean_output(data, report_list=None, return_null_results=False):
 
     # iterate through to check for report_ids that are empty and assign report count from original report_list
     for obj in data:
-        report_id = str(obj.get("report_id", '')).split('_')
+        r_id = obj["report_id"]
+        log(r_id, util.INFO)
+        report_id = str(r_id).split('_')
         if len(report_id) > 1:
             nlpaas_array_id = report_id[1]
-            if obj.get("report_id", '') in report_ids:
-                orig_report = report_dictionary[obj.get("report_id", '')]
+            if obj["report_id"] in report_ids:
+                orig_report = report_dictionary[obj["report_id"]]
                 obj.update({
                     'nlpaas_report_list_id': nlpaas_array_id,
-                    'original_report_id': orig_report.get('original_report_id', '')
+                    'original_report_id': orig_report['original_report_id']
                 })
-                matched_reports.append(obj.get("report_id", ''))
+                matched_reports.append(obj["report_id"])
     # return null response for reports with no results
     for report in report_list:
-        item = report.get('report_id', '')
+        item = report['report_id']
         if item in matched_reports:
             continue
         if return_null_results:
