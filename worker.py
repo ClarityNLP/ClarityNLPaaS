@@ -535,7 +535,8 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
         log('')
         log('')
         if len(results) == 0:
-            return '{ "success":"true", "message":"No results found for job id %s"}' % str(job_id), False
+            log('No results found for job {}'.format(job_id))
+            return '[]', False
         for r in results:
             # log('** REPORT (R)**', util.INFO)
             # log(r, util.INFO)
@@ -589,7 +590,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
     except Exception as ex:
         log(ex, util.ERROR)
         log(r_formatted)
-        return '''{ "success":"false", "message":%s}''' % (str(ex)), False
+        return '[]', False
 
 
 def clean_output(data, report_list=None, return_null_results=False):
