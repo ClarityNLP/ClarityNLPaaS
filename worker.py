@@ -612,6 +612,10 @@ def clean_output(data, report_list=None, return_null_results=False):
 
     # iterate through to check for report_ids that are empty and assign report count from original report_list
     for obj in data:
+        if not isinstance(obj, dict):
+            continue
+        if 'report_id' not in obj:
+            continue
         r_id = obj["report_id"]
         log(r_id, util.INFO)
         report_id = str(r_id).split('_')
