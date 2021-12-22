@@ -535,10 +535,7 @@ def get_results(job_id: int, source_data=None, report_ids=None, return_only_if_c
         log('')
         log('')
         if len(results) == 0:
-            return ''' {
-                        "success":"true",
-                        "message":"No results found for job id {}"
-                    }'''.format(job_id), False
+            return '{ "success":"true", "message":"No results found for job id {}"}'.format(job_id), False
         for r in results:
             # log('** REPORT (R)**', util.INFO)
             # log(r, util.INFO)
@@ -604,8 +601,14 @@ def clean_output(data, report_list=None, return_null_results=False):
     """
     if not report_list:
         report_list = list()
-    # log(data, util.INFO)
-    data = json.loads(data)
+
+    try:
+        data = json.loads(data)
+    except Exception as ex:
+        log(ex, util.ERROR)
+        log('Error loading JSON', util.ERROR)
+        log(data, util.ERROR)
+        data = {}
     report_dictionary = {x['report_id']: x for x in report_list}
     report_ids = list(report_dictionary.keys())
     matched_reports = list()
