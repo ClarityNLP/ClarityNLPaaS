@@ -27,6 +27,8 @@ logger = None
 
 def set_logger(l):
     global logger
+    if logger == l:
+        return
     logger = l
 
     use_gunicorn_logger = environ.get('USE_GUNICORN', "true")
@@ -36,11 +38,11 @@ def set_logger(l):
         logger.handlers = gunicorn_logger.handlers
         logger.setLevel(gunicorn_logger.level)
 
-    logger.debug('this is a DEBUG message')
-    logger.info('this is an INFO message')
-    logger.warning('this is a WARNING message')
-    logger.error('this is an ERROR message')
-    logger.critical('this is a CRITICAL message')
+    # logger.debug('this is a DEBUG message')
+    # logger.info('this is an INFO message')
+    # logger.warning('this is a WARNING message')
+    # logger.error('this is an ERROR message')
+    # logger.critical('this is a CRITICAL message')
 
 
 def log(obj=None, level=INFO, file=sys.stdout):

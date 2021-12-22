@@ -604,6 +604,7 @@ def clean_output(data, report_list=None, return_null_results=False):
     """
     if not report_list:
         report_list = list()
+    log(data, util.INFO)
     data = json.loads(data)
     report_dictionary = {x['report_id']: x for x in report_list}
     report_ids = list(report_dictionary.keys())
