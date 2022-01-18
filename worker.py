@@ -677,19 +677,20 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False, nlp
     fhir_token_uri = ''
     patient_id = -1
     encounter_id = -1
-    try:
-        fhir_version_str = str(data.get('fhirVersion', '3'))
-        if "3" in fhir_version_str:
-            fhir_version = 'STU3'
-        elif "2" in fhir_version_str:
-            fhir_version = 'DSTU2'
-        elif "4" in fhir_version_str:
-            fhir_version = 'R4'
-        else:
-            fhir_version = "Unknown"
-    except Exception as fv_ex:
-        log(fv_ex)
-        fhir_version = 'STU3'
+#     try:
+#         fhir_version_str = str(data.get('fhirVersion', '3'))
+#         if "3" in fhir_version_str:
+#             fhir_version = 'STU3'
+#         elif "2" in fhir_version_str:
+#         #    fhir_version = 'DSTU2'
+#             fhir_version = 'STU3'
+#         elif "4" in fhir_version_str:
+#             fhir_version = 'R4'
+#         else:
+#             fhir_version = "STU3"
+#     except Exception as fv_ex:
+#         log(fv_ex)
+    fhir_version = 'STU3'
 
     if 'fhir' in data:
         fhir = data['fhir']
