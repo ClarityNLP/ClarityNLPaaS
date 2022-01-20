@@ -98,6 +98,29 @@ def get_text(url, headers=None, key=None, base64_encoded=True):
     return txt
 
 
+def load_reports_from_fhir(fhir_url, fhir_auth, patient_id, idx=0):
+    reports = []
+    if fhir_url[-1] != '/':
+        fhir_url += '/'
+    try:
+        r = requests.get(fhir_url + 'DocumentReference?patient={}'.format(patient_id), headers=fhir_auth)
+        res_data = r.json()
+        links = res_data.get('link', [])
+        entry = res_data.get('entry', [])
+        reports = list(map(lambda x: x.get('resource', {}), entry))
+
+        next_idx = idx + 1
+        if next_idx < len(links):
+            next_link = links[next_idx]
+            next_url = next_link.get('url')
+            if next_url:
+                reports.extend(load_reports_from_fhir(next_url, fhir_auth, patient_id, idx=next_idx))
+
+    except Exception as ex:
+        log(ex, util.ERROR)
+    return reports
+
+
 def upload_reports(data, access_token=None):
     """
     Uploading reports with unique source
@@ -754,6 +777,14 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False, nlp
     log('patient_id {}'.format(patient_id))
     source_id = data.get('source_id', 'UNKNOWN')
     reports = data.get('reports', [])
+
+    if not source_id or source_id == 'UNKNOWN':
+        if not reports or len(reports) == 0:
+            if fhir_data_service_uri and fhir_data_service_uri != '' and fhir_auth_type and fhir_auth_type != '' and \
+                    fhir_auth_token and fhir_auth_token != '':
+                fhir_auth_str = "{'Authorization': '%s %s'}" % (fhir_auth_type, fhir_auth_token)
+                reports = load_reports_from_fhir(fhir_data_service_uri, fhir_auth_str, patient_id)
+                data['reports'] = reports
 
     if reports and len(reports) > 0:
         status, source_id, report_ids, is_fhir_resource, report_payload = upload_reports(data,
