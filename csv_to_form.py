@@ -296,8 +296,11 @@ def cleanup_row(r):
 		'\\u00b0', ' degrees')
 	                 .replace('\\u03b3', 'gamma').replace('\\u03b1', 'alpha').replace('\\u00b5', 'u'))
 	for ro in row.keys():
-		new_key = ro.strip().lower()
-		output_row[new_key] = row[ro].strip()
+		try:
+			new_key = ro.strip().lower()
+			output_row[new_key] = row[ro].strip()
+		except:
+			print('failure to cleanup row')
 	return output_row
 
 
@@ -350,7 +353,7 @@ def write_questions_file_v2(output_dir, folder_prefix, form_data, groups, eviden
 	new_evidences = dict()
 	for q in form_data.get('questions', list()):
 		group = q.get('group', '')
-		group_id = '_'.join(group.lower().split(' ')).replace(',', '').replace('_/_', '_')
+		group_id = '_'.join(group.lower().split(' ')).replace(',', '').replace('_/_', '_').replace('.', '')
 		if group_id not in new_groupings:
 			new_groupings[group_id] = list()
 		new_q = dict()
@@ -1205,11 +1208,11 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 
 
 if __name__ == "__main__":
-	parse_questions_from_feature_csv(folder_prefix='covid19',
-	                                 form_name="COVID-19",
-	                                 file_name='https://docs.google.com/spreadsheet/ccc?key=1w9VcIxVJXYh8mX7RGtxo7rHyq-r64bbzFQs6dGz0Vuk&output=csv',
-	                                 output_dir='/Users/chilton9/repos/custom_nlpql',
-	                                 description='COVID-19 Case Definition')
+	# parse_questions_from_feature_csv(folder_prefix='covid19',
+	#                                  form_name="COVID-19",
+	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1w9VcIxVJXYh8mX7RGtxo7rHyq-r64bbzFQs6dGz0Vuk&output=csv',
+	#                                  output_dir='/Users/chilton9/repos/custom_nlpql',
+	#                                  description='COVID-19 Case Definition')
 	# parse_questions_from_feature_csv(folder_prefix='death',
 	#                                  form_name="US Death Certificate",
 	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1J_JqRjjryjaJE-fB9nNcBb9mQNL3cl7dx_vhbG95XHE&output=csv',
@@ -1220,10 +1223,14 @@ if __name__ == "__main__":
 	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=1hGwgzRVItB-SE6tnysSwj9EjFPc1MJ6ov1EumJHn_PA&output=csv',
 	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
 	#                                  description='CDC Surveillance for Emerging Threats to Pregnant Women and Infants')
-	# parse_questions_from_feature_csv(folder_prefix='4100r4',
-	#                                  form_name="Form 4100 R4.0",
-	#                                  output_dir='/Users/charityhilton/repos/custom_nlpql',
-	#                                  description='CIBMTR Cellular Therapy Essential Data Follow-Up')
+
+	cibmtr_key = ''
+	parse_questions_from_feature_csv(folder_prefix='4100r4',
+	                                 form_name="Form 4100 R4.0",
+	                                 file_name='https://docs.google.com/spreadsheet/ccc?key={}&output=csv'.format(cibmtr_key),
+
+	                                 output_dir='/Users/chilton9/repos/custom_nlpql',
+	                                 description='CIBMTR Cellular Therapy Essential Data Follow-Up')
 	# parse_questions_from_feature_csv(folder_prefix='fluoroquinolone',
 	#                                  form_name="Fluoroquinolone Valvular Events",
 	#                                  file_name='https://docs.google.com/spreadsheet/ccc?key=11GGj6SPwLLjKoNVS3vp-YtVOs5facig6Py5491bHVQQ&output=csv',
