@@ -126,7 +126,7 @@ cql_result_template = '''
 
 cql_result_template_res = ''' [{}]'''
 
-cql_result_template_cs = ''' [{}: Code in "{}_concepts"]'''
+cql_result_template_cs = ''' [{}: Code in "{}_concepts"] {}'''
 
 cql_result_template_vs = '''[{}:"{}_valueset"]'''
 
@@ -781,7 +781,7 @@ def map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, va
 
 
 def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features, value_set_oid,
-            cql_expression, cql_folder):
+            cql_expression, cql_folder, value_min=None, value_max=None):
 	cql_concept = ''
 	cql_header = ''
 	c_string = ''
@@ -809,6 +809,9 @@ def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entitie
 		c_string = ''
 		resource = fhir_resource_type
 
+		if not resource or len(resource) == 0:
+			resource = 'Observation'
+
 		cql_result_members = list()
 		#
 		# define "Conditions Indicating Sexual Activity":
@@ -821,14 +824,39 @@ def map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entitie
 		#     union ["Condition": "Syphilis"]
 		#     union ["Condition": "Complications of Pregnancy, Childbirth and the Puerperium"]
 
-		if not resource or len(resource) == 0:
-			resource = 'Observation'
+		value_template = 'O where O.value.value > {:.1f} {}'
+		value_template_upper = ' and O.value.value < {:.1f}'
+		value_template_upper_only = 'O where O.value.value < {:.1f} {}'
+		upper_string = ''
+		value_string = ''
+
+		if resource == 'Observation':
+
+			if value_max and value_max != '' and (not value_min or value_min == ''):
+				try:
+					value_string = value_template_upper_only.format((float(value_max)), '')
+				except:
+					value_string = ''
+			else:
+				if value_max and value_max != '':
+					try:
+						upper_string = value_template_upper.format((float(value_max)))
+					except Exception as ex:
+						upper_string = ''
+
+				if value_min and value_min != '':
+					try:
+						value_string = value_template.format((float(value_min)), upper_string)
+					except:
+						value_string = ''
+
+
 		if not codes:
 			codes = list()
 		if len(codes) == 1 and codes[0] == '':
 			codes = list()
 		if len(codes) > 0:
-			cql_result_members.append(cql_result_template_cs.format(resource, feature_name))
+			cql_result_members.append(cql_result_template_cs.format(resource, feature_name, value_string))
 		if value_set_oid and len(value_set_oid) > 0:
 			cql_result_members.append(cql_result_template_vs.format(resource, feature_name))
 
@@ -1177,7 +1205,7 @@ def parse_questions_from_feature_csv(folder_prefix='4100r4',
 					                     entities, values_before_terms)
 				elif len(cql_expression) > 0 or len(r_fhir_resource_type) > 0:
 					map_cql(codes, code_sys, feature_name, concepts, fhir_resource_type, entities, features,
-					        valueset_oid, cql_expression, cql_folder)
+					        valueset_oid, cql_expression, cql_folder, value_min=value_min, value_max=value_max)
 				else:
 					map_generic_task(nlp_task_type, terms, termsets, feature_name, value_min, value_max, value_enum_set,
 					                 features, entities)
@@ -1227,8 +1255,8 @@ if __name__ == "__main__":
 	cibmtr_key = ''
 	parse_questions_from_feature_csv(folder_prefix='4100r4',
 	                                 form_name="Form 4100 R4.0",
-	                                 file_name='https://docs.google.com/spreadsheet/ccc?key={}&output=csv'.format(cibmtr_key),
-
+	                                 #file_name='https://docs.google.com/spreadsheet/ccc?key={}&output=csv'.format(cibmtr_key),
+                                     file_name='/Users/chilton9/Downloads/CIBMTR-Form_4100_Mapping - FeatureToQuestionMapping (3).csv',
 	                                 output_dir='/Users/chilton9/repos/custom_nlpql',
 	                                 description='CIBMTR Cellular Therapy Essential Data Follow-Up')
 	# parse_questions_from_feature_csv(folder_prefix='fluoroquinolone',
