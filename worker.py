@@ -782,7 +782,7 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False, nlp
         if not reports or len(reports) == 0:
             if fhir_data_service_uri and fhir_data_service_uri != '' and fhir_auth_type and fhir_auth_type != '' and \
                     fhir_auth_token and fhir_auth_token != '':
-                fhir_auth_dict = {'Authorization': f'{} {}'.format(fhir_auth_type, fhir_auth_token)}
+                fhir_auth_dict = {'Authorization': '{} {}'.format(fhir_auth_type, fhir_auth_token)}
                 reports = load_reports_from_fhir(fhir_data_service_uri, fhir_auth_dict, patient_id)
                 data['reports'] = reports
 
