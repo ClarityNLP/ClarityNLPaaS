@@ -103,7 +103,7 @@ def load_reports_from_fhir(fhir_url, fhir_auth, patient_id, idx=0):
     if fhir_url[-1] != '/':
         fhir_url += '/'
     try:
-        r = requests.get(fhir_url + 'DocumentReference?patient={}'.format(patient_id), headers={'Authorization': fhir_auth})
+        r = requests.get(fhir_url + 'DocumentReference?patient={}'.format(patient_id), headers=fhir_auth)
         res_data = r.json()
         links = res_data.get('link', [])
         entry = res_data.get('entry', [])
@@ -782,8 +782,8 @@ def worker(job_file_path, data, synchronous=True, return_null_results=False, nlp
         if not reports or len(reports) == 0:
             if fhir_data_service_uri and fhir_data_service_uri != '' and fhir_auth_type and fhir_auth_type != '' and \
                     fhir_auth_token and fhir_auth_token != '':
-                fhir_auth_str = "{'Authorization': '%s %s'}" % (fhir_auth_type, fhir_auth_token)
-                reports = load_reports_from_fhir(fhir_data_service_uri, fhir_auth_str, patient_id)
+                fhir_auth_dict = {'Authorization': f'{} {}'.format(fhir_auth_type, fhir_auth_token)}
+                reports = load_reports_from_fhir(fhir_data_service_uri, fhir_auth_dict, patient_id)
                 data['reports'] = reports
 
     if reports and len(reports) > 0:
