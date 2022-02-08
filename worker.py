@@ -103,7 +103,7 @@ def load_reports_from_fhir(fhir_url, fhir_auth, patient_id, idx=0):
     if fhir_url[-1] != '/':
         fhir_url += '/'
     try:
-        r = requests.get(fhir_url + 'DocumentReference?patient={}'.format(patient_id), headers=fhir_auth)
+        r = requests.get(fhir_url + 'DocumentReference?patient={}'.format(patient_id), headers={'Authorization': fhir_auth})
         res_data = r.json()
         links = res_data.get('link', [])
         entry = res_data.get('entry', [])
