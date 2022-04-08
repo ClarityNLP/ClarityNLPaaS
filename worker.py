@@ -170,6 +170,8 @@ def upload_reports(data, access_token=None):
             report_date = None
             if 'created' in report:
                 report_date = dateparser.parse(report['created'])
+            if 'date' in report:
+                report_date = dateparser.parse(report['date'])
             if not report_date and 'indexed' in report:
                 report_date = dateparser.parse(report['indexed'])
             if report_date:
