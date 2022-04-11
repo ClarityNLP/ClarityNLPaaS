@@ -171,6 +171,7 @@ def upload_reports(data, access_token=None):
             if 'created' in report:
                 report_date = dateparser.parse(report['created'])
             if 'date' in report:
+                log(f'Found date in DocumentReference {report["date"]}')
                 report_date = dateparser.parse(report['date'])
             if not report_date and 'indexed' in report:
                 report_date = dateparser.parse(report['indexed'])

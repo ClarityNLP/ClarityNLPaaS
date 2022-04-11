@@ -17,7 +17,7 @@ requests==2.20.0
 six==1.11.0
 urllib3==1.24.2
 Werkzeug==0.15.5
-dateparser==0.7.1
+dateparser==1.1.1
 requests_oauthlib==0.8.0
 oauthlib==3.0.0
 PyPDF2==1.26.0
