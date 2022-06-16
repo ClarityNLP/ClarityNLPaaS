@@ -15,7 +15,7 @@ pymongo==3.8.0                  # upgraded, was 3.6.0
 python-dateutil==2.7.3
 requests==2.20.0
 six==1.11.0
-urllib3==1.24.2
+urllib3==1.26.5
 Werkzeug==0.15.5
 dateparser==1.1.1
 requests_oauthlib==0.8.0
