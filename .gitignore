@@ -8,3 +8,5 @@ CIBMTR_knowledge_base/
 custom/*.csv
 custon/*.nlpql
 custom/*.json
+
+.vscode
