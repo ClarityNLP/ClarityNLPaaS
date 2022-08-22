@@ -8,6 +8,7 @@ from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
 from api import app_router
@@ -64,3 +65,22 @@ async def validation_exception_handler(request, exc):
 
 # ================ Router inclusion from src directory =================
 app.include_router(app_router)
+
+# =========================== Custom OpenAPI ===========================
+
+def custom_openapi():
+    '''Defines the custom OpenAPI schema handling'''
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title="NLPaaS Lite",
+        version="0.0.1",
+        description="This is a custom Open API Schema to align with NLPaaS Lite's API endpoints",
+        routes=app.routes,
+    )
+
+    openapi_schema["paths"]["/job/register_nlpql"]["post"]["requestBody"]["content"] = {"text/plain": {"schema": {}}}
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi

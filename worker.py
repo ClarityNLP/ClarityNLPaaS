@@ -220,6 +220,11 @@ def clean_output(results: list) -> list:
         result[20] = result[20].replace('"', '').replace('^', ',')
 
         cleaned_result_dict = {header[i]: item for i, item in enumerate(result)}
+        cleaned_result_dict['start'] = int(cleaned_result_dict['start'])
+        cleaned_result_dict['end'] = int(cleaned_result_dict['end'])
+        cleaned_result_dict['job_id'] = int(cleaned_result_dict['job_id'])
+        cleaned_result_dict['pipeline_id'] = int(cleaned_result_dict['pipeline_id'])
+
 
         cleaned_results.append(cleaned_result_dict)
 

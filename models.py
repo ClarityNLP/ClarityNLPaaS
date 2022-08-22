@@ -42,3 +42,50 @@ class RunNLPQLPostBody(pydantic.BaseModel):
     patient_id: str
     fhir: FHIRConnectionInfo
     reports: typing.Optional[list] = None
+
+
+class ResultDisplayObject(pydantic.BaseModel):
+    date: str
+    result_content: str
+    sentence: str
+    highlights: list[str]
+    start: list[int]
+    end: list[int]
+
+
+class NLPResult(pydantic.BaseModel):
+    _id: str
+    batch: str
+    concept_code: str
+    concept_code_system: str
+    display_name: str
+    end: int
+    experiencer: str
+    inserted_date: str
+    job_id: int
+    negation: str
+    nlpql_feature: str
+    owner: str
+    phenotype_final: str
+    pipeline_id: int
+    pipeline_type: str
+    report_date: str
+    report_id: str
+    report_type: str
+    result_display: ResultDisplayObject
+    section: str
+    sentence: str
+    solr_id: str
+    source: str
+    start: str
+    subject: str
+    temporality: str
+    term: str
+    text: str
+    value: str
+
+class DetailResponse(pydantic.BaseModel):
+    detail: str
+
+class DetailLocationResponse(DetailResponse):
+    location: str

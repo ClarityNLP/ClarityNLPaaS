@@ -3,9 +3,10 @@
 from fastapi import APIRouter, Body
 
 import logging
+import typing
 
 from worker import add_custom_nlpql, run_job
-from models import RunNLPQLPostBody, CustomFormatter
+from models import DetailLocationResponse, DetailResponse, RunNLPQLPostBody, CustomFormatter, NLPResult
 
 from util import log_level
 
@@ -31,11 +32,11 @@ def return_root():
     return {'detail': 'Welcome to Clarity NLPaaS Lite. Swagger UI is available at /docs.'}
 
 
-@app_router.post('/job/register_nlpql')
+@app_router.post('/job/register_nlpql', response_model=typing.Union[DetailLocationResponse, DetailResponse])
 def register_nlpql(nlpql: str = Body(...)):
     return add_custom_nlpql(nlpql=nlpql)
 
 
-@app_router.post('/job/{nlpql_library}')
+@app_router.post('/job/{nlpql_library}', response_model=list[NLPResult])
 def run_nlpql(nlpql_library: str, post_body: RunNLPQLPostBody):
     return run_job(nlpql_library, post_body)
