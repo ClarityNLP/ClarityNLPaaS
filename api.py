@@ -34,9 +34,17 @@ def return_root():
 
 @app_router.post('/job/register_nlpql', response_model=typing.Union[DetailLocationResponse, DetailResponse])
 def register_nlpql(nlpql: str = Body(...)):
+    '''
+    Saves NLPQL to the filesystem for use at `/job/{nlpql_library}`
+    '''
+
     return add_custom_nlpql(nlpql=nlpql)
 
 
 @app_router.post('/job/{nlpql_library}', response_model=list[NLPResult])
 def run_nlpql(nlpql_library: str, post_body: RunNLPQLPostBody):
+    '''
+    Runs NLPQL library given in path against patient and documents given in post body
+    '''
+
     return run_job(nlpql_library, post_body)

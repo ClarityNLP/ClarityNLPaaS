@@ -12,7 +12,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
 from api import app_router
-from models import CustomFormatter
+from models import CustomFormatter, nlpql_example
 from util import log_level
 
 logger = logging.getLogger('main')
@@ -79,7 +79,10 @@ def custom_openapi():
         routes=app.routes,
     )
 
-    openapi_schema["paths"]["/job/register_nlpql"]["post"]["requestBody"]["content"] = {"text/plain": {"schema": {}}}
+    openapi_schema["paths"]["/job/register_nlpql"]["post"]["requestBody"]["content"] = {"text/plain": {"schema": {"type": "string"}}}
+    openapi_schema["paths"]["/job/register_nlpql"]["post"]["summary"] = "Register NLPQL"
+    openapi_schema["paths"]["/job/{nlpql_library}"]["post"]["summary"] = "Run NLPQL"
+
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
