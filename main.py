@@ -52,6 +52,8 @@ async def validation_exception_handler(request, exc):
         try:
             field_string = ".".join(filtered_loc)  # nested fields with dot-notation
         except TypeError:  # Handles malformed JSON (extra comma)
+            logger.error('Pydantic Error: ')
+            logger.error(pydantic_error)
             return JSONResponse({'detail': 'Something was malformed in your request body'}, 400)
         reformatted_message[field_string].append(msg)
 
