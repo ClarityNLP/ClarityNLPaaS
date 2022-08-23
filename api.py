@@ -17,6 +17,10 @@ ch.setLevel(logging.INFO)
 ch.setFormatter(CustomFormatter())
 logger.addHandler(ch)
 
+uvicorn_access_logger = logging.getLogger("uvicorn.access")
+uvicorn_access_logger.name = 'api'
+logger.handlers = uvicorn_access_logger.handlers
+
 if log_level.lower() == 'debug':
     logger.info('Logging level is being set to DEBUG')
     logger.setLevel(logging.DEBUG)
