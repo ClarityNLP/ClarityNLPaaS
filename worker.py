@@ -191,7 +191,7 @@ def get_results(job_id: int, name="NLPAAS Job"):
     try:
         if len(results) == 0:
             logger.info(f'No results found for job {job_id}')
-            return [], False
+            return [], True
 
         results = [result.strip('\r') for result in results.split('\n')]
         logger.info(f'Total results for {name}: {len(results)}')
@@ -215,10 +215,16 @@ def clean_output(results: list) -> list:
     for result in results:
         if len(result) != len(header):
             continue
-        result_display = result[18]
-        result_display = result_display.replace('^', ',').strip('"').replace("'", '"')
-        result[18] = json.loads(result_display)
-        result[20] = result[20].replace('"', '').replace('^', ',')
+        if len(header) != 36:
+            result_display = result[18]
+            result_display = result_display.replace('^', ',').strip('"').replace("'", '"').replace('True', 'true')
+            result[18] = json.loads(result_display)
+            result[20] = result[20].replace('"', '').replace('^', ',')
+            print('result_display: ', result[18])
+        elif len(header) == 36:
+            result_display = result[24]
+            result_display = result_display.replace('^', ',').strip('"').replace("'", '"').replace('True', 'true')
+            result[24] = json.loads(result_display)
 
         cleaned_result_dict = {header[i]: item for i, item in enumerate(result)}
         cleaned_result_dict['start'] = int(cleaned_result_dict['start'])
@@ -295,6 +301,8 @@ def run_job(nlpql_library_name, data, nlpql=None):
     results, got_results = get_results(job_id, name=nlpql_json.get('name'))
 
     logger.info(f"Run Time = {time.time() - start}")
+    if not results:
+        return {'detail': 'There were no results found', 'results': []}
     if not got_results:
         return JSONResponse({'detail': 'There was an error in get_results, see logs for full output', 'results': results}, status_code=500)
 
