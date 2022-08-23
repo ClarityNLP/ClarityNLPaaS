@@ -229,6 +229,9 @@ def clean_output(results: list) -> list:
 
         cleaned_results.append(cleaned_result_dict)
 
+    logger.debug('Cleaned Results:')
+    logger.debug(cleaned_results)
+
     return cleaned_results
 
 
