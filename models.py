@@ -137,6 +137,13 @@ class NLPResult(pydantic.BaseModel):
     term: str
     text: typing.Optional[str]
     value: typing.Optional[str]
+    _ids_1: typing.Optional[str]
+    context_type: typing.Optional[str]
+    job_date: typing.Optional[str]
+    nlpql_features_1: typing.Optional[str]
+    phenotype_id: typing.Optional[int]
+    raw_definition_text: typing.Optional[str]
+    tuple: typing.Optional[str]
 
     class Config:
         schema_extra = {
@@ -186,8 +193,10 @@ class NLPResult(pydantic.BaseModel):
             }
         }
 
+
 class DetailResponse(pydantic.BaseModel):
     detail: str
+
 
 class DetailLocationResponse(DetailResponse):
     location: str

@@ -225,13 +225,14 @@ def clean_output(results: list) -> list:
             result_display = result[24]
             result_display = result_display.replace('^', ',').strip('"').replace("'", '"').replace('True', 'true')
             result[24] = json.loads(result_display)
+            result[26] = result[26].replace('"', '').replace('^', ',')
+            result[34] = '"' + result[34].strip('"').replace('""', '"').replace('^', ',') + '"'
 
         cleaned_result_dict = {header[i]: item for i, item in enumerate(result)}
         cleaned_result_dict['start'] = int(cleaned_result_dict['start'])
         cleaned_result_dict['end'] = int(cleaned_result_dict['end'])
         cleaned_result_dict['job_id'] = int(cleaned_result_dict['job_id'])
         cleaned_result_dict['pipeline_id'] = int(cleaned_result_dict['pipeline_id'])
-
 
         cleaned_results.append(cleaned_result_dict)
 
