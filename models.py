@@ -135,8 +135,8 @@ class NLPResult(pydantic.BaseModel):
     subject: str
     temporality: str
     term: str
-    text: str
-    value: str
+    text: typing.Optional[str]
+    value: typing.Optional[str]
 
     class Config:
         schema_extra = {

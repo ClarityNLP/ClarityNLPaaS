@@ -73,6 +73,7 @@ def submit_test(nlpql):
     logger.info(f'URL from submit_test: "{url}"')
 
     response = requests.post(url, data=nlpql)
+
     if response.status_code == 200:
         data = response.json()
         if 'success' in data and not data['success']:
@@ -230,6 +231,7 @@ def clean_output(results: list) -> list:
 
     return cleaned_results
 
+
 def run_job(nlpql_library_name, data, nlpql=None):
     """
     Main function to run jobs
@@ -287,7 +289,6 @@ def run_job(nlpql_library_name, data, nlpql=None):
 
     # Getting the results of the Job
     job_id = int(job_info['job_id'])
-    logger.info(f"job_id = {job_id}")
     results, got_results = get_results(job_id, name=nlpql_json.get('name'))
 
     logger.info(f"Run Time = {time.time() - start}")
