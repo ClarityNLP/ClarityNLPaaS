@@ -50,7 +50,5 @@ def run_nlpql(nlpql_library: str, post_body: RunNLPQLPostBody):
     '''
     Runs NLPQL library given in path against patient and documents given in post body
     '''
-    temp_output = run_job(nlpql_library, post_body)
-    logger.info('Run NLPQL Output:')
-    logger.info(temp_output)
-    return temp_output
+
+    return run_job(nlpql_library, post_body)
