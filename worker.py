@@ -215,18 +215,24 @@ def clean_output(results: list, reports: list[dict]) -> list:
     for result in results:
         if len(result) != len(header):
             continue
-        if len(header) != 36:
+        if len(header) not in [34, 36]:
             result_display = result[18]
             result_display = result_display.replace('^', ',').strip('"').replace("'", '"').replace('True', 'true')
             result[18] = json.loads(result_display)
             result[20] = result[20].replace('"', '').replace('^', ',')
-            print('result_display: ', result[18])
         elif len(header) == 36:
             result_display = result[24]
             result_display = result_display.replace('^', ',').strip('"').replace("'", '"').replace('True', 'true')
             result[24] = json.loads(result_display)
             result[26] = result[26].replace('"', '').replace('^', ',')
             result[34] = '"' + result[34].strip('"').replace('""', '"').replace('^', ',') + '"'
+        elif len(header) == 34:
+            result_display = result[24]
+            result_display = result_display.replace('^', ',').strip('"').replace("'", '"').replace('True', 'true')
+            result[24] = json.loads(result_display)
+            result[26] = result[26].replace('"', '').replace('^', ',')
+            result[33] = '"' + result[33].strip('"').replace('""', '"').replace('^', ',') + '"'
+
 
         cleaned_result_dict = {header[i]: item for i, item in enumerate(result)}
         cleaned_result_dict['start'] = int(cleaned_result_dict['start'])
@@ -234,14 +240,13 @@ def clean_output(results: list, reports: list[dict]) -> list:
         cleaned_result_dict['job_id'] = int(cleaned_result_dict['job_id'])
         cleaned_result_dict['pipeline_id'] = int(cleaned_result_dict['pipeline_id'])
 
-        print('Reports: ', reports)
         report_of_interest = list(filter(lambda x: x['report_id'] == cleaned_result_dict['report_id'], reports))[0]
         cleaned_result_dict['report_text'] = report_of_interest['report_text']
 
         cleaned_results.append(cleaned_result_dict)
 
-    logger.debug('Cleaned Results:')
-    logger.debug(cleaned_results)
+        logger.debug('Cleaned Result:')
+        logger.debug(cleaned_result_dict)
 
     return cleaned_results
 
@@ -307,7 +312,7 @@ def run_job(nlpql_library_name, data, nlpql=None):
 
     logger.info(f"Run Time = {time.time() - start}")
     if not results:
-        return {'detail': 'There were no results found', 'results': []}
+        return results
     if not got_results:
         return JSONResponse({'detail': 'There was an error in get_results, see logs for full output', 'results': results}, status_code=500)
 

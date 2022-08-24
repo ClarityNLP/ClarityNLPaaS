@@ -1,5 +1,4 @@
 '''File for holding models for necessary operation of API'''
-from asyncio import streams
 import logging
 import pydantic
 import typing
@@ -145,7 +144,6 @@ class NLPResult(pydantic.BaseModel):
     text: typing.Optional[str]
     tuple: typing.Optional[str]
     value: typing.Optional[str]
-
 
     class Config:
         schema_extra = {
