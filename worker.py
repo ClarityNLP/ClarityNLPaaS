@@ -203,7 +203,7 @@ def get_results(job_id: int, name="NLPAAS Job"):
         return [], False
 
 
-def clean_output(results: list) -> list:
+def clean_output(results: list, reports: list[dict]) -> list:
     """
     Clean up results and format into final return list of dictionaries
     """
@@ -233,6 +233,10 @@ def clean_output(results: list) -> list:
         cleaned_result_dict['end'] = int(cleaned_result_dict['end'])
         cleaned_result_dict['job_id'] = int(cleaned_result_dict['job_id'])
         cleaned_result_dict['pipeline_id'] = int(cleaned_result_dict['pipeline_id'])
+
+        print('Reports: ', reports)
+        report_of_interest = list(filter(lambda x: x['report_id'] == cleaned_result_dict['report_id'], reports))[0]
+        cleaned_result_dict['report_text'] = report_of_interest['report_text']
 
         cleaned_results.append(cleaned_result_dict)
 
@@ -307,4 +311,4 @@ def run_job(nlpql_library_name, data, nlpql=None):
     if not got_results:
         return JSONResponse({'detail': 'There was an error in get_results, see logs for full output', 'results': results}, status_code=500)
 
-    return clean_output(results)
+    return clean_output(results, reports=nlpql_json['reports'])

@@ -109,23 +109,30 @@ class ResultDisplayObject(pydantic.BaseModel):
 
 class NLPResult(pydantic.BaseModel):
     _id: str
+    _ids_1: typing.Optional[str]
     batch: str
     concept_code: str
     concept_code_system: str
+    context_type: typing.Optional[str]
     display_name: str
     end: int
     experiencer: str
     inserted_date: str
+    job_date: typing.Optional[str]
     job_id: int
     negation: str
     nlpql_feature: str
+    nlpql_features_1: typing.Optional[str]
     owner: str
     phenotype_final: str
+    phenotype_id: typing.Optional[int]
     pipeline_id: int
     pipeline_type: str
+    raw_definition_text: typing.Optional[str]
     report_date: str
     report_id: str
     report_type: str
+    report_text: str
     result_display: ResultDisplayObject
     section: str
     sentence: str
@@ -136,14 +143,9 @@ class NLPResult(pydantic.BaseModel):
     temporality: str
     term: str
     text: typing.Optional[str]
-    value: typing.Optional[str]
-    _ids_1: typing.Optional[str]
-    context_type: typing.Optional[str]
-    job_date: typing.Optional[str]
-    nlpql_features_1: typing.Optional[str]
-    phenotype_id: typing.Optional[int]
-    raw_definition_text: typing.Optional[str]
     tuple: typing.Optional[str]
+    value: typing.Optional[str]
+
 
     class Config:
         schema_extra = {
