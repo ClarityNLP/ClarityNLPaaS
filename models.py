@@ -98,49 +98,49 @@ class RunNLPQLPostBody(pydantic.BaseModel):
 
 
 class ResultDisplayObject(pydantic.BaseModel):
-    date: str
-    result_content: str
-    sentence: str
-    highlights: list[str]
-    start: list[int]
-    end: list[int]
+    date: typing.Optional[str]
+    result_content: typing.Optional[str]
+    sentence: typing.Optional[str]
+    highlights: typing.Optional[list[str]]
+    start: typing.Optional[list[int]]
+    end: typing.Optional[list[int]]
 
 
 class NLPResult(pydantic.BaseModel):
-    _id: str
+    _id: typing.Optional[str]
     _ids_1: typing.Optional[str]
-    batch: str
-    concept_code: str
-    concept_code_system: str
+    batch: typing.Optional[str]
+    concept_code: typing.Optional[str]
+    concept_code_system: typing.Optional[str]
     context_type: typing.Optional[str]
-    display_name: str
-    end: int
-    experiencer: str
-    inserted_date: str
+    display_name: typing.Optional[str]
+    end: typing.Optional[int]
+    experiencer: typing.Optional[str]
+    inserted_date: typing.Optional[str]
     job_date: typing.Optional[str]
-    job_id: int
-    negation: str
-    nlpql_feature: str
+    job_id: typing.Optional[int]
+    negation: typing.Optional[str]
+    nlpql_feature: typing.Optional[str]
     nlpql_features_1: typing.Optional[str]
-    owner: str
-    phenotype_final: str
+    owner: typing.Optional[str]
+    phenotype_final: typing.Optional[str]
     phenotype_id: typing.Optional[int]
-    pipeline_id: int
-    pipeline_type: str
+    pipeline_id: typing.Optional[int]
+    pipeline_type: typing.Optional[str]
     raw_definition_text: typing.Optional[str]
-    report_date: str
-    report_id: str
-    report_type: str
-    report_text: str
+    report_date: typing.Optional[str]
+    report_id: typing.Optional[str]
+    report_type: typing.Optional[str]
+    report_text: typing.Optional[str]
     result_display: ResultDisplayObject
-    section: str
-    sentence: str
-    solr_id: str
-    source: str
-    start: str
-    subject: str
-    temporality: str
-    term: str
+    section: typing.Optional[str]
+    sentence: typing.Optional[str]
+    solr_id: typing.Optional[str]
+    source: typing.Optional[str]
+    start: typing.Optional[str]
+    subject: typing.Optional[str]
+    temporality: typing.Optional[str]
+    term: typing.Optional[str]
     text: typing.Optional[str]
     tuple: typing.Optional[str]
     value: typing.Optional[str]
