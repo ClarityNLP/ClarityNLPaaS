@@ -45,7 +45,7 @@ def register_nlpql(nlpql: str = Body(...)):
     return add_custom_nlpql(nlpql=nlpql)
 
 
-@app_router.post('/job/{nlpql_library}', response_model=list[NLPResult])
+@app_router.post('/job/{nlpql_library}', response_model=list[NLPResult], response_model_exclude_unset=True)
 def run_nlpql(nlpql_library: str, post_body: RunNLPQLPostBody):
     '''
     Runs NLPQL library given in path against patient and documents given in post body
