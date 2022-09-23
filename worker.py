@@ -235,10 +235,22 @@ def clean_output(results: list, reports: list[dict]) -> list:
 
 
         cleaned_result_dict = {header[i]: item for i, item in enumerate(result)}
-        cleaned_result_dict['start'] = int(cleaned_result_dict['start'])
-        cleaned_result_dict['end'] = int(cleaned_result_dict['end'])
-        cleaned_result_dict['job_id'] = int(cleaned_result_dict['job_id'])
-        cleaned_result_dict['pipeline_id'] = int(cleaned_result_dict['pipeline_id'])
+        try:
+            cleaned_result_dict['start'] = int(cleaned_result_dict['start'])
+        except KeyError:
+            pass
+        try:
+            cleaned_result_dict['end'] = int(cleaned_result_dict['end'])
+        except KeyError:
+            pass
+        try:
+            cleaned_result_dict['job_id'] = int(cleaned_result_dict['job_id'])
+        except KeyError:
+            pass
+        try:
+            cleaned_result_dict['pipeline_id'] = int(cleaned_result_dict['pipeline_id'])
+        except KeyError:
+            pass
 
         report_of_interest = list(filter(lambda x: x['report_id'] == cleaned_result_dict['report_id'], reports))[0]
         cleaned_result_dict['report_text'] = report_of_interest['report_text']
