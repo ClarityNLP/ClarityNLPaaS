@@ -284,7 +284,10 @@ def run_job(nlpql_library_name, data, nlpql=None):
     if not nlpql_library_name and not nlpql:
         return JSONResponse({'detail': 'Please pass in NLPQL text or a valid NLPQL file name'}, status_code=400)
     elif nlpql_library_name:
-        nlpql = get_file(f'./nlpql/{nlpql_library_name}.nlpql')
+        try:
+            nlpql = get_file(f'./nlpql/{nlpql_library_name}.nlpql')
+        except FileNotFoundError:
+            return JSONResponse({'detail': 'NLPQL Library not found, please post the NLPQL library before running'}, status_code=404)
 
     # Validating the input object
     success, nlpql_json = submit_test(nlpql)
