@@ -179,10 +179,14 @@ def get_results(job_id: int, name="NLPAAS Job"):
     logger.info(f'** JOB ID {job_id} **')
 
     # Wating for job completion
-    time.sleep(5.0)
+    time.sleep(10.0)
 
-    # /job_results/<int:job_id>/phenotype
-    url = util.clarity_nlp_api_url + f'job_results/{job_id}/phenotype'
+    # /job_results/<int:job_id>/phenotype?clearResults=true to delete from Mongo after collecting
+    if util.clear_results.lower() == 'true':
+        url = util.clarity_nlp_api_url + f'job_results/{job_id}/phenotype?clearResults=true'
+    else:
+        url = util.clarity_nlp_api_url + f'job_results/{job_id}/phenotype'
+
     results = requests.get(url).text
 
     logger.debug('Phenotype Results from NLP API:')
