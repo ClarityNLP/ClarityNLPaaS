@@ -221,7 +221,7 @@ def clean_output(results: list, reports: list[dict]) -> list:
             continue
 
         cleaned_result_dict = {header[i]: item for i, item in enumerate(result)}
-        cleaned_result_dict['result_display'] = json.loads(cleaned_result_dict['result_display'].replace('^', ',').strip('"').replace("'", '"').replace('True', 'true'))
+        cleaned_result_dict['result_display'] = json.loads(cleaned_result_dict['result_display'].replace('^', ',').strip('"').replace("'", '"').replace('True', 'true').replace('False', 'false').replace('None', 'null'))
         cleaned_result_dict['sentence'] = cleaned_result_dict['sentence'].replace('"', '').replace('^', ',')
         try:
             cleaned_result_dict['start'] = int(cleaned_result_dict['start'])
@@ -246,6 +246,12 @@ def clean_output(results: list, reports: list[dict]) -> list:
 
         report_of_interest = list(filter(lambda x: x['report_id'] == cleaned_result_dict['report_id'], reports))[0]
         cleaned_result_dict['report_text'] = report_of_interest['report_text']
+
+        if cleaned_result_dict['phenotype_id'] == '':
+            cleaned_result_dict['phenotype_id'] = None
+
+        if None in cleaned_result_dict['result_display']['highlights']:
+            cleaned_result_dict['result_display']['highlights'] = ['' if not x else x for x in cleaned_result_dict['result_display']['highlights']]
 
         cleaned_results.append(cleaned_result_dict)
 
