@@ -1,6 +1,7 @@
 '''File for API routes in the application'''
 
 from fastapi import APIRouter, Body
+from fastapi.responses import JSONResponse
 
 import logging
 import typing
@@ -34,6 +35,16 @@ app_router = APIRouter()
 @app_router.get('/')
 def return_root():
     return {'detail': 'Welcome to Clarity NLPaaS Lite. Swagger UI is available at /docs.'}
+
+
+@app_router.post('/job/validate_nlpql')
+def validate_nlpql(nlpql: str = Body(...)):
+    '''
+    Validate NLPQL
+    '''
+
+    # TODO: Implement this endpoint
+    return JSONResponse({'detail': 'This is a dummy endpoint that doesn\'t actually do anything yet', 'valid': True}, status_code=200)
 
 
 @app_router.post('/job/register_nlpql', response_model=typing.Union[DetailLocationResponse, DetailResponse])
