@@ -221,7 +221,11 @@ def clean_output(results: list, reports: list[dict]) -> list:
             continue
 
         cleaned_result_dict = {header[i]: item for i, item in enumerate(result)}
-        cleaned_result_dict['result_display'] = json.loads(cleaned_result_dict['result_display'].replace('^', ',').strip('"').replace("'", '"').replace('True', 'true').replace('False', 'false').replace('None', 'null'))
+        cleaned_result_display_string = cleaned_result_dict['result_display'].replace('^', ',').strip('"').replace("'", '"').replace('True', 'true').replace('False', 'false').replace('None', 'null').replace('""', '\\"').replace('patient"s', 'patients').replace('didn"t', "didnt")
+        try:
+            cleaned_result_dict['result_display'] = json.loads(cleaned_result_display_string)
+        except json.decoder.JSONDecodeError:
+            cleaned_result_dict['result_display'] = json.loads(cleaned_result_display_string.replace('\\"', '"'))
         cleaned_result_dict['sentence'] = cleaned_result_dict['sentence'].replace('"', '').replace('^', ',')
         try:
             cleaned_result_dict['start'] = int(cleaned_result_dict['start'])
