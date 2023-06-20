@@ -4,7 +4,7 @@ import logging
 
 from collections import defaultdict
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, status, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -43,6 +43,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ================= Catch all non-caught errors in a pretty way ========
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        # you probably want some kind of logging here
+        logger.error(f'There was a {type(exc).__name__} exception, see below for printout: ')
+        logger.error(exc)
+        return JSONResponse({'detail': f"There was an uncaught exception named {type(exc).__name__}, please see logs for more information"}, status_code=500)
+
+app.middleware('http')(catch_exceptions_middleware)
 
 
 # ================= App Validation Error Override ======================
