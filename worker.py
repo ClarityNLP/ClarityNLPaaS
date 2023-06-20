@@ -251,7 +251,7 @@ def clean_output(results: list, reports: list[dict]) -> list:
         report_of_interest = list(filter(lambda x: x['report_id'] == cleaned_result_dict['report_id'], reports))[0]
         cleaned_result_dict['report_text'] = report_of_interest['report_text']
 
-        if cleaned_result_dict['phenotype_id'] == '':
+        if 'phenotype_id' not in cleaned_result_dict or cleaned_result_dict['phenotype_id'] == '':
             cleaned_result_dict['phenotype_id'] = None
 
         if None in cleaned_result_dict['result_display']['highlights']:
