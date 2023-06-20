@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 
 from api import app_router
 from models import CustomFormatter, nlpql_example
-from util import log_level, root_path
+from util import log_level, root_path, deploy_url
 
 logger = logging.getLogger('main')
 logger.setLevel(logging.INFO)
@@ -83,7 +83,8 @@ def custom_openapi():
         description="This is a custom Open API Schema to align with NLPaaS Lite's API endpoints",
         routes=app.routes,
     )
-
+    if deploy_url:
+        openapi_schema["servers"] = [{"url": deploy_url}]
     openapi_schema["paths"]["/job/register_nlpql"]["post"]["requestBody"]["content"] = {"text/plain": {"schema": {"type": "string"}}}
     openapi_schema["paths"]["/job/register_nlpql"]["post"]["summary"] = "Register NLPQL"
     openapi_schema["paths"]["/job/{nlpql_library}"]["post"]["summary"] = "Run NLPQL"
