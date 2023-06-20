@@ -85,6 +85,7 @@ def custom_openapi():
     )
     if deploy_url:
         openapi_schema["servers"] = [{"url": deploy_url}]
+    openapi_schema["paths"]["/job/validate_nlpql"]["post"]["requestBody"]["content"] = {"text/plain": {"schema": {"type": "string"}}}
     openapi_schema["paths"]["/job/register_nlpql"]["post"]["requestBody"]["content"] = {"text/plain": {"schema": {"type": "string"}}}
     openapi_schema["paths"]["/job/register_nlpql"]["post"]["summary"] = "Register NLPQL"
     openapi_schema["paths"]["/job/{nlpql_library}"]["post"]["summary"] = "Run NLPQL"
