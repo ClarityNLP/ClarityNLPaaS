@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 
 from api import app_router
 from models import CustomFormatter, nlpql_example
-from util import log_level
+from util import log_level, root_path
 
 logger = logging.getLogger('main')
 logger.setLevel(logging.INFO)
@@ -31,7 +31,10 @@ else:
     logger.info('Logging level is at INFO')
 
 # ------------------ FastAPI variable ----------------------------------
-app = FastAPI(title='NLPaaS Lite', version='0.0.1')
+if root_path:
+    app = FastAPI(title='NLPaaS Lite', version='0.0.1', root_path=root_path)
+else:
+    app = FastAPI(title='NLPaaS Lite', version='0.0.1')
 
 app.add_middleware(
     CORSMiddleware,
