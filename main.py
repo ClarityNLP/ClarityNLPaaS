@@ -45,17 +45,17 @@ app.add_middleware(
 )
 
 
-# ================= Catch all non-caught errors in a pretty way ========
-async def catch_exceptions_middleware(request: Request, call_next):
-    try:
-        return await call_next(request)
-    except Exception as exc:
-        # you probably want some kind of logging here
-        logger.error(f'There was a {type(exc).__name__} exception, see below for printout: ')
-        logger.error(exc)
-        return JSONResponse({'detail': f"There was an uncaught exception named {type(exc).__name__}, please see logs for more information"}, status_code=500)
+# # ================= Catch all non-caught errors in a pretty way ========
+# async def catch_exceptions_middleware(request: Request, call_next):
+#     try:
+#         return await call_next(request)
+#     except Exception as exc:
+#         # you probably want some kind of logging here
+#         logger.error(f'There was a {type(exc).__name__} exception, see below for printout: ')
+#         logger.error(exc)
+#         return JSONResponse({'detail': f"There was an uncaught exception named {type(exc).__name__}, please see logs for more information"}, status_code=500)
 
-app.middleware('http')(catch_exceptions_middleware)
+# app.middleware('http')(catch_exceptions_middleware)
 
 
 # ================= App Validation Error Override ======================
