@@ -72,7 +72,11 @@ def submit_test(nlpql):
     url = util.clarity_nlp_api_url + 'nlpql_tester'
     logger.info(f'URL from submit_test: "{url}"')
 
-    response = requests.post(url, data=nlpql)
+    try:
+        response = requests.post(url, data=nlpql)
+    except requests.exceptions.ConnectionError:
+        logger.error(f'Could not connect to ClarityNLP Lite. Is it running at {util.clarity_nlp_api_url}?')
+        return False, {'error': 'Could not connect to ClarityNLP Lite'}
 
     if response.status_code == 200:
         data = response.json()
