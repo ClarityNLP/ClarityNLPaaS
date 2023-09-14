@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 import logging
 import typing
 
-from worker import add_custom_nlpql, run_job
+from worker import add_custom_nlpql, run_job, check_claritynlp_connection
 from models import DetailLocationResponse, DetailResponse, RunNLPQLPostBody, CustomFormatter, NLPResult
 
 from util import log_level
@@ -36,6 +36,15 @@ app_router = APIRouter()
 def return_root():
     return {'detail': 'Welcome to Clarity NLPaaS Lite. Swagger UI is available at /docs.'}
 
+
+@app_router.get('/heath')
+def return_health():
+    '''Health check endpoint'''
+    clarity_up = check_claritynlp_connection()
+    if clarity_up:
+        return {'status': 'ClarityNLPaaS is ready to receive requests'}
+    else:
+        return {'status': 'ClarityNLP is not running, therefore NLPaaS requests will not succeed.'}
 
 @app_router.post('/job/validate_nlpql')
 def validate_nlpql(nlpql: str = Body(...)):

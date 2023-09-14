@@ -30,6 +30,25 @@ if util.log_level.lower() == 'debug':
 else:
     logger.info('Logging level is at INFO')
 
+
+def check_claritynlp_connection():
+    '''
+    Test if ClarityNLP is running
+    '''
+
+    try:
+        resp = requests.get(util.clarity_nlp_api_url)
+        if resp.status_code == 200 and resp.text == 'Welcome to ClarityNLP!':
+            logger.info('ClarityNLP is running')
+            return True
+        logger.error(f'Trying to connect to ClarityNLP gave a status code of {resp.status_code} and a response of {resp.text if resp.text else "unknown"}')
+        return False
+    except Exception as exc:
+        logger.error('Trying to connect to ClarityNLP gave the following error:')
+        logger.error(exc)
+        return False
+
+
 def add_custom_nlpql(nlpql):
     if not os.path.exists('./nlpql'):
         os.makedirs('./nlpql')
