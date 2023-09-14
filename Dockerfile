@@ -11,4 +11,4 @@ ENV NUM_WORKERS=4
 
 COPY . .
 
-CMD exec gunicorn main:app --workers $NUM_WORKERS --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8080
+CMD exec hypercorn main:app --bind 0.0.0.0:8080 --workers $NUM_WORKERS --access-logfile - --access-logformat "%(h)s %(l)s \"%(r)s\" %(s)s Origin:\"%({origin}i)s\" X-Forwarded-For:\"%({x-forwarded-for}i)s\""
