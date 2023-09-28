@@ -37,7 +37,7 @@ def return_root():
     return {'detail': 'Welcome to Clarity NLPaaS Lite. Swagger UI is available at /docs.'}
 
 
-@app_router.get('/heath')
+@app_router.get('/health')
 def return_health():
     '''Health check endpoint'''
     clarity_up = check_claritynlp_connection()
