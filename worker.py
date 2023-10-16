@@ -160,14 +160,24 @@ def convert_document_references_to_reports(doc_refs: list) -> list:
     output_list = []
     for resource in doc_refs:
         resource = DocumentReference(**resource)
+        text_plain_content = list(filter(lambda x: x.attachment.contentType == 'text/plain', resource.content))
+        text_html_content = list(filter(lambda x: x.attachment.contentType == 'text/html', resource.content))
+
+        if text_plain_content:
+            report_text = base64.b64decode(list(filter(lambda x: x.attachment.contentType == 'text/plain' ,resource.content))[0].attachment.data).decode("utf-8") #type: ignore
+        elif text_html_content:
+            report_text = list(filter(lambda x: x.attachment.contentType == 'text/plain' ,resource.content))[0].attachment.data
+        else:
+            report_text = ""
+
         output_object = {
             "id": resource.id,
             "report_id": resource.id,
             "source": "FHIR",
             "report_date": resource.date.strftime('%Y-%m-%d'),
-            "subject": resource.subject.reference.split('/')[-1] if resource.subject.reference[0:7].lower() == 'patient' else resource.subject.reference,
-            "report_type": resource.type.coding[0].display,
-            "report_text": base64.b64decode(resource.content[0].attachment.data).decode("utf-8")
+            "subject": resource.subject.reference.split('/')[-1] if resource.subject.reference[0:7].lower() == 'patient' else resource.subject.reference, #type: ignore
+            "report_type": resource.type.coding[0].display, #type: ignore
+            "report_text": report_text
         }
         output_list.append(output_object)
     return output_list
