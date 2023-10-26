@@ -293,8 +293,11 @@ def clean_output(results: list, reports: list[dict]) -> list:
 
         cleaned_results.append(cleaned_result_dict)
 
+        sanitized_cleaned_result_dict = cleaned_result_dict
+        sanitized_cleaned_result_dict['report_text'] = '***'
+
         logger.debug('Cleaned Result:')
-        logger.debug(cleaned_result_dict)
+        logger.debug(sanitized_cleaned_result_dict)
 
     return cleaned_results
 
