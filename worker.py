@@ -7,6 +7,7 @@ import time
 import base64
 import json
 import re
+from copy import deepcopy
 
 from fastapi.responses import JSONResponse
 
@@ -160,15 +161,22 @@ def convert_document_references_to_reports(doc_refs: list) -> list:
     output_list = []
     for resource in doc_refs:
         resource = DocumentReference(**resource)
-        text_plain_content = list(filter(lambda x: x.attachment.contentType == 'text/plain', resource.content))
-        text_html_content = list(filter(lambda x: x.attachment.contentType == 'text/html', resource.content))
+        text_plain_content = list(filter(lambda x: x.attachment.contentType == 'text/plain', resource.content)) #type: ignore
+        text_html_content = list(filter(lambda x: x.attachment.contentType == 'text/html', resource.content)) #type: ignore
 
         if text_plain_content:
             report_text = base64.b64decode(list(filter(lambda x: x.attachment.contentType == 'text/plain' ,resource.content))[0].attachment.data).decode("utf-8") #type: ignore
         elif text_html_content:
-            report_text = list(filter(lambda x: x.attachment.contentType == 'text/plain' ,resource.content))[0].attachment.data
+            report_text = list(filter(lambda x: x.attachment.contentType == 'text/plain' ,resource.content))[0].attachment.data #type: ignore
         else:
-            report_text = ""
+            report_text = ''
+
+        # Check if text empty, if so, ignore
+        chars_to_remove = ['\a', '\b', '\t', '\n', '\v', '\f', '\r']
+        translation_table = str.maketrans('', '', ''.join(chars_to_remove))
+        result_str = report_text.translate(translation_table)
+        if result_str == '':
+            continue
 
         output_object = {
             "id": resource.id,
@@ -293,7 +301,7 @@ def clean_output(results: list, reports: list[dict]) -> list:
 
         cleaned_results.append(cleaned_result_dict)
 
-        sanitized_cleaned_result_dict = cleaned_result_dict
+        sanitized_cleaned_result_dict = deepcopy(cleaned_result_dict)
         sanitized_cleaned_result_dict['report_text'] = '***'
 
         logger.debug('Cleaned Result:')
