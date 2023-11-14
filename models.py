@@ -68,7 +68,7 @@ class RunNLPQLReports(pydantic.BaseModel):
 
 class RunNLPQLPostBody(pydantic.BaseModel):
     patient_id: str
-    fhir: FHIRConnectionInfo
+    fhir: typing.Optional[FHIRConnectionInfo] = None
     reports: typing.Optional[list[RunNLPQLReports]] = None
 
     class Config:

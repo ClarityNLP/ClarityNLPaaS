@@ -356,7 +356,7 @@ def run_job(nlpql_library_name, data, nlpql=None):
         # This is checking if the reports are of type DocumentReference and need to be converted to the correct object schema
         assert all([item['resourceType'] == 'DocumentReference' for item in data.reports])
         nlpql_json['reports'] = convert_document_references_to_reports(data.reports)
-    except AssertionError:
+    except (TypeError, AssertionError):
         # data.reports is of the correct type and can be passed on to be submitted as is
         nlpql_json['reports'] = data.reports
 
