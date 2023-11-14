@@ -321,7 +321,8 @@ def run_job(nlpql_library_name, data, nlpql=None):
 
     if isinstance(data, models.RunNLPQLPostBody):
         fhir = data.fhir
-        fhir_data_service_uri = fhir.service_url
+        if fhir:
+            fhir_data_service_uri = fhir.service_url
     else:
         # TODO: need to figure outh FHIR Server Auth Stuff, most likely will just need RC-API to pass DocRefs
         pass
@@ -358,7 +359,7 @@ def run_job(nlpql_library_name, data, nlpql=None):
         nlpql_json['reports'] = convert_document_references_to_reports(data.reports)
     except (TypeError, AssertionError):
         # data.reports is of the correct type and can be passed on to be submitted as is
-        nlpql_json['reports'] = data.reports
+        nlpql_json['reports'] = [item.__dict__ for item in data.reports]
 
     logger.debug('NLPQL JSON:')
     logger.debug(nlpql_json)
