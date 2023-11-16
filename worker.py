@@ -262,13 +262,17 @@ def clean_output(results: list, reports: list[dict]) -> list:
             continue
 
         cleaned_result_dict = {header[i]: item for i, item in enumerate(result)}
-        cleaned_result_display_string = cleaned_result_dict['result_display'].replace('^', ',').strip('"').replace("'", '"').replace('True', 'true').replace('False', 'false').replace('None', 'null').replace('""', '\\"')
-        cleaned_result_display_string = re.sub('([A-Za-z]+)[\"`]([A-Za-z]+)', r'\1'r'\2', cleaned_result_display_string)
-        try:
-            cleaned_result_dict['result_display'] = json.loads(cleaned_result_display_string)
-        except json.decoder.JSONDecodeError:
-            cleaned_result_dict['result_display'] = json.loads(cleaned_result_display_string.replace('\\"', '"'))
-        cleaned_result_dict['sentence'] = cleaned_result_dict['sentence'].replace('"', '').replace('^', ',')
+        if 'result_display' in cleaned_result_dict:
+            cleaned_result_display_string = cleaned_result_dict['result_display'].replace('^', ',').strip('"').replace("'", '"').replace('True', 'true').replace('False', 'false').replace('None', 'null').replace('""', '\\"')
+            cleaned_result_display_string = re.sub('([A-Za-z]+)[\"`]([A-Za-z]+)', r'\1'r'\2', cleaned_result_display_string)
+            try:
+                cleaned_result_dict['result_display'] = json.loads(cleaned_result_display_string)
+            except json.decoder.JSONDecodeError:
+                cleaned_result_dict['result_display'] = json.loads(cleaned_result_display_string.replace('\\"', '"'))
+        else:
+            cleaned_result_dict['result_display'] = ''
+
+        cleaned_result_dict['sentence'] = cleaned_result_dict['sentence'].replace('"', '').replace('^', ',') if 'sentence' in cleaned_result_dict else ''
         try:
             cleaned_result_dict['start'] = int(cleaned_result_dict['start'])
         except KeyError:
@@ -296,7 +300,7 @@ def clean_output(results: list, reports: list[dict]) -> list:
         if 'phenotype_id' not in cleaned_result_dict or cleaned_result_dict['phenotype_id'] == '':
             cleaned_result_dict['phenotype_id'] = None
 
-        if None in cleaned_result_dict['result_display']['highlights']:
+        if 'result_display' in cleaned_result_dict and cleaned_result_dict['result_display'] and None in cleaned_result_dict['result_display']['highlights']:
             cleaned_result_dict['result_display']['highlights'] = ['' if not x else x for x in cleaned_result_dict['result_display']['highlights']]
 
         cleaned_results.append(cleaned_result_dict)
