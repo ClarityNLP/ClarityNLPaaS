@@ -268,7 +268,10 @@ def clean_output(results: list, reports: list[dict]) -> list:
             try:
                 cleaned_result_dict['result_display'] = json.loads(cleaned_result_display_string)
             except json.decoder.JSONDecodeError:
-                cleaned_result_dict['result_display'] = json.loads(cleaned_result_display_string.replace('\\"', '"'))
+                try:
+                    cleaned_result_dict['result_display'] = json.loads(cleaned_result_display_string.replace('\\"', '"'))
+                except json.decoder.JSONDecodeError:
+                    cleaned_result_dict['result_display'] = json.loads(cleaned_result_display_string.replace('\\"', '""'))
         else:
             cleaned_result_dict['result_display'] = ''
 
