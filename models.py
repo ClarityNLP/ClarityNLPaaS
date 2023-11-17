@@ -1,10 +1,10 @@
-'''File for holding models for necessary operation of API'''
+"""File for holding models for necessary operation of API"""
 import logging
 import pydantic
 import typing
 
 
-nlpql_example = '''// Phenotype library name
+nlpql_example = """// Phenotype library name
 phenotype "Syphilis_Test" version "1";
 
 include ClarityCore version "1.0" called ClarityNLP;
@@ -19,30 +19,29 @@ define final syphilis_test_unstructured:
     ClarityNLP.TermFinder({
 		termset: [syphilis_test_unstructured_terms]
 	});
-    '''
+"""
 
 
 class CustomFormatter(logging.Formatter):
-
     grey = "\x1b[38;21m"
     green = "\x1b[32m"
     yellow = "\x1b[33m"
     red = "\x1b[31m"
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"
-    format = '{asctime}   {levelname:8s} --- [{process:2d}] {name}: {message}'
+    format_str = "{asctime}   {levelname:8s} --- [{process:2d}] {name}: {message}"
 
     FORMATS = {
-        logging.DEBUG: grey + format + reset,
-        logging.INFO: green + format + reset,
-        logging.WARNING: yellow + format + reset,
-        logging.ERROR: red + format + reset,
-        logging.CRITICAL: bold_red + format + reset
+        logging.DEBUG: grey + format_str + reset,
+        logging.INFO: green + format_str + reset,
+        logging.WARNING: yellow + format_str + reset,
+        logging.ERROR: red + format_str + reset,
+        logging.CRITICAL: bold_red + format_str + reset,
     }
 
     def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_fmt, '%m/%d/%Y %I:%M:%S %p', style='{')
+        formatter = logging.Formatter(log_fmt, "%m/%d/%Y %I:%M:%S %p", style="{")
         return formatter.format(record)
 
 
@@ -75,13 +74,7 @@ class RunNLPQLPostBody(pydantic.BaseModel):
         schema_extra = {
             "example": {
                 "patient_id": "12345",
-                "fhir": {
-                    "service_url": "https://example.org/fhir/",
-                    "auth": {
-                        "auth_type": "Bearer",
-                        "token": "112233445566"
-                    }
-                },
+                "fhir": {"service_url": "https://example.org/fhir/", "auth": {"auth_type": "Bearer", "token": "112233445566"}},
                 "reports": [
                     {
                         "id": "cde69f20-0a9b-4755-aaca-2330de486f6d",
@@ -90,9 +83,9 @@ class RunNLPQLPostBody(pydantic.BaseModel):
                         "report_date": "2022-06-24T15:02:43.378272Z",
                         "subject": "12345",
                         "report_type": "Example Doc",
-                        "report_text": "sepsis and on vent"
+                        "report_text": "sepsis and on vent",
                     }
-                ]
+                ],
             }
         }
 
@@ -177,15 +170,9 @@ class NLPResult(pydantic.BaseModel):
                     "date": "2022-01-14",
                     "result_content": "The medical provider is concerned about secondary syphilis and orders a rapid point of care treponemal test in the office which is positive.",
                     "sentence": "The medical provider is concerned about secondary syphilis and orders a rapid point of care treponemal test in the office which is positive.",
-                    "highlights": [
-                        "syphilis"
-                    ],
-                    "start": [
-                        50
-                    ],
-                    "end": [
-                        58
-                    ]
+                    "highlights": ["syphilis"],
+                    "start": [50],
+                    "end": [58],
                 },
                 "section": "UNKNOWN",
                 "sentence": "The medical provider is concerned about secondary syphilis and orders a rapid point of care treponemal test in the office which is positive.",
@@ -196,7 +183,7 @@ class NLPResult(pydantic.BaseModel):
                 "temporality": "Recent",
                 "term": "syphilis",
                 "text": "syphilis",
-                "value": "True"
+                "value": "True",
             }
         }
 
