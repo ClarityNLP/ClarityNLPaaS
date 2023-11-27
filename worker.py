@@ -348,8 +348,8 @@ def run_job(nlpql_library_name, data, nlpql=None) -> JSONResponse | list[dict]:
         return JSONResponse(nlpql_json, status_code=400)
 
     # Adding in the reports to the JSON to be submitted
-    if not isinstance(data.reports[0], dict) and 'resourceType' in data.reports[0].dict(exclude_none=True):
-        assert all([item.dict(exclude_none=True)["resourceType"] == "DocumentReference" for item in data.reports])
+    if isinstance(data.reports, list) and 'resourceType' in data.reports[0]:
+        assert all([item["resourceType"] == "DocumentReference" for item in data.reports])
         nlpql_json["reports"] = convert_document_references_to_reports(data.reports)
     else:
         nlpql_json["reports"] = [item.__dict__ for item in data.reports]
