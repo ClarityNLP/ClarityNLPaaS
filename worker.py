@@ -121,10 +121,11 @@ def load_reports_from_fhir(fhir_url, patient_id, fhir_auth: dict = {}, idx=0):
         fhir_url += "/"
 
     try:
+        type_string = 'type=11506-3,51847-2,34111-5,84062-9,34751-8,11488-4,18842-5,34117-2,28570-0,34746-8,84061-1,34748-4,11502-2,18748-4'
         if fhir_auth:
-            r = requests.get(fhir_url + f"DocumentReference?patient={patient_id}", headers=fhir_auth)
+            r = requests.get(fhir_url + f"DocumentReference?patient={patient_id}&{type_string}", headers=fhir_auth)
         else:
-            r = requests.get(fhir_url + f"DocumentReference?patient={patient_id}")
+            r = requests.get(fhir_url + f"DocumentReference?patient={patient_id}&{type_string}")
         res_data = r.json()
         links = res_data.get("link", [])
         entry = res_data.get("entry", [])
