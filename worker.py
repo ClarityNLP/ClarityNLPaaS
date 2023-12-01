@@ -121,7 +121,7 @@ def load_reports_from_fhir(fhir_url, patient_id, fhir_auth: dict = {}, idx=0):
         fhir_url += "/"
 
     try:
-        type_string = 'type=11506-3,51847-2,34111-5,84062-9,34751-8,11488-4,18842-5,34117-2,28570-0,34746-8,84061-1,34748-4,11502-2,18748-4'
+        type_string = 'type=11506-3,51847-2,34111-5,84062-9,34751-8,11488-4,18842-5,34117-2,28570-0,34746-8,84061-1,34748-4,11502-2,18748-4,34109-9'
         if fhir_auth:
             r = requests.get(fhir_url + f"DocumentReference?patient={patient_id}&{type_string}", headers=fhir_auth)
         else:
@@ -326,8 +326,14 @@ def run_job(nlpql_library_name, data, nlpql=None) -> JSONResponse | list[dict]:
             data.reports = load_reports_from_fhir(fhir_url=fhir_data_service_uri, patient_id=data.patient_id, fhir_auth=fhir_auth_dict)
         else:
             data.reports = load_reports_from_fhir(fhir_url=fhir_data_service_uri, patient_id=data.patient_id)
+
+        if not data.reports:
+            logger.warning('There was an issue getting the documents via FHIR, see above for error message. To avoid errors in downstream processing, no results will be returned.')
+            return []
+
     elif not data.reports and not fhir:
         return JSONResponse({"detail": "You need to pass in fhir information or reports to run NLPQL"}, status_code=400)
+
 
     # Getting the NLPQL from disk
     if not nlpql_library_name and not nlpql:
