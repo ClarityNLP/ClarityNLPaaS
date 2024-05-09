@@ -133,6 +133,8 @@ class NLPResult(pydantic.BaseModel):
     report_text: typing.Optional[str]
     result_display: ResultDisplayObject
     section: typing.Optional[str]
+    section_header: typing.Optional[str]
+    section_text: typing.Optional[str]
     sentence: typing.Optional[str]
     sexual_orientation: typing.Optional[str]
     solr_id: typing.Optional[str]
