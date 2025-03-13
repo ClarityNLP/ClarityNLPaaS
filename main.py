@@ -91,7 +91,7 @@ def custom_openapi():
         return app.openapi_schema
     openapi_schema = get_openapi(
         title="NLPaaS Lite",
-        version="0.0.1",
+        version="0.0.2",
         description="This is a custom Open API Schema to align with NLPaaS Lite's API endpoints",
         routes=app.routes,
     )

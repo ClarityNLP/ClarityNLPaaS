@@ -1,15 +1,14 @@
 """File for API routes in the application"""
 
-from fastapi import APIRouter, Body
-from fastapi.responses import JSONResponse
-
 import logging
 import typing
 
-from worker import add_custom_nlpql, run_job, check_claritynlp_connection
-from models import DetailLocationResponse, DetailResponse, RunNLPQLPostBody, CustomFormatter, NLPResult
+from fastapi import APIRouter, Body
+from fastapi.responses import JSONResponse
 
+from models import CustomFormatter, DetailLocationResponse, DetailResponse, NLPResult, RunNLPQLPostBody
 from util import log_level
+from worker import add_custom_nlpql, check_claritynlp_connection, run_job
 
 logger = logging.getLogger("api")
 logger.setLevel(logging.INFO)

@@ -1,4 +1,5 @@
 """File for holding models for necessary operation of API"""
+
 import logging
 import pydantic
 import typing
@@ -67,6 +68,7 @@ class RunNLPQLReports(pydantic.BaseModel):
 
 class RunNLPQLPostBody(pydantic.BaseModel):
     patient_id: str
+    date: str | None = None
     fhir: typing.Optional[FHIRConnectionInfo] = None
     reports: typing.Optional[list[RunNLPQLReports]] = None
 
@@ -74,6 +76,7 @@ class RunNLPQLPostBody(pydantic.BaseModel):
         schema_extra = {
             "example": {
                 "patient_id": "12345",
+                "date": "2025",
                 "fhir": {"service_url": "https://example.org/fhir/", "auth": {"auth_type": "Bearer", "token": "112233445566"}},
                 "reports": [
                     {

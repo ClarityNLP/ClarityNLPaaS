@@ -1,20 +1,19 @@
 """Worker file for handling operations from the API"""
 
-import os
-import logging
-import requests
-import time
 import base64
 import json
+import logging
+import os
 import re
+import time
 from copy import deepcopy
 
+import requests
 from fastapi.responses import JSONResponse
-
 from fhir.resources.documentreference import DocumentReference
 
-import util
 import models
+import util
 
 logger = logging.getLogger("worker")
 logger.setLevel(logging.INFO)
@@ -42,7 +41,7 @@ def check_claritynlp_connection():
         if resp.status_code == 200 and resp.text == "Welcome to ClarityNLP!":
             logger.info("ClarityNLP is running")
             return True
-        logger.error(f'Trying to connect to ClarityNLP gave a status code of {resp.status_code} and a response of {resp.text if resp.text else "unknown"}')
+        logger.error(f"Trying to connect to ClarityNLP gave a status code of {resp.status_code} and a response of {resp.text if resp.text else 'unknown'}")
         return False
     except Exception as exc:
         logger.error("Trying to connect to ClarityNLP gave the following error:")
@@ -102,7 +101,7 @@ def submit_test(nlpql) -> tuple[bool, dict]:
     if response.status_code == 200:
         data = response.json()
         if "success" in data and not data["success"]:
-            logger.error(f'Error in testing NLPQL: {data["error"]}')
+            logger.error(f"Error in testing NLPQL: {data['error']}")
             return False, data["error"]
         if "valid" in data and not data["valid"]:
             logger.info(f"Testing NLPQL was a success: {data['valid']}")
@@ -114,18 +113,20 @@ def submit_test(nlpql) -> tuple[bool, dict]:
         return False, {"success": False, "status_code": response.status_code, "reason": str(response.reason), "valid": False}
 
 
-def load_reports_from_fhir(fhir_url, patient_id, fhir_auth: dict = {}, idx=0):
+def load_reports_from_fhir(fhir_url, patient_id, date: str | None, fhir_auth: dict = {}, idx=0):
     reports = []
 
     if fhir_url[-1] != "/":
         fhir_url += "/"
 
     try:
-        type_string = 'type=11506-3,51847-2,34111-5,84062-9,34751-8,11488-4,18842-5,34117-2,28570-0,34746-8,84061-1,34748-4,11502-2,18748-4,34109-9'
+        additional_params = "type=11506-3,51847-2,34111-5,84062-9,34751-8,11488-4,18842-5,34117-2,28570-0,34746-8,84061-1,34748-4,11502-2,18748-4,34109-9"
+        if date:
+            additional_params += f"&date={date}"
         if fhir_auth:
-            r = requests.get(fhir_url + f"DocumentReference?patient={patient_id}&{type_string}", headers=fhir_auth)
+            r = requests.get(fhir_url + f"DocumentReference?patient={patient_id}&{additional_params}", headers=fhir_auth)
         else:
-            r = requests.get(fhir_url + f"DocumentReference?patient={patient_id}&{type_string}")
+            r = requests.get(fhir_url + f"DocumentReference?patient={patient_id}&{additional_params}")
         res_data = r.json()
         links = res_data.get("link", [])
         entry = res_data.get("entry", [])
@@ -273,7 +274,7 @@ def clean_output(results: list, reports: list[dict]) -> list[dict]:
                     try:
                         cleaned_result_dict["result_display"] = json.loads(cleaned_result_display_string.replace('\\"', '""'))
                     except json.decoder.JSONDecodeError:
-                        cleaned_result_display_string = re.sub(r'\\".*?\\"', lambda match: match.group().replace('"', '').replace('\\', '"'), cleaned_result_display_string)
+                        cleaned_result_display_string = re.sub(r'\\".*?\\"', lambda match: match.group().replace('"', "").replace("\\", '"'), cleaned_result_display_string)
                         cleaned_result_dict["result_display"] = json.loads(cleaned_result_display_string)
         else:
             cleaned_result_dict["result_display"] = ""
@@ -327,17 +328,16 @@ def run_job(nlpql_library_name, data, nlpql=None) -> JSONResponse | list[dict]:
     if not data.reports and fhir:
         if fhir.auth:
             fhir_auth_dict = {"Authorization": f"{fhir.auth.auth_type} {fhir.auth.token}"}
-            data.reports = load_reports_from_fhir(fhir_url=fhir_data_service_uri, patient_id=data.patient_id, fhir_auth=fhir_auth_dict)
+            data.reports = load_reports_from_fhir(fhir_url=fhir_data_service_uri, patient_id=data.patient_id, date=data.date, fhir_auth=fhir_auth_dict)
         else:
-            data.reports = load_reports_from_fhir(fhir_url=fhir_data_service_uri, patient_id=data.patient_id)
+            data.reports = load_reports_from_fhir(fhir_url=fhir_data_service_uri, patient_id=data.patient_id, date=data.date)
 
         if not data.reports:
-            logger.warning('There was an issue getting the documents via FHIR, see above for error message. To avoid errors in downstream processing, no results will be returned.')
+            logger.warning("There was an issue getting the documents via FHIR, see above for error message. To avoid errors in downstream processing, no results will be returned.")
             return []
 
     elif not data.reports and not fhir:
         return JSONResponse({"detail": "You need to pass in fhir information or reports to run NLPQL"}, status_code=400)
-
 
     # Getting the NLPQL from disk
     if not nlpql_library_name and not nlpql:
@@ -359,7 +359,7 @@ def run_job(nlpql_library_name, data, nlpql=None) -> JSONResponse | list[dict]:
         return JSONResponse(nlpql_json, status_code=400)
 
     # Adding in the reports to the JSON to be submitted
-    if isinstance(data.reports, list) and 'resourceType' in data.reports[0]:
+    if isinstance(data.reports, list) and "resourceType" in data.reports[0]:
         assert all([item["resourceType"] == "DocumentReference" for item in data.reports])
         nlpql_json["reports"] = convert_document_references_to_reports(data.reports)
     else:
