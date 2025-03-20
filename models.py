@@ -94,61 +94,61 @@ class RunNLPQLPostBody(pydantic.BaseModel):
 
 
 class ResultDisplayObject(pydantic.BaseModel):
-    date: typing.Optional[str]
-    result_content: typing.Optional[str]
-    sentence: typing.Optional[str]
-    highlights: typing.Optional[list[str]]
-    start: typing.Optional[list[int]]
-    end: typing.Optional[list[int]]
+    date: str | None
+    result_content: str | None
+    sentence: str | None
+    highlights: list[str] | None
+    start: list[int] | None
+    end: list[int] | None
 
 
 class NLPResult(pydantic.BaseModel):
-    _id: typing.Optional[str]
-    _ids_1: typing.Optional[str]
-    batch: typing.Optional[str]
-    concept_code: typing.Optional[str]
-    concept_code_system: typing.Optional[str]
-    context_type: typing.Optional[str]
-    display_name: typing.Optional[str]
-    education_level: typing.Optional[str]
-    employment_status: typing.Optional[str]
+    _id: str | None
+    _ids_1: str | None
+    batch: str | None
+    concept_code: str | None
+    concept_code_system: str | None
+    context_type: str | None
+    display_name: str | None
+    education_level: str | None
+    employment_status: str | None
     end: typing.Optional[int]
-    experiencer: typing.Optional[str]
-    housing: typing.Optional[str]
-    immigration_status: typing.Optional[str]
-    inserted_date: typing.Optional[str]
-    job_date: typing.Optional[str]
+    experiencer: str | None
+    housing: str | None
+    immigration_status: str | None
+    inserted_date: str | None
+    job_date: str | None
     job_id: typing.Optional[int]
-    languages: typing.Optional[str]
-    negation: typing.Optional[str]
-    nlpql_feature: typing.Optional[str]
-    nlpql_features_1: typing.Optional[str]
-    owner: typing.Optional[str]
-    phenotype_final: typing.Optional[str]
+    languages: str | None
+    negation: str | None
+    nlpql_feature: str | None
+    nlpql_features_1: str | None
+    owner: str | None
+    phenotype_final: str | None
     phenotype_id: typing.Optional[int]
     pipeline_id: typing.Optional[int]
-    pipeline_type: typing.Optional[str]
-    raw_definition_text: typing.Optional[str]
-    religion: typing.Optional[str]
-    report_date: typing.Optional[str]
-    report_id: typing.Optional[str]
-    report_type: typing.Optional[str]
-    report_text: typing.Optional[str]
+    pipeline_type: str | None
+    raw_definition_text: str | None
+    religion: str | None
+    report_date: str | None
+    report_id: str | None
+    report_type: str | None
+    report_text: str | None
     result_display: ResultDisplayObject
-    section: typing.Optional[str]
-    section_header: typing.Optional[str]
-    section_text: typing.Optional[str]
-    sentence: typing.Optional[str]
-    sexual_orientation: typing.Optional[str]
-    solr_id: typing.Optional[str]
-    source: typing.Optional[str]
-    start: typing.Optional[str]
-    subject: typing.Optional[str]
-    temporality: typing.Optional[str]
-    term: typing.Optional[str]
-    text: typing.Optional[str]
-    tuple: typing.Optional[str]
-    value: typing.Optional[str]
+    section: str | None
+    section_header: str | None
+    section_text: str | None
+    sentence: str | None
+    sexual_orientation: str | None
+    solr_id: str | None
+    source: str | None
+    start: str | None
+    subject: str | None
+    temporality: str | None
+    term: str | None
+    text: str | None
+    tuple: str | None
+    value: str | dict | None
 
     class Config:
         schema_extra = {

@@ -222,11 +222,17 @@ def get_results(job_id: int, name: str = "NLPAAS Job"):
 
     # /job_results/<int:job_id>/phenotype?clearResults=true to delete from Mongo after collecting
     if util.clear_results.lower() == "true":
-        url = util.clarity_nlp_api_url + f"job_results/{job_id}/phenotype?clearResults=true"
+        url = util.clarity_nlp_api_url + f"job_results/{job_id}/phenotype?clearResults=true&format=json"
     else:
-        url = util.clarity_nlp_api_url + f"job_results/{job_id}/phenotype"
+        url = util.clarity_nlp_api_url + f"job_results/{job_id}/phenotype?format=json"
 
-    results = requests.get(url).text
+    json_results = False
+    try:
+        results = requests.get(url).json()
+        json_results = True
+        logger.info("Got JSON-formatted results from ClarityNLP")
+    except:
+        results = requests.get(url).text
 
     logger.debug("Phenotype Results from NLP API:")
     logger.debug(results)
@@ -234,16 +240,15 @@ def get_results(job_id: int, name: str = "NLPAAS Job"):
     try:
         if len(results) == 0:
             logger.info(f"No results found for job {job_id}")
-            return [], True
+            return [], True, json_results
 
-        results = [result.strip("\r") for result in results.split("\n")]
-        logger.info(f"Total results for {name}: {len(results)}")
-
-        return results, True
+        if not json_results:
+            results = [result.strip("\r") for result in results.split("\n")]
+        return results, True, json_results
 
     except Exception as ex:
         logger.error(f"Error in get_results: {ex}")
-        return [], False
+        return [], False, json_results
 
 
 def clean_output(results: list, reports: list[dict]) -> list[dict]:
@@ -338,6 +343,8 @@ def run_job(nlpql_library_name, data, nlpql=None) -> JSONResponse | list[dict]:
 
     elif not data.reports and not fhir:
         return JSONResponse({"detail": "You need to pass in fhir information or reports to run NLPQL"}, status_code=400)
+    
+    logger.info(f"Running with {len(data.reports)} reports")
 
     # Getting the NLPQL from disk
     if not nlpql_library_name and not nlpql:
@@ -380,12 +387,17 @@ def run_job(nlpql_library_name, data, nlpql=None) -> JSONResponse | list[dict]:
     job_id: int = int(job_info["job_id"]) if job_info["job_id"].isnumeric() else 0
     results: list[str]
     got_results: bool
-    results, got_results = get_results(job_id, name=nlpql_json["name"])
+    json_results: bool
+    results, got_results, json_results = get_results(job_id, name=nlpql_json["name"])
 
     logger.info(f"Run Time = {time.time() - start}")
+
     if not results:
         return []
     if not got_results:
         return JSONResponse({"detail": "There was an error in get_results, see logs for full output", "results": results}, status_code=500)
-
-    return clean_output(results, reports=nlpql_json["reports"])
+    if not json_results:
+        return clean_output(results, reports=nlpql_json["reports"])
+    else:
+        logger.info(f"Received {len(results)} results from ClarityNLP")
+        return results
