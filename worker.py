@@ -211,7 +211,7 @@ def submit_job(nlpql_json) -> tuple[bool, str | dict]:
         return False, response.reason
 
 
-def get_results(job_id: int, name: str = "NLPAAS Job"):
+def get_results(job_id: int, name: str = "NLPAAS Job") -> tuple[list, bool, bool]:
     """
     Reading Results from API endpoint
     """
@@ -226,24 +226,26 @@ def get_results(job_id: int, name: str = "NLPAAS Job"):
     else:
         url = util.clarity_nlp_api_url + f"job_results/{job_id}/phenotype?format=json"
 
-    json_results = False
+    json_results: bool = False
     try:
-        results = requests.get(url).json()
+        results_json = requests.get(url).json()
         json_results = True
         logger.info("Got JSON-formatted results from ClarityNLP")
-    except:
-        results = requests.get(url).text
+    except Exception:
+        results_csv = requests.get(url).text
 
     logger.debug("Phenotype Results from NLP API:")
-    logger.debug(results)
+    logger.debug(results_json) if json_results else logger.debug(results_csv)
 
     try:
-        if len(results) == 0:
+        if (json_results and len(results_json) == 0) or (not json_results and len(results_csv) == 0):
             logger.info(f"No results found for job {job_id}")
             return [], True, json_results
 
         if not json_results:
-            results = [result.strip("\r") for result in results.split("\n")]
+            results: list = [result.strip("\r") for result in results_csv.split("\n")]
+        else:
+            results = results_json
         return results, True, json_results
 
     except Exception as ex:
@@ -315,7 +317,7 @@ def clean_output(results: list, reports: list[dict]) -> list[dict]:
     return cleaned_results
 
 
-def run_job(nlpql_library_name, data, nlpql=None) -> JSONResponse | list[dict]:
+def run_job(nlpql_library_name, data, nlpql=None) -> JSONResponse | list:
     """
     Main function to run jobs
     """
@@ -343,7 +345,7 @@ def run_job(nlpql_library_name, data, nlpql=None) -> JSONResponse | list[dict]:
 
     elif not data.reports and not fhir:
         return JSONResponse({"detail": "You need to pass in fhir information or reports to run NLPQL"}, status_code=400)
-    
+
     logger.info(f"Running with {len(data.reports)} reports")
 
     # Getting the NLPQL from disk
