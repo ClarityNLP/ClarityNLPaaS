@@ -97,7 +97,7 @@ class ResultDisplayObject(pydantic.BaseModel):
     date: str | None
     result_content: str | None
     sentence: str | None
-    highlights: list[str] | None
+    highlights: list | None
     start: list[int] | None
     end: list[int] | None
 
@@ -112,21 +112,21 @@ class NLPResult(pydantic.BaseModel):
     display_name: str | None
     education_level: str | None
     employment_status: str | None
-    end: typing.Optional[int]
+    end: int | None
     experiencer: str | None
     housing: str | None
     immigration_status: str | None
     inserted_date: str | None
     job_date: str | None
-    job_id: typing.Optional[int]
+    job_id: int | None
     languages: str | None
     negation: str | None
     nlpql_feature: str | None
     nlpql_features_1: str | None
     owner: str | None
     phenotype_final: str | None
-    phenotype_id: typing.Optional[int]
-    pipeline_id: typing.Optional[int]
+    phenotype_id: int | None
+    pipeline_id: int | None
     pipeline_type: str | None
     raw_definition_text: str | None
     religion: str | None
